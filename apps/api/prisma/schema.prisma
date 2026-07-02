@@ -1,0 +1,701 @@
+generator client {
+
+  provider = "prisma-client-js"
+
+}
+
+
+
+datasource db {
+
+  provider = "postgresql"
+
+  url      = env("DATABASE_URL")
+
+}
+
+
+
+model School {
+
+  id              String           @id @default(uuid())
+
+  name            String
+
+  settingsJson    Json             @default("{}") @map("settings_json")
+
+  users           User[]
+
+  classes         Class[]
+
+  students        Student[]
+
+  gradingSets     GradingSet[]
+
+  gradingSetTypes GradingSetType[]
+
+  classGroups     ClassGroup[]
+
+  subjects            Subject[]
+
+  teacherAssignments  TeacherAssignment[]
+
+  gradingTerms        GradingTerm[]
+
+  gradeEntries        GradeEntry[]
+
+  studentClassGroups  StudentClassGroup[]
+
+  editLocks           EditLock[]
+
+  certificateSnapshots CertificateSnapshot[]
+
+  certificateSupplements CertificateSupplement[]
+
+  certificateTemplates CertificateTemplate[]
+
+
+
+  @@map("schools")
+
+}
+
+
+
+model User {
+
+  id              String   @id @default(uuid())
+
+  schoolId        String   @map("school_id")
+
+  role            String
+
+  name            String
+
+  email           String
+
+  passwordHash    String   @map("password_hash")
+
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  homeroomClasses Class[]  @relation("ClassHomeroom")
+
+  subjects        UserSubject[]
+
+  assignments     TeacherAssignment[]
+
+  gradeEntries    GradeEntry[]
+
+  editLocks       EditLock[]
+
+  generatedCertificates CertificateSnapshot[] @relation("CertificateGenerator")
+
+
+
+  @@unique([schoolId, email])
+
+  @@index([schoolId])
+
+  @@map("users")
+
+}
+
+
+
+model Class {
+
+  id                String   @id @default(uuid())
+
+  schoolId          String   @map("school_id")
+
+  name              String
+
+  year              Int
+
+  yearHebrew        String?  @map("year_hebrew")
+
+  homeroomTeacherId String?  @map("homeroom_teacher_id")
+
+  certificateProfileId String? @map("certificate_profile_id")
+
+  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  homeroomTeacher   User?    @relation("ClassHomeroom", fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
+
+  students          Student[]
+
+  groups            ClassGroup[]
+
+  teacherAssignments TeacherAssignment[]
+
+  gradeEntries       GradeEntry[]
+
+  editLocks          EditLock[]
+
+  certificateSnapshots CertificateSnapshot[]
+
+  certificateSupplements CertificateSupplement[]
+
+
+
+  @@index([schoolId])
+
+  @@index([homeroomTeacherId])
+
+  @@map("classes")
+
+}
+
+
+
+model ClassGroup {
+
+  id        String    @id @default(uuid())
+
+  schoolId  String    @map("school_id")
+
+  classId   String    @map("class_id")
+
+  name      String
+
+  sortOrder Int       @default(0) @map("sort_order")
+
+  subjectId String?   @map("subject_id")
+
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  subject   Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  students           Student[]
+
+  studentMemberships StudentClassGroup[]
+
+  teacherAssignments TeacherAssignment[]
+
+  editLocks          EditLock[]
+
+
+
+  @@index([schoolId])
+
+  @@index([classId])
+
+  @@index([subjectId])
+
+  @@map("class_groups")
+
+}
+
+
+
+model StudentClassGroup {
+
+  id           String     @id @default(uuid())
+
+  schoolId     String     @map("school_id")
+
+  studentId    String     @map("student_id")
+
+  classGroupId String     @map("class_group_id")
+
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([studentId, classGroupId])
+
+  @@index([schoolId])
+
+  @@index([studentId])
+
+  @@index([classGroupId])
+
+  @@map("student_class_groups")
+
+}
+
+
+
+model Student {
+
+  id       String @id @default(uuid())
+
+  schoolId String @map("school_id")
+
+  classId       String      @map("class_id")
+
+  classGroupId  String?     @map("class_group_id")
+
+  fullName      String      @map("full_name")
+
+  school        School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  class         Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  classGroup    ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: SetNull)
+
+  groupMemberships StudentClassGroup[]
+
+  gradeEntries  GradeEntry[]
+
+  certificateSnapshots CertificateSnapshot[]
+
+  certificateSupplements CertificateSupplement[]
+
+
+
+  @@index([schoolId])
+
+  @@index([classId])
+
+  @@index([classGroupId])
+
+  @@map("students")
+
+}
+
+
+
+model GradingSetType {
+
+  id          String       @id @default(uuid())
+
+  schoolId    String       @map("school_id")
+
+  key         String
+
+  label       String
+
+  parentId    String?      @map("parent_id")
+
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  parent      GradingSetType?  @relation("GradingSetTypeHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+
+  children    GradingSetType[] @relation("GradingSetTypeHierarchy")
+
+  gradingSets GradingSet[]
+
+  subjects    Subject[]
+
+
+
+  @@unique([schoolId, key])
+
+  @@index([schoolId])
+
+  @@index([parentId])
+
+  @@map("grading_set_types")
+
+}
+
+
+
+model GradingSet {
+
+  id               String             @id @default(uuid())
+
+  schoolId         String             @map("school_id")
+
+  name             String
+
+  gradingSetTypeId String             @map("grading_set_type_id")
+
+  school           School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  gradingSetType   GradingSetType     @relation(fields: [gradingSetTypeId], references: [id], onDelete: Restrict)
+
+  values           GradingSetValue[]
+
+
+
+  @@index([schoolId])
+
+  @@index([gradingSetTypeId])
+
+  @@map("grading_sets")
+
+}
+
+
+
+model GradingSetValue {
+
+  id           String     @id @default(uuid())
+
+  gradingSetId String     @map("grading_set_id")
+
+  label        String
+
+  order        Int
+
+  gradingSet   GradingSet @relation(fields: [gradingSetId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([gradingSetId, label])
+
+  @@index([gradingSetId])
+
+  @@map("grading_set_values")
+
+}
+
+
+
+model Subject {
+
+  id               String     @id @default(uuid())
+
+  schoolId         String     @map("school_id")
+
+  name             String
+
+  gradingSetTypeId String     @map("grading_set_type_id")
+
+  school           School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  gradingSetType   GradingSetType @relation(fields: [gradingSetTypeId], references: [id], onDelete: Restrict)
+
+  teachers         UserSubject[]
+
+  assignments      TeacherAssignment[]
+
+  gradeEntries     GradeEntry[]
+
+  classGroups      ClassGroup[]
+
+  editLocks        EditLock[]
+
+
+
+  @@index([schoolId])
+
+  @@index([gradingSetTypeId])
+
+  @@map("subjects")
+
+}
+
+
+
+model GradingTerm {
+
+  id        String       @id @default(uuid())
+
+  schoolId  String       @map("school_id")
+
+  name      String
+
+  isLocked  Boolean      @default(false) @map("is_locked")
+
+  school    School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  entries   GradeEntry[]
+
+  editLocks EditLock[]
+
+  certificateSnapshots CertificateSnapshot[]
+
+  certificateSupplements CertificateSupplement[]
+
+
+
+  @@index([schoolId])
+
+  @@map("grading_terms")
+
+}
+
+
+
+model GradeEntry {
+
+  id        String      @id @default(uuid())
+
+  schoolId  String      @map("school_id")
+
+  studentId String      @map("student_id")
+
+  classId   String      @map("class_id")
+
+  subjectId String      @map("subject_id")
+
+  termId    String      @map("term_id")
+
+  teacherId String      @map("teacher_id")
+
+  value     String?
+
+  version   Int         @default(1)
+
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  school    School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  student   Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  class     Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  subject   Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  term      GradingTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  teacher   User        @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+
+
+  @@unique([schoolId, studentId, subjectId, termId])
+
+  @@index([schoolId])
+
+  @@index([classId, termId])
+
+  @@index([studentId, termId])
+
+  @@map("grade_entries")
+
+}
+
+
+
+model UserSubject {
+
+  userId    String  @map("user_id")
+
+  subjectId String  @map("subject_id")
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+
+
+  @@id([userId, subjectId])
+
+  @@index([subjectId])
+
+  @@map("user_subjects")
+
+}
+
+
+
+model TeacherAssignment {
+
+  id           String      @id @default(uuid())
+
+  schoolId     String      @map("school_id")
+
+  userId       String      @map("user_id")
+
+  subjectId    String      @map("subject_id")
+
+  classId      String      @map("class_id")
+
+  classGroupId String?     @map("class_group_id")
+
+  school       School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject      Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  class        Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: SetNull)
+
+
+
+  @@index([schoolId])
+
+  @@index([userId])
+
+  @@index([subjectId])
+
+  @@index([classId])
+
+  @@map("teacher_assignments")
+
+}
+
+
+
+model EditLock {
+
+  id           String      @id @default(uuid())
+
+  schoolId     String      @map("school_id")
+
+  classId      String      @map("class_id")
+
+  subjectId    String      @map("subject_id")
+
+  termId       String      @map("term_id")
+
+  classGroupId String?     @map("class_group_id")
+
+  lockedBy     String      @map("locked_by")
+
+  expiresAt    DateTime    @map("expires_at")
+
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  school       School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  class        Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  subject      Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  term         GradingTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  classGroup   ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: SetNull)
+
+  holder       User        @relation(fields: [lockedBy], references: [id], onDelete: Cascade)
+
+
+
+  @@index([schoolId])
+
+  @@index([expiresAt])
+
+  @@index([schoolId, classId, termId])
+
+  @@map("locks")
+
+}
+
+
+
+model CertificateSnapshot {
+
+  id            String   @id @default(uuid())
+
+  schoolId      String   @map("school_id")
+
+  studentId     String   @map("student_id")
+
+  classId       String   @map("class_id")
+
+  termId        String   @map("term_id")
+
+  snapshotJson  Json     @map("snapshot_json")
+
+  pdfStorageKey String   @map("pdf_storage_key")
+
+  generatedBy   String   @map("generated_by")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  school    School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  student   Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  class     Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  term      GradingTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  generator User        @relation("CertificateGenerator", fields: [generatedBy], references: [id], onDelete: Restrict)
+
+
+
+  @@index([schoolId, classId, termId])
+
+  @@index([schoolId, studentId, termId])
+
+  @@map("certificate_snapshots")
+
+}
+
+
+
+model CertificateSupplement {
+
+  id                 String   @id @default(uuid())
+
+  schoolId           String   @map("school_id")
+
+  studentId          String   @map("student_id")
+
+  classId            String   @map("class_id")
+
+  termId             String   @map("term_id")
+
+  absences           String?
+
+  lateness           String?
+
+  hourAbsences       String?  @map("hour_absences")
+
+  hourLateness       String?  @map("hour_lateness")
+
+  evaluation         String?
+
+  homeroomSignature  String?  @map("homeroom_signature")
+
+  principalSignature String?  @map("principal_signature")
+
+  gradeComments      Json?    @map("grade_comments")
+
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  school  School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  student Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  class   Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  term    GradingTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([schoolId, studentId, termId])
+
+  @@index([schoolId, classId, termId])
+
+  @@map("certificate_supplements")
+
+}
+
+
+
+model CertificateTemplate {
+
+  id                  String   @id @default(uuid())
+
+  schoolId            String   @map("school_id")
+
+  name                String
+
+  orientation         String
+
+  layoutJson          Json     @map("layout_json")
+
+  layoutSchemaVersion Int      @default(1) @map("layout_schema_version")
+
+  layoutVersion       Int      @default(1) @map("layout_version")
+
+  logoStorageKey      String?  @map("logo_storage_key")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  school              School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([schoolId, updatedAt(sort: Desc)])
+
+  @@map("certificate_templates")
+
+}
+
+

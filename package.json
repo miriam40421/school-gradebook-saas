@@ -1,0 +1,28 @@
+{
+  "name": "my-project",
+  "private": true,
+  "scripts": {
+    "postinstall": "pnpm --filter @school/shared build && pnpm --filter @school/certificate-layout build",
+    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @school/api dev\" \"pnpm --filter @school/web dev\"",
+    "build": "pnpm --filter @school/shared build && pnpm --filter @school/certificate-layout build && pnpm --filter @school/api build && pnpm --filter @school/web build",
+    "test": "pnpm --filter @school/certificate-layout test && pnpm --filter @school/api test",
+    "lint": "pnpm --filter @school/api lint && pnpm --filter @school/web lint",
+    "db:migrate": "pnpm --filter @school/api db:migrate",
+    "db:seed": "pnpm --filter @school/api db:seed",
+    "db:clear-demo": "pnpm --filter @school/api db:clear-demo",
+    "db:clear-groups": "pnpm --filter @school/api db:clear-groups"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,25 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const token = req.nextUrl.searchParams.get('token');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const backendUrl = `http://localhost:3001/certificates/snapshots/${params.id}/preview-html`;
+  const res = await fetch(backendUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    return NextResponse.json({ error: 'Not found' }, { status: res.status });
+  }
+
+  const html = await res.text();
+  return new NextResponse(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}

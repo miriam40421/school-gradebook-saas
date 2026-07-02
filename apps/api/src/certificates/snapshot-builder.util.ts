@@ -1,0 +1,335 @@
+import type {
+  CertificatePrefs,
+  CertificateSnapshotCategoryDto,
+  CertificateSnapshotJsonV1,
+  CertificateSnapshotSubjectDto,
+  CertificateSupplementInput,
+} from '@school/shared';
+import {
+  certificateFillView,
+  normalizeCertificatePrefs,
+  commentPerGradeForCategory,
+  buildGradingTypeMap,
+  resolveSubjectCategoryPlacement,
+} from '@school/shared';
+import { certificateSubjectLabel } from '@school/shared';
+
+export type SnapshotBuilderInput = {
+  templateKey: string;
+  school: { id: string; name: string };
+  class: {
+    id: string;
+    name: string;
+    year: number;
+    yearHebrew?: string | null;
+  };
+  term: { id: string; name: string };
+  student: { id: string; fullName: string };
+  subjects: Array<{
+    id: string;
+    name: string;
+    gradingSetTypeId: string;
+    gradingSetTypeLabel: string;
+  }>;
+  gradingSetTypes?: Array<{ id: string; label: string; parentId: string | null }>;
+  entries: Map<string, string | null>;
+  classGroups: Array<{ id: string; name: string; subjectId: string | null }>;
+  studentGroupIds: string[];
+  certificatePrefs: CertificatePrefs;
+  certificateProfileName?: string | null;
+  supplement?: CertificateSupplementInput;
+  generatedAt?: string;
+};
+
+function groupNameForSubject(
+  subjectId: string,
+  classGroups: SnapshotBuilderInput['classGroups'],
+  studentGroupIds: string[],
+): string | null {
+  const groups = classGroups.filter(
+    (g) => g.subjectId === subjectId && studentGroupIds.includes(g.id),
+  );
+  return groups[0]?.name ?? null;
+}
+
+const GEMATRIA_MAP: [number, string][] = [
+  [400, 'ת'], [300, 'ש'], [200, 'ר'], [100, 'ק'],
+  [90, 'צ'], [80, 'פ'], [70, 'ע'], [60, 'ס'], [50, 'נ'],
+  [40, 'מ'], [30, 'ל'], [20, 'כ'], [10, 'י'],
+  [9, 'ט'], [8, 'ח'], [7, 'ז'], [6, 'ו'], [5, 'ה'],
+  [4, 'ד'], [3, 'ג'], [2, 'ב'], [1, 'א'],
+];
+
+function toGematria(n: number): string {
+  let remaining = n;
+  let letters = '';
+  for (const [val, letter] of GEMATRIA_MAP) {
+    while (remaining >= val) { letters += letter; remaining -= val; }
+    if (remaining === 0) break;
+  }
+  letters = letters.replace('יה', 'טו').replace('יו', 'טז');
+  if (letters.length === 1) return letters + '׳';
+  return letters.slice(0, -1) + '״' + letters.slice(-1);
+}
+
+function formatDisplayDate(iso: string): string {
+  try {
+    const date = new Date(iso);
+    const fmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    const parts = fmt.formatToParts(date);
+    const dayNum = parseInt(parts.find((p) => p.type === 'day')?.value ?? '1', 10);
+    const monthName = parts.find((p) => p.type === 'month')?.value ?? '';
+    const yearNum = parseInt(parts.find((p) => p.type === 'year')?.value ?? '5786', 10);
+    return `${toGematria(dayNum)} ${monthName} ${toGematria(yearNum - 5000)}`;
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+function groupSubjectsByCategory(
+  subjects: CertificateSnapshotSubjectDto[],
+): CertificateSnapshotCategoryDto[] {
+  const order: string[] = [];
+  const map = new Map<string, CertificateSnapshotCategoryDto>();
+
+  for (const s of subjects) {
+    const categoryId = s.categoryId ?? 'unknown';
+    const categoryLabel = s.categoryLabel ?? 'כללי';
+    if (!map.has(categoryId)) {
+      order.push(categoryId);
+      map.set(categoryId, {
+        categoryId,
+        categoryLabel,
+        showComment: Boolean(s.showComment),
+        subjects: [],
+        subCategories: [],
+      });
+    }
+    const cat = map.get(categoryId)!;
+    if (s.showComment) {
+      cat.showComment = true;
+    }
+
+    if (s.subCategoryId && s.subCategoryLabel) {
+      const subs = cat.subCategories ?? (cat.subCategories = []);
+      let sub = subs.find((sc) => sc.subCategoryId === s.subCategoryId);
+      if (!sub) {
+        sub = {
+          subCategoryId: s.subCategoryId,
+          subCategoryLabel: s.subCategoryLabel,
+          subjects: [],
+        };
+        subs.push(sub);
+      }
+      sub.subjects.push(s);
+    } else {
+      cat.subjects.push(s);
+    }
+  }
+
+  return order.map((id) => {
+    const cat = map.get(id)!;
+    if (cat.subCategories?.length === 0) {
+      delete cat.subCategories;
+    }
+    return cat;
+  });
+}
+
+function buildAttendance(prefs: CertificatePrefs, supplement?: CertificateSupplementInput) {
+  const hasAny =
+    prefs.absences ||
+    prefs.lateness ||
+    prefs.hourAbsences ||
+    prefs.hourLateness;
+  if (!hasAny) return undefined;
+
+  return {
+    ...(prefs.absences
+      ? { absences: supplement?.absences?.trim() || null }
+      : {}),
+    ...(prefs.lateness
+      ? { lateness: supplement?.lateness?.trim() || null }
+      : {}),
+    ...(prefs.hourAbsences
+      ? { hourAbsences: supplement?.hourAbsences?.trim() || null }
+      : {}),
+    ...(prefs.hourLateness
+      ? { hourLateness: supplement?.hourLateness?.trim() || null }
+      : {}),
+  };
+}
+
+export function buildSnapshotJson(
+  input: SnapshotBuilderInput,
+): CertificateSnapshotJsonV1 {
+  const prefs = normalizeCertificatePrefs(input.certificatePrefs);
+  const showGroup = Boolean(prefs.showSubjectGroupOnCertificate);
+  const showSubCategories = prefs.showSubCategoriesOnCertificate !== false;
+  const generatedAt = input.generatedAt ?? new Date().toISOString();
+  const supplement = input.supplement;
+  const gradeComments = supplement?.gradeComments ?? {};
+  const typeMap = buildGradingTypeMap(input.gradingSetTypes ?? []);
+
+  const subjects: CertificateSnapshotSubjectDto[] = input.subjects.map((s) => {
+    const groupName = groupNameForSubject(
+      s.id,
+      input.classGroups,
+      input.studentGroupIds,
+    );
+    const commentRaw = gradeComments[s.id];
+    const placement = resolveSubjectCategoryPlacement(
+      s.gradingSetTypeId,
+      s.gradingSetTypeLabel,
+      typeMap,
+      showSubCategories,
+    );
+    const showComment = commentPerGradeForCategory(prefs, placement.categoryId);
+    return {
+      subjectId: s.id,
+      subjectName: certificateSubjectLabel(s.name, groupName, showGroup),
+      value: input.entries.get(s.id) ?? null,
+      categoryId: placement.categoryId,
+      categoryLabel: placement.categoryLabel,
+      subCategoryId: placement.subCategoryId,
+      subCategoryLabel: placement.subCategoryLabel,
+      showComment,
+      ...(showComment
+        ? {
+            comment:
+              typeof commentRaw === 'string' ? commentRaw.trim() || null : null,
+          }
+        : {}),
+    };
+  });
+
+  const subjectCategories = groupSubjectsByCategory(subjects);
+  const attendance = buildAttendance(prefs, supplement);
+  const cohortValue = input.class.yearHebrew?.trim() || null;
+
+  const snapshot: CertificateSnapshotJsonV1 = {
+    schemaVersion: 1,
+    templateKey: input.templateKey,
+    generatedAt,
+    displayDate: prefs.dateOnCertificate ? formatDisplayDate(generatedAt) : null,
+    school: { id: input.school.id, name: input.school.name },
+    class: {
+      id: input.class.id,
+      name: input.class.name,
+      year: input.class.year,
+      ...(prefs.showClassYearHebrew
+        ? { yearHebrew: cohortValue, cohort: cohortValue }
+        : {}),
+    },
+    term: { id: input.term.id, name: input.term.name },
+    student: { id: input.student.id, fullName: input.student.fullName },
+    ...(prefs.showProfileNameOnCertificate && input.certificateProfileName?.trim()
+      ? { certificateProfileName: input.certificateProfileName.trim() }
+      : {}),
+    subjects,
+    subjectCategories,
+    showAnyGradeComment: subjects.some((s) => s.showComment),
+    certificatePrefs: prefs,
+    fill: certificateFillView(prefs),
+    ...(prefs.evaluation
+      ? { evaluation: supplement?.evaluation?.trim() || null }
+      : {}),
+    attendance,
+  };
+
+  if (prefs.signatures) {
+    snapshot.signatures = {
+      homeroom: supplement?.homeroomSignature?.trim() || null,
+      principal: supplement?.principalSignature?.trim() || null,
+      parent: null,
+    };
+  }
+
+  return snapshot;
+}
+
+/** Attach profile display name for PDF render when the school pref is enabled. */
+export function enrichSnapshotProfileName(
+  snapshot: CertificateSnapshotJsonV1,
+  profileName?: string | null,
+): CertificateSnapshotJsonV1 {
+  const prefs = normalizeCertificatePrefs(snapshot.certificatePrefs);
+  if (!prefs.showProfileNameOnCertificate) {
+    return { ...snapshot, certificatePrefs: prefs };
+  }
+  const name = profileName?.trim() || snapshot.certificateProfileName?.trim();
+  if (!name) {
+    return { ...snapshot, certificatePrefs: prefs };
+  }
+  return {
+    ...snapshot,
+    certificatePrefs: prefs,
+    certificateProfileName: name,
+  };
+}
+
+/** Apply latest saved supplement data onto an existing snapshot before PDF render. */
+export function mergeSupplementIntoSnapshot(
+  snapshot: CertificateSnapshotJsonV1,
+  supplement?: CertificateSupplementInput,
+  certificatePrefs?: CertificatePrefs,
+): CertificateSnapshotJsonV1 {
+  const prefs = normalizeCertificatePrefs(
+    certificatePrefs ?? snapshot.certificatePrefs,
+  );
+  const showSubCategories = prefs.showSubCategoriesOnCertificate !== false;
+  const gradeComments = supplement?.gradeComments ?? {};
+
+  const subjects: CertificateSnapshotSubjectDto[] = snapshot.subjects.map((s) => {
+    const subjectId = s.subjectId;
+    const commentRaw = subjectId ? gradeComments[subjectId] : undefined;
+    const subCategoryId = showSubCategories ? (s.subCategoryId ?? null) : null;
+    const subCategoryLabel = showSubCategories
+      ? (s.subCategoryLabel ?? null)
+      : null;
+    const categoryId = s.categoryId ?? 'unknown';
+    const showComment = commentPerGradeForCategory(prefs, categoryId);
+    return {
+      ...s,
+      subCategoryId,
+      subCategoryLabel,
+      showComment,
+      ...(showComment
+        ? {
+            comment:
+              typeof commentRaw === 'string'
+                ? commentRaw.trim() || null
+                : (s.comment ?? null),
+          }
+        : { comment: undefined }),
+    };
+  });
+
+  const next: CertificateSnapshotJsonV1 = {
+    ...snapshot,
+    certificatePrefs: prefs,
+    fill: certificateFillView(prefs),
+    subjects,
+    subjectCategories: groupSubjectsByCategory(subjects),
+    showAnyGradeComment: subjects.some((s) => s.showComment),
+    displayDate: prefs.dateOnCertificate ? formatDisplayDate(snapshot.generatedAt) : null,
+    ...(prefs.evaluation
+      ? { evaluation: supplement?.evaluation?.trim() || null }
+      : {}),
+    attendance: buildAttendance(prefs, supplement),
+  };
+
+  if (prefs.signatures) {
+    next.signatures = {
+      homeroom: supplement?.homeroomSignature?.trim() || null,
+      principal: supplement?.principalSignature?.trim() || null,
+      parent: snapshot.signatures?.parent ?? null,
+    };
+  }
+
+  return next;
+}

@@ -1,0 +1,4 @@
+# PROGRESS — append-only journal
+# Format: [YYYY-MM-DD HH:MM] session=<id> | tasks: <what> | files: <list> | result: <outcome>
+# Never overwrite. Too big → rename PROGRESS_OLD_<date>.txt, start fresh.
+
