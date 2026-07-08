@@ -93,7 +93,7 @@ export class UsersService {
       return;
     }
     const count = await this.prisma.subject.count({
-      where: { schoolId, id: { in: subjectIds } },
+      where: { schoolId, id: { in: subjectIds }, deletedAt: null },
     });
     if (count !== subjectIds.length) {
       throw new BadRequestException('One or more subjects not found in school');
@@ -115,7 +115,7 @@ export class UsersService {
   list(schoolId: string) {
     return this.prisma.user
       .findMany({
-        where: { schoolId },
+        where: { schoolId, deletedAt: null },
         include: this.userInclude,
         orderBy: { name: 'asc' },
       })
@@ -125,7 +125,7 @@ export class UsersService {
   async create(schoolId: string, dto: CreateUserDto) {
     const email = dto.email.toLowerCase();
     const existing = await this.prisma.user.findFirst({
-      where: { schoolId, email },
+      where: { schoolId, email, deletedAt: null },
     });
     if (existing) {
       throw new ConflictException('Email already exists in school');
@@ -164,7 +164,7 @@ export class UsersService {
 
   async update(schoolId: string, id: string, dto: UpdateUserDto) {
     const existing = await this.prisma.user.findFirst({
-      where: { id, schoolId },
+      where: { id, schoolId, deletedAt: null },
       include: { subjects: true },
     });
     if (!existing) {
@@ -172,7 +172,7 @@ export class UsersService {
     }
     if (dto.role && dto.role !== Role.Admin && existing.role === Role.Admin) {
       const adminCount = await this.prisma.user.count({
-        where: { schoolId, role: Role.Admin },
+        where: { schoolId, role: Role.Admin, deletedAt: null },
       });
       if (adminCount <= 1) {
         throw new ConflictException('Cannot demote the last admin');
@@ -208,19 +208,19 @@ export class UsersService {
   }
 
   async remove(schoolId: string, id: string) {
-    const existing = await this.prisma.user.findFirst({ where: { id, schoolId } });
+    const existing = await this.prisma.user.findFirst({ where: { id, schoolId, deletedAt: null } });
     if (!existing) {
       throw new NotFoundException();
     }
     if (existing.role === Role.Admin) {
       const adminCount = await this.prisma.user.count({
-        where: { schoolId, role: Role.Admin },
+        where: { schoolId, role: Role.Admin, deletedAt: null },
       });
       if (adminCount <= 1) {
         throw new ConflictException('Cannot delete the last admin');
       }
     }
-    await this.prisma.user.delete({ where: { id } });
+    await this.prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
     return { success: true };
   }
 }

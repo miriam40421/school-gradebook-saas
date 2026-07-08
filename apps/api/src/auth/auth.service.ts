@@ -1,6 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { Role } from '@school/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -35,7 +36,7 @@ export class AuthService {
       school_id: user.schoolId,
       role: user.role as Role,
     };
-    const accessToken = this.jwt.sign(payload);
+    const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
     this.logger.log(JSON.stringify({ event: 'login_success', userId: user.id, email, schoolId: user.schoolId, ip }));
     return {
       accessToken,
@@ -51,7 +52,7 @@ export class AuthService {
 
   async me(userId: string, schoolId: string) {
     const user = await this.prisma.user.findFirst({
-      where: { id: userId, schoolId },
+      where: { id: userId, schoolId, deletedAt: null },
       include: { school: true },
     });
     if (!user) {

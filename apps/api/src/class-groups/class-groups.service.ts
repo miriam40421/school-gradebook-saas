@@ -12,7 +12,7 @@ export class ClassGroupsService {
 
   private async assertClass(schoolId: string, classId: string) {
     const cls = await this.prisma.class.findFirst({
-      where: { id: classId, schoolId },
+      where: { id: classId, schoolId, deletedAt: null },
     });
     if (!cls) {
       throw new NotFoundException('Class not found');
@@ -26,7 +26,7 @@ export class ClassGroupsService {
 
   private async assertSubjectInSchool(schoolId: string, subjectId: string) {
     const subject = await this.prisma.subject.findFirst({
-      where: { id: subjectId, schoolId },
+      where: { id: subjectId, schoolId, deletedAt: null },
     });
     if (!subject) {
       throw new BadRequestException('Subject not found in school');

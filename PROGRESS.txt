@@ -5,6 +5,25 @@
 [2026-07-07 00:00] session=nikud-modal-expansion | tasks: expand nikud modal to all certificate fields | files: apps/api/prisma/schema.prisma, packages/shared/src/certificate-supplements.ts, apps/api/src/certificates/dto/certificate-supplements.dto.ts, apps/api/src/certificates/nikud-snapshot.util.ts, apps/api/src/certificates/certificates.service.ts, apps/web/components/NikudPreviewModal.tsx | result: added nikudOverrides Json column to CertificateSupplement, applyNikudOverrides util, full modal rewrite with studentName/termName/className/categories/subjects + handleRemove for NikudPicker
 
 ---
+2026-07-08 task/soft-delete-filtering branch
+Tasks: Add deletedAt: null filtering to all Prisma queries on soft-deletable models; convert hard-deletes to soft-deletes
+Files changed:
+  - apps/api/src/users/users.service.ts — list, create(duplicate check), update(existence+admin count), remove(existence, admin count, converted delete→update), assertSubjectsInSchool(count)
+  - apps/api/src/students/students.service.ts — list(class filter, student filter), updateGroupMemberships(existence), update(existence), remove(existence, converted delete→update), assertClassInSchool
+  - apps/api/src/subjects/subjects.service.ts — list, update(existence), remove(existence, converted delete→update), assertTypeInSchool
+  - apps/api/src/grading-sets/grading-sets.service.ts — list, findSetOrThrow, create(duplicate check), remove(converted delete→update), assertTypeInSchool
+  - apps/api/src/grading-set-types/grading-set-types.service.ts — list, create(key-check), update(existence), assertValidParent, remove(existence, child/subject/set counts converted, delete→update)
+  - apps/api/src/classes/classes.service.ts — list, update(existence), remove(existence, student count, converted delete→update), assertHomeroomTeacher(user lookup)
+  - apps/api/src/class-groups/class-groups.service.ts — assertClass, assertSubjectInSchool
+  - apps/api/src/teacher-assignments/teacher-assignments.service.ts — create(user/subject/class lookups), update(class lookup)
+  - apps/api/src/locks/locks.service.ts — acquire(class+subject lookups), listForClassTerm(class lookup)
+  - apps/api/src/certificate-templates/certificate-templates.service.ts — previewPdf(gradingSetType+subject findMany)
+  - apps/api/src/auth/auth.service.ts — me(user findFirst)
+  - apps/api/test/unit/soft-delete-filtering.spec.ts — NEW: 41 unit tests covering all service filtering and soft-delete conversion
+  - FOLLOWUPS.md — filed P2 pre-existing TS/xlsx issues in import-names.util
+Result: 41/41 unit tests pass; 107/107 total unit tests pass (1 pre-existing suite fails due to missing xlsx types, filed in FOLLOWUPS)
+
+---
 2026-07-08 security-quick-fixes branch
 Tasks: Security quick fixes from /secure-audit report
 Files changed:

@@ -34,7 +34,7 @@ export class GradingSetsService {
 
     const set = await this.prisma.gradingSet.findFirst({
 
-      where: { id, schoolId },
+      where: { id, schoolId, deletedAt: null },
 
       include: {
 
@@ -62,7 +62,7 @@ export class GradingSetsService {
 
     const t = await this.prisma.gradingSetType.findFirst({
 
-      where: { id: gradingSetTypeId, schoolId },
+      where: { id: gradingSetTypeId, schoolId, deletedAt: null },
 
     });
 
@@ -78,7 +78,7 @@ export class GradingSetsService {
 
     return this.prisma.gradingSet.findMany({
 
-      where: { schoolId },
+      where: { schoolId, deletedAt: null },
 
       include: {
 
@@ -99,7 +99,7 @@ export class GradingSetsService {
   async create(schoolId: string, dto: CreateGradingSetDto) {
     await this.assertTypeInSchool(schoolId, dto.gradingSetTypeId);
     const existing = await this.prisma.gradingSet.findFirst({
-      where: { schoolId, gradingSetTypeId: dto.gradingSetTypeId },
+      where: { schoolId, gradingSetTypeId: dto.gradingSetTypeId, deletedAt: null },
       include: { values: true, gradingSetType: true },
     });
     if (existing) {
@@ -160,7 +160,7 @@ export class GradingSetsService {
 
     await this.findSetOrThrow(schoolId, id);
 
-    await this.prisma.gradingSet.delete({ where: { id } });
+    await this.prisma.gradingSet.update({ where: { id }, data: { deletedAt: new Date() } });
 
     return { success: true };
 

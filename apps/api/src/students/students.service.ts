@@ -45,7 +45,7 @@ export class StudentsService {
 
   private async assertClassInSchool(schoolId: string, classId: string) {
     const cls = await this.prisma.class.findFirst({
-      where: { id: classId, schoolId },
+      where: { id: classId, schoolId, deletedAt: null },
     });
     if (!cls) {
       throw new BadRequestException('Class not found in school');
@@ -85,7 +85,7 @@ export class StudentsService {
     }
     const classFilter = this.homeroomClassFilter(user);
     const classes = await this.prisma.class.findMany({
-      where: { schoolId: user.school_id, ...classFilter, ...(classId ? { id: classId } : {}) },
+      where: { schoolId: user.school_id, deletedAt: null, ...classFilter, ...(classId ? { id: classId } : {}) },
       select: { id: true },
     });
     const classIds = classes.map((c) => c.id);
@@ -94,6 +94,7 @@ export class StudentsService {
     }
     const where = {
       schoolId: user.school_id,
+      deletedAt: null,
       classId: classId ? classId : { in: classIds },
     };
     let rows;
@@ -132,7 +133,7 @@ export class StudentsService {
   ) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
-      where: { id: studentId, schoolId: user.school_id },
+      where: { id: studentId, schoolId: user.school_id, deletedAt: null },
     });
     if (!existing) {
       throw new NotFoundException();
@@ -160,7 +161,7 @@ export class StudentsService {
       });
     });
     return this.prisma.student.findFirst({
-      where: { id: studentId },
+      where: { id: studentId, deletedAt: null },
       include: studentIncludeBasic,
     });
   }
@@ -202,7 +203,7 @@ export class StudentsService {
   async update(user: JwtPayload, id: string, dto: UpdateStudentDto) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
-      where: { id, schoolId: user.school_id },
+      where: { id, schoolId: user.school_id, deletedAt: null },
     });
     if (!existing) {
       throw new NotFoundException();
@@ -234,13 +235,13 @@ export class StudentsService {
   async remove(user: JwtPayload, id: string) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
-      where: { id, schoolId: user.school_id },
+      where: { id, schoolId: user.school_id, deletedAt: null },
     });
     if (!existing) {
       throw new NotFoundException();
     }
     await assertHomeroomStudentAccess(this.prisma, user, id);
-    await this.prisma.student.delete({ where: { id } });
+    await this.prisma.student.update({ where: { id }, data: { deletedAt: new Date() } });
     return { success: true };
   }
 }

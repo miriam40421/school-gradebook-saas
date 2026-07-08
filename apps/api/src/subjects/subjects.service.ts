@@ -12,7 +12,7 @@ export class SubjectsService {
 
   private async assertTypeInSchool(schoolId: string, gradingSetTypeId: string) {
     const type = await this.prisma.gradingSetType.findFirst({
-      where: { id: gradingSetTypeId, schoolId },
+      where: { id: gradingSetTypeId, schoolId, deletedAt: null },
     });
     if (!type) {
       throw new BadRequestException('Grading category not found in school');
@@ -21,7 +21,7 @@ export class SubjectsService {
 
   list(schoolId: string) {
     return this.prisma.subject.findMany({
-      where: { schoolId },
+      where: { schoolId, deletedAt: null },
       include: { gradingSetType: true },
       orderBy: { name: 'asc' },
     });
@@ -41,7 +41,7 @@ export class SubjectsService {
 
   async update(schoolId: string, id: string, dto: UpdateSubjectDto) {
     const existing = await this.prisma.subject.findFirst({
-      where: { id, schoolId },
+      where: { id, schoolId, deletedAt: null },
     });
     if (!existing) {
       throw new NotFoundException();
@@ -61,12 +61,12 @@ export class SubjectsService {
 
   async remove(schoolId: string, id: string) {
     const existing = await this.prisma.subject.findFirst({
-      where: { id, schoolId },
+      where: { id, schoolId, deletedAt: null },
     });
     if (!existing) {
       throw new NotFoundException();
     }
-    await this.prisma.subject.delete({ where: { id } });
+    await this.prisma.subject.update({ where: { id }, data: { deletedAt: new Date() } });
     return { success: true };
   }
 }

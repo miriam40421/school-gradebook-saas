@@ -39,7 +39,7 @@ export class TeacherAssignmentsService {
 
   async create(schoolId: string, dto: CreateTeacherAssignmentDto) {
     const user = await this.prisma.user.findFirst({
-      where: { id: dto.userId, schoolId },
+      where: { id: dto.userId, schoolId, deletedAt: null },
       include: { subjects: true },
     });
     if (!user || user.role !== Role.SubjectTeacher) {
@@ -69,14 +69,14 @@ export class TeacherAssignmentsService {
 
     const subjectIds = workItems.map((i) => i.subjectId);
     const subjects = await this.prisma.subject.findMany({
-      where: { schoolId, id: { in: subjectIds } },
+      where: { schoolId, id: { in: subjectIds }, deletedAt: null },
     });
     if (subjects.length !== subjectIds.length) {
       throw new BadRequestException('One or more subjects not found');
     }
 
     const cls = await this.prisma.class.findFirst({
-      where: { id: dto.classId, schoolId },
+      where: { id: dto.classId, schoolId, deletedAt: null },
     });
     if (!cls) {
       throw new BadRequestException('Class not found');
@@ -137,7 +137,7 @@ export class TeacherAssignmentsService {
       dto.classGroupId !== undefined ? dto.classGroupId : existing.classGroupId;
 
     const cls = await this.prisma.class.findFirst({
-      where: { id: classId, schoolId },
+      where: { id: classId, schoolId, deletedAt: null },
     });
     if (!cls) {
       throw new BadRequestException('Class not found');
