@@ -8,6 +8,7 @@ export const he = {
   remove: 'הסרה',
   add: 'הוספה',
   name: 'שם',
+  schoolId: 'מזהה בית ספר',
   email: 'אימייל',
   password: 'סיסמה',
   type: 'סוג',

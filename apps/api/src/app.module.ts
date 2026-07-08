@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { ClassGroupsModule } from './class-groups/class-groups.module';
 import { ClassesModule } from './classes/classes.module';
@@ -22,6 +24,7 @@ import { CertificateTemplatesModule } from './certificate-templates/certificate-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot({ throttlers: [{ name: 'default', limit: 300, ttl: 60000 }] }),
     PrismaModule,
     StorageModule,
     HealthModule,
@@ -41,5 +44,6 @@ import { CertificateTemplatesModule } from './certificate-templates/certificate-
     CertificatesModule,
     CertificateTemplatesModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
