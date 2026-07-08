@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { Role } from '@school/shared';
@@ -8,21 +8,26 @@ import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ip?: string) {
+    const email = dto.email.toLowerCase();
     const user = await this.prisma.user.findFirst({
-      where: { email: dto.email.toLowerCase() },
+      where: { email },
       include: { school: true },
     });
     if (!user) {
+      this.logger.warn({ event: 'login_failure', email, ip, reason: 'user_not_found' });
       throw new UnauthorizedException('Invalid credentials');
     }
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
+      this.logger.warn({ event: 'login_failure', email, ip, reason: 'wrong_password' });
       throw new UnauthorizedException('Invalid credentials');
     }
     const payload: JwtPayload = {
@@ -32,6 +37,7 @@ export class AuthService {
       role: user.role as Role,
     };
     const accessToken = this.jwt.sign(payload);
+    this.logger.log({ event: 'login_success', userId: user.id, email, schoolId: user.schoolId, ip });
     return {
       accessToken,
       user: {

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { ClassGroupsModule } from './class-groups/class-groups.module';
 import { ClassesModule } from './classes/classes.module';
@@ -22,6 +23,7 @@ import { CertificateTemplatesModule } from './certificate-templates/certificate-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot(),
     PrismaModule,
     StorageModule,
     HealthModule,
