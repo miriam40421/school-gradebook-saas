@@ -7,7 +7,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
   if (process.env.NODE_ENV === 'production' && corsOrigin === '*') {

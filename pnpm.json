@@ -5,11 +5,5 @@
     "@prisma/engines",
     "prisma",
     "unrs-resolver"
-  ],
-  "overrides": {
-    "multer": ">=2.2.0",
-    "lodash": ">=4.17.24",
-    "qs": ">=6.15.2",
-    "file-type": ">=21.3.2"
-  }
+  ]
 }
