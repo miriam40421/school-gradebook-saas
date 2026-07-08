@@ -10,8 +10,8 @@ async function bootstrap() {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
-  if (process.env.NODE_ENV === 'production' && corsOrigin === '*') {
-    throw new Error('CORS_ORIGIN must not be wildcard in production');
+  if (process.env.NODE_ENV === 'production' && !corsOrigin.startsWith('https://')) {
+    throw new Error('CORS_ORIGIN must be a valid HTTPS URL in production');
   }
   app.enableCors({ origin: corsOrigin });
   app.useGlobalPipes(

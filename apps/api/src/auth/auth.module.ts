@@ -13,11 +13,11 @@ import { JwtStrategy } from './jwt.strategy';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const secret = config.get<string>('JWT_SECRET');
-        if (!secret && process.env.NODE_ENV !== 'test') {
+        if (!secret) {
           throw new Error('JWT_SECRET is required');
         }
         return {
-          secret: secret ?? 'test-secret',
+          secret,
           signOptions: { expiresIn: '24h' },
         };
       },

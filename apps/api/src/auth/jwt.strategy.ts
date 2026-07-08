@@ -8,13 +8,13 @@ import { JwtPayload } from './jwt-payload.interface';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(config: ConfigService) {
     const secret = config.get<string>('JWT_SECRET');
-    if (!secret && process.env.NODE_ENV !== 'test') {
+    if (!secret) {
       throw new Error('JWT_SECRET is required');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secret ?? 'test-secret',
+      secretOrKey: secret,
       algorithms: ['HS256'],
     });
   }

@@ -17,26 +17,18 @@ export class AuthService {
 
   async login(dto: LoginDto, ip?: string) {
     const email = dto.email.toLowerCase();
-    const users = await this.prisma.user.findMany({
-      where: { email },
-      include: { school: true },
+    const user = await this.prisma.user.findUnique({
+      where: { schoolId_email: { schoolId: dto.schoolId, email } },
     });
-    if (users.length === 0) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', email, ip, reason: 'user_not_found' }));
+    if (!user) {
+      this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'user_not_found' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    let matchedUser = null;
-    for (const candidate of users) {
-      if (await bcrypt.compare(dto.password, candidate.passwordHash)) {
-        matchedUser = candidate;
-        break;
-      }
-    }
-    if (!matchedUser) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', email, ip, reason: 'wrong_password' }));
+    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!valid) {
+      this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'wrong_password' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    const user = matchedUser;
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,

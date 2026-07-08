@@ -9,7 +9,7 @@ import { apiFetch, clearToken, getToken, setToken } from './api';
 type AuthContextValue = {
   user: AuthUserDto | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (schoolId: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -59,10 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (schoolId: string, email: string, password: string) => {
     const data = await apiFetch<{ accessToken: string; user: AuthUserDto }>(
       '/auth/login',
-      { method: 'POST', body: JSON.stringify({ email, password }) },
+      { method: 'POST', body: JSON.stringify({ schoolId, email, password }) },
     );
     setToken(data.accessToken);
     setUser(data.user);

@@ -13,8 +13,9 @@ import { Spinner } from '@/components/ui/Spinner';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
-  const [email, setEmail] = useState('admin@demo-a.local');
-  const [password, setPassword] = useState('DemoAdmin1!');
+  const [schoolId, setSchoolId] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,7 +24,7 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(schoolId, email, password);
     } catch (err) {
       const msg = err instanceof Error ? err.message : he.loginFailed;
       setError(translateApiError(msg));
@@ -53,6 +54,18 @@ export default function LoginPage() {
           </div>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="schoolId">{he.schoolId}</Label>
+            <Input
+              id="schoolId"
+              type="text"
+              value={schoolId}
+              onChange={(e) => setSchoolId(e.target.value)}
+              required
+              autoComplete="organization"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+          </div>
           <div>
             <Label htmlFor="email">{he.email}</Label>
             <Input
