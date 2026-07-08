@@ -2,3 +2,16 @@
 # Format: [YYYY-MM-DD HH:MM] session=<id> | tasks: <what> | files: <list> | result: <outcome>
 # Never overwrite. Too big → rename PROGRESS_OLD_<date>.txt, start fresh.
 
+[2026-07-07 00:00] session=nikud-modal-expansion | tasks: expand nikud modal to all certificate fields | files: apps/api/prisma/schema.prisma, packages/shared/src/certificate-supplements.ts, apps/api/src/certificates/dto/certificate-supplements.dto.ts, apps/api/src/certificates/nikud-snapshot.util.ts, apps/api/src/certificates/certificates.service.ts, apps/web/components/NikudPreviewModal.tsx | result: added nikudOverrides Json column to CertificateSupplement, applyNikudOverrides util, full modal rewrite with studentName/termName/className/categories/subjects + handleRemove for NikudPicker
+
+---
+2026-07-08 security-quick-fixes branch
+Tasks: Security quick fixes from /secure-audit report
+Files changed:
+  - apps/api/src/main.ts — added Helmet + CORS wildcard validation at startup
+  - apps/api/src/auth/jwt.strategy.ts — added algorithms: ['HS256'] to passport-jwt
+  - pnpm-workspace.yaml — added overrides: multer^2.2.0, lodash^4.17.24, qs^6.15.2, file-type^21.3.2
+  - apps/api/package.json — added multer@^2.2.0 as direct dep (triggered lockfile re-resolution)
+CVEs resolved: GHSA-xf7r-hgr6-v32p, GHSA-v52c-386h-88mc, GHSA-5528-5vmv-3xc2, GHSA-72gw-mp4g-v24j (multer),
+               GHSA-r5fr-rjxr-66jc, GHSA-f23m-r3pf-42rh, GHSA-xxjr-mmjv-4gpg (lodash),
+               GHSA-q8mj-m7cp-5q26 (qs), GHSA-5v7r-6r5c-r473, GHSA-j47w-4g3g-c36v (file-type)
