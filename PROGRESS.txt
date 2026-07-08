@@ -23,6 +23,32 @@ Files changed:
   - FOLLOWUPS.md — filed P2 pre-existing TS/xlsx issues in import-names.util
 Result: 41/41 unit tests pass; 107/107 total unit tests pass (1 pre-existing suite fails due to missing xlsx types, filed in FOLLOWUPS)
 
+[2026-07-08 14:00] session=security-audit | tasks: full security audit + fixes (2 PRs) | files: see below | result: all 14 security findings fixed, merged to master
+
+PR1 task/security-quick-fixes — merged:
+  - apps/api/src/main.ts — Helmet + CORS https:// guard
+  - apps/api/src/auth/jwt.strategy.ts — HS256 pin, removed test-secret fallback
+  - apps/api/src/auth/auth.module.ts — removed test-secret fallback
+  - apps/api/src/auth/auth.service.ts — findUnique(schoolId+email), audit logging, jwtid
+  - apps/api/src/auth/auth.controller.ts — rate limit 5/15min, logout revocation
+  - apps/api/src/auth/dto/login.dto.ts — added schoolId field
+  - apps/api/src/auth/jwt-payload.interface.ts — added jti, exp
+  - apps/api/src/auth/token-revocation.service.ts — NEW: jti denylist (revoke/isRevoked/purgeExpired)
+  - apps/api/src/health/health.controller.ts — @SkipThrottle()
+  - apps/api/src/app.module.ts — ThrottlerModule.forRoot config + APP_GUARD
+  - pnpm-workspace.yaml — CVE overrides: multer, lodash, qs, file-type
+  - apps/web/app/login/page.tsx — schoolId field
+  - apps/web/lib/auth.tsx — login(schoolId, email, password)
+  - apps/web/lib/he.ts — schoolId label
+
+PR2 task/soft-delete-filtering — merged:
+  - apps/api/prisma/schema.prisma — deletedAt on User/Student/Class/Subject/GradingSetType/GradingSet + RevokedToken model
+  - apps/api/prisma/migrations/20260708000000_security_soft_delete_and_token_revocation/migration.sql — NEW
+  - apps/api/src/students/import-names.util.ts — xlsx→exceljs (CVE fix)
+  - apps/api/src/users/users.service.ts + students + subjects + grading-sets + grading-set-types + classes + class-groups + teacher-assignments + locks + certificate-templates — deletedAt:null filters + soft-delete conversions
+  - apps/api/test/unit/soft-delete-filtering.spec.ts — NEW: 41 unit tests
+  - apps/web/package.json — next@14→next@15 (CVE fix)
+
 ---
 2026-07-08 security-quick-fixes branch
 Tasks: Security quick fixes from /secure-audit report
