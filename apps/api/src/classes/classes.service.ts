@@ -35,7 +35,7 @@ export class ClassesService {
 
     const teacher = await this.prisma.user.findFirst({
 
-      where: { id: userId, schoolId },
+      where: { id: userId, schoolId, deletedAt: null },
 
     });
 
@@ -75,13 +75,13 @@ export class ClassesService {
     const orderBy = [{ year: 'desc' as const }, { name: 'asc' as const }];
     try {
       return await this.prisma.class.findMany({
-        where,
+        where: { ...where, deletedAt: null },
         include: this.listInclude,
         orderBy,
       });
     } catch {
       return this.prisma.class.findMany({
-        where,
+        where: { ...where, deletedAt: null },
         include: {
           ...this.classInclude,
           groups: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
@@ -129,7 +129,7 @@ export class ClassesService {
 
   async update(schoolId: string, id: string, dto: UpdateClassDto) {
 
-    const existing = await this.prisma.class.findFirst({ where: { id, schoolId } });
+    const existing = await this.prisma.class.findFirst({ where: { id, schoolId, deletedAt: null } });
 
     if (!existing) {
 
@@ -172,7 +172,7 @@ export class ClassesService {
 
   async remove(schoolId: string, id: string) {
 
-    const existing = await this.prisma.class.findFirst({ where: { id, schoolId } });
+    const existing = await this.prisma.class.findFirst({ where: { id, schoolId, deletedAt: null } });
 
     if (!existing) {
 
@@ -182,7 +182,7 @@ export class ClassesService {
 
     const studentCount = await this.prisma.student.count({
 
-      where: { classId: id, schoolId },
+      where: { classId: id, schoolId, deletedAt: null },
 
     });
 
@@ -192,7 +192,7 @@ export class ClassesService {
 
     }
 
-    await this.prisma.class.delete({ where: { id } });
+    await this.prisma.class.update({ where: { id }, data: { deletedAt: new Date() } });
 
     return { success: true };
 

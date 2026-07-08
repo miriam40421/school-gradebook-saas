@@ -32,7 +32,7 @@ export class GradingSetTypesService {
       throw new BadRequestException('Category cannot be its own parent');
     }
     const parent = await this.prisma.gradingSetType.findFirst({
-      where: { id: parentId, schoolId },
+      where: { id: parentId, schoolId, deletedAt: null },
     });
     if (!parent) {
       throw new BadRequestException('Parent category not found');
@@ -45,7 +45,7 @@ export class GradingSetTypesService {
         }
         const row: { parentId: string | null } | null =
           await this.prisma.gradingSetType.findFirst({
-          where: { id: cursor, schoolId },
+          where: { id: cursor, schoolId, deletedAt: null },
           select: { parentId: true },
         });
         cursor = row?.parentId ?? null;
@@ -55,7 +55,7 @@ export class GradingSetTypesService {
 
   list(schoolId: string) {
     return this.prisma.gradingSetType.findMany({
-      where: { schoolId },
+      where: { schoolId, deletedAt: null },
       orderBy: [{ label: 'asc' }],
     });
   }
@@ -63,7 +63,7 @@ export class GradingSetTypesService {
   async create(schoolId: string, dto: CreateGradingSetTypeDto) {
     const key = dto.key ?? this.slugifyKey(dto.label);
     const existing = await this.prisma.gradingSetType.findFirst({
-      where: { schoolId, key },
+      where: { schoolId, key, deletedAt: null },
     });
     if (existing) {
       throw new ConflictException('Type key already exists');
@@ -80,7 +80,7 @@ export class GradingSetTypesService {
   }
 
   async update(schoolId: string, id: string, dto: UpdateGradingSetTypeDto) {
-    const row = await this.prisma.gradingSetType.findFirst({ where: { id, schoolId } });
+    const row = await this.prisma.gradingSetType.findFirst({ where: { id, schoolId, deletedAt: null } });
     if (!row) throw new NotFoundException();
     if (dto.parentId !== undefined) {
       await this.assertValidParent(schoolId, dto.parentId, id);
@@ -95,31 +95,31 @@ export class GradingSetTypesService {
   }
 
   async remove(schoolId: string, id: string) {
-    const row = await this.prisma.gradingSetType.findFirst({ where: { id, schoolId } });
+    const row = await this.prisma.gradingSetType.findFirst({ where: { id, schoolId, deletedAt: null } });
     if (!row) throw new NotFoundException();
 
     const childCount = await this.prisma.gradingSetType.count({
-      where: { parentId: id, schoolId },
+      where: { parentId: id, schoolId, deletedAt: null },
     });
     if (childCount > 0) {
       throw new ConflictException('Category has sub-categories');
     }
 
     const subjectCount = await this.prisma.subject.count({
-      where: { gradingSetTypeId: id, schoolId },
+      where: { gradingSetTypeId: id, schoolId, deletedAt: null },
     });
     if (subjectCount > 0) {
       throw new ConflictException('Category is used by subjects');
     }
 
     const setCount = await this.prisma.gradingSet.count({
-      where: { gradingSetTypeId: id, schoolId },
+      where: { gradingSetTypeId: id, schoolId, deletedAt: null },
     });
     if (setCount > 0) {
       throw new ConflictException('Type is used by grading sets');
     }
 
-    await this.prisma.gradingSetType.delete({ where: { id } });
+    await this.prisma.gradingSetType.update({ where: { id }, data: { deletedAt: new Date() } });
     return { success: true };
   }
 }

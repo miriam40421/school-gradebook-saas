@@ -92,9 +92,15 @@ model User {
 
 
 
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  deletedAt    DateTime? @map("deleted_at")
+
   @@unique([schoolId, email])
 
   @@index([schoolId])
+
+  @@index([deletedAt])
 
   @@map("users")
 
@@ -138,9 +144,13 @@ model Class {
 
 
 
+  deletedAt    DateTime? @map("deleted_at")
+
   @@index([schoolId])
 
   @@index([homeroomTeacherId])
+
+  @@index([deletedAt])
 
   @@map("classes")
 
@@ -250,11 +260,15 @@ model Student {
 
 
 
+  deletedAt    DateTime? @map("deleted_at")
+
   @@index([schoolId])
 
   @@index([classId])
 
   @@index([classGroupId])
+
+  @@index([deletedAt])
 
   @@map("students")
 
@@ -286,11 +300,15 @@ model GradingSetType {
 
 
 
+  deletedAt    DateTime? @map("deleted_at")
+
   @@unique([schoolId, key])
 
   @@index([schoolId])
 
   @@index([parentId])
+
+  @@index([deletedAt])
 
   @@map("grading_set_types")
 
@@ -316,9 +334,13 @@ model GradingSet {
 
 
 
+  deletedAt    DateTime? @map("deleted_at")
+
   @@index([schoolId])
 
   @@index([gradingSetTypeId])
+
+  @@index([deletedAt])
 
   @@map("grading_sets")
 
@@ -376,9 +398,13 @@ model Subject {
 
 
 
+  deletedAt    DateTime? @map("deleted_at")
+
   @@index([schoolId])
 
   @@index([gradingSetTypeId])
+
+  @@index([deletedAt])
 
   @@map("subjects")
 
@@ -698,4 +724,19 @@ model CertificateTemplate {
 
 }
 
+
+
+model RevokedToken {
+
+  jti       String   @id
+
+  expiresAt DateTime @map("expires_at")
+
+  revokedAt DateTime @default(now()) @map("revoked_at")
+
+  @@index([expiresAt])
+
+  @@map("revoked_tokens")
+
+}
 

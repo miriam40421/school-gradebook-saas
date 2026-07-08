@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 
 const FULL_NAME_HEADERS = new Set([
@@ -251,18 +251,22 @@ function parseText(content: string): string[] {
   return parseRows(rows);
 }
 
-function parseExcel(buffer: Buffer): string[] {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet) {
+async function parseExcel(buffer: Buffer): Promise<string[]> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) {
     return [];
   }
-  const rows = XLSX.utils.sheet_to_json<(string | number)[]>(sheet, {
-    header: 1,
-    defval: '',
-  }) as (string | number)[][];
-  const asStrings = rows.map((row) => row.map((c) => String(c)));
-  return parseRows(asStrings);
+  const rows: string[][] = [];
+  worksheet.eachRow((row) => {
+    // ExcelJS row.values is 1-based (index 0 is null), slice(1) removes it
+    const cells = (row.values as (ExcelJS.CellValue | null)[])
+      .slice(1)
+      .map((c) => (c === null || c === undefined ? '' : String(c)));
+    rows.push(cells);
+  });
+  return parseRows(rows);
 }
 
 function dedupeNames(names: string[]): string[] {

@@ -304,12 +304,12 @@ export class CertificateTemplatesService {
 
     const [gradingSetTypes, subjectRows] = await Promise.all([
       this.prisma.gradingSetType.findMany({
-        where: { schoolId },
+        where: { schoolId, deletedAt: null },
         select: { id: true, label: true, parentId: true },
         orderBy: { label: 'asc' },
       }),
       this.prisma.subject.findMany({
-        where: { schoolId },
+        where: { schoolId, deletedAt: null },
         select: {
           id: true,
           name: true,

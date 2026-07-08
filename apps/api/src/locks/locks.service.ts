@@ -129,7 +129,7 @@ export class LocksService {
     body: AcquireLockDto,
   ): Promise<AcquireLockResultDto> {
     const classRow = await this.prisma.class.findFirst({
-      where: { id: body.classId, schoolId: user.school_id },
+      where: { id: body.classId, schoolId: user.school_id, deletedAt: null },
     });
     if (!classRow) throw new NotFoundException();
 
@@ -142,7 +142,7 @@ export class LocksService {
     }
 
     const subject = await this.prisma.subject.findFirst({
-      where: { id: body.subjectId, schoolId: user.school_id },
+      where: { id: body.subjectId, schoolId: user.school_id, deletedAt: null },
     });
     if (!subject) throw new NotFoundException();
 
@@ -284,7 +284,7 @@ export class LocksService {
     termId: string,
   ): Promise<LockStatusDto[]> {
     const classRow = await this.prisma.class.findFirst({
-      where: { id: classId, schoolId: user.school_id },
+      where: { id: classId, schoolId: user.school_id, deletedAt: null },
     });
     if (!classRow) throw new NotFoundException();
 
