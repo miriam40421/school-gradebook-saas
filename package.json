@@ -12,13 +12,6 @@
     "db:clear-demo": "pnpm --filter @school/api db:clear-demo",
     "db:clear-groups": "pnpm --filter @school/api db:clear-groups"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma"
-    ]
-  },
   "devDependencies": {
     "concurrently": "^9.1.2"
   },

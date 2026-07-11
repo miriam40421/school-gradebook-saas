@@ -3,7 +3,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import type { AcquireLockResultDto, CertificateSupplementContextDto, CertificateSupplementDto, GradebookMatrixDto, UpsertCertificateSupplementItemDto } from '@school/shared';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getToken } from '@/lib/api';
 import {
   buildGridColumns,
   buildNestedCategoryHeaders,
@@ -153,14 +153,16 @@ export function GradebookGrid({
     return () => {
       const locks = [...heldLocksRef.current.values()];
       heldLocksRef.current = new Map();
-      void Promise.all(
-        locks.map((lockId) =>
-          apiFetch('/locks/release', {
-            method: 'POST',
-            body: JSON.stringify({ lockId }),
-          }).catch(() => undefined),
-        ),
-      );
+      if (getToken() && locks.length > 0) {
+        void Promise.all(
+          locks.map((lockId) =>
+            apiFetch('/locks/release', {
+              method: 'POST',
+              body: JSON.stringify({ lockId }),
+            }).catch(() => undefined),
+          ),
+        );
+      }
       useGradebookStore.getState().reset();
     };
   }, []);

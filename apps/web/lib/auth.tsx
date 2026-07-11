@@ -10,7 +10,7 @@ type AuthContextValue = {
   user: AuthUserDto | null;
   loading: boolean;
   login: (schoolId: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -75,7 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
     clearToken();
     setUser(null);
     router.replace('/login');

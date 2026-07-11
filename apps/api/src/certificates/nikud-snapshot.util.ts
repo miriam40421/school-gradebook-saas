@@ -25,7 +25,7 @@ export async function nikudSnapshot(
   snapshot: CertificateSnapshotJsonV1,
   nikud: NikudFn,
 ): Promise<CertificateSnapshotJsonV1> {
-  const [studentName, className, termName, evaluation, cohort, yearHebrew] =
+  const [studentName, className, termName, evaluation, cohort, yearHebrew, displayDate, certificateProfileName] =
     await Promise.all([
       nikudStr(snapshot.student.fullName, nikud),
       nikudStr(snapshot.class.name, nikud),
@@ -33,6 +33,8 @@ export async function nikudSnapshot(
       maybeNikud(snapshot.evaluation, nikud),
       maybeNikud(snapshot.class.cohort, nikud),
       maybeNikud(snapshot.class.yearHebrew, nikud),
+      maybeNikud(snapshot.displayDate, nikud),
+      maybeNikud(snapshot.certificateProfileName, nikud),
     ]);
 
   const signatures = snapshot.signatures
@@ -84,6 +86,8 @@ export async function nikudSnapshot(
       ...(yearHebrew !== undefined ? { yearHebrew: yearHebrew as string | null } : {}),
     },
     term: { ...snapshot.term, name: termName },
+    ...(displayDate !== undefined ? { displayDate: displayDate as string | null } : {}),
+    ...(certificateProfileName !== undefined ? { certificateProfileName: certificateProfileName as string | null } : {}),
     ...(evaluation !== undefined ? { evaluation: evaluation as string | null } : {}),
     ...(signatures !== undefined ? { signatures } : {}),
     subjects: nikudFlatSubjects,

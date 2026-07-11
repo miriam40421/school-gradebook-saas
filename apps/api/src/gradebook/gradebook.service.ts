@@ -307,8 +307,9 @@ export class GradebookService {
     const studentWhere: {
       schoolId: string;
       classId: string;
+      deletedAt: null;
       groupMemberships?: { some: { classGroupId: string } };
-    } = { schoolId: user.school_id, classId };
+    } = { schoolId: user.school_id, classId, deletedAt: null };
     if (classGroupId) {
       studentWhere.groupMemberships = { some: { classGroupId } };
     }
@@ -420,7 +421,7 @@ export class GradebookService {
 
     const studentIds = [...new Set(dto.updates.map((u) => u.studentId))];
     const students = await this.prisma.student.findMany({
-      where: { schoolId: user.school_id, id: { in: studentIds } },
+      where: { schoolId: user.school_id, deletedAt: null, id: { in: studentIds } },
       include: { groupMemberships: { select: { classGroupId: true } } },
     });
     if (students.length !== studentIds.length) throw new NotFoundException();
@@ -466,7 +467,7 @@ export class GradebookService {
     const results = await this.prisma.$transaction(async (tx) => {
       const out: GradebookEntryDto[] = [];
       for (const update of dto.updates) {
-        const existing = await tx.gradeEntry.findUnique({
+        const row = await tx.gradeEntry.upsert({
           where: {
             schoolId_studentId_subjectId_termId: {
               schoolId: user.school_id,
@@ -475,27 +476,21 @@ export class GradebookService {
               termId: dto.termId,
             },
           },
+          create: {
+            schoolId: user.school_id,
+            studentId: update.studentId,
+            classId: dto.classId,
+            subjectId: update.subjectId,
+            termId: dto.termId,
+            teacherId: user.sub,
+            value: update.value,
+          },
+          update: {
+            value: update.value,
+            teacherId: user.sub,
+            version: { increment: 1 },
+          },
         });
-        const row = existing
-          ? await tx.gradeEntry.update({
-              where: { id: existing.id },
-              data: {
-                value: update.value,
-                teacherId: user.sub,
-                version: existing.version + 1,
-              },
-            })
-          : await tx.gradeEntry.create({
-              data: {
-                schoolId: user.school_id,
-                studentId: update.studentId,
-                classId: dto.classId,
-                subjectId: update.subjectId,
-                termId: dto.termId,
-                teacherId: user.sub,
-                value: update.value,
-              },
-            });
         out.push(this.entryToDto(row));
       }
       return out;

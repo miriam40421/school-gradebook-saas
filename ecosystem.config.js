@@ -3,10 +3,10 @@ module.exports = {
     {
       name: 'api',
       cwd: '/home/runner/my_project/apps/api',
-      script: 'npx',
-      args: 'ts-node-dev --respawn --transpile-only --cache-directory /tmp src/main.ts',
+      script: 'node_modules/.bin/ts-node',
+      args: '--transpile-only src/main.ts',
       interpreter: 'none',
-      env: { NODE_ENV: 'development', PORT: '3001' },
+      env: { NODE_ENV: 'development', API_PORT: '3001' },
       watch: false,
       autorestart: true,
       max_restarts: 10,

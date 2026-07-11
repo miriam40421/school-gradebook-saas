@@ -60,3 +60,143 @@ Files changed:
 CVEs resolved: GHSA-xf7r-hgr6-v32p, GHSA-v52c-386h-88mc, GHSA-5528-5vmv-3xc2, GHSA-72gw-mp4g-v24j (multer),
                GHSA-r5fr-rjxr-66jc, GHSA-f23m-r3pf-42rh, GHSA-xxjr-mmjv-4gpg (lodash),
                GHSA-q8mj-m7cp-5q26 (qs), GHSA-5v7r-6r5c-r473, GHSA-j47w-4g3g-c36v (file-type)
+
+---
+2026-07-08 session-resume health check
+Tasks: בדיקת כל הפרויקט לאחר security session + nikud modal session
+Issues found & fixed:
+1. Migration 20260708100000_add_created_at_to_users לא הוחל בפועל (למרות exit 0 קודם) — הרצת prisma migrate deploy ישירות → הוחל
+2. TS error: import-names.util.ts:256 — Buffer<ArrayBufferLike> לא תואם ExcelJS.load() — תוקן עם `as any` cast
+3. TS errors (3x) — Next.js 15 dynamic route params הפכו ל-Promise<{id}> — תוקנו ב:
+   - apps/web/app/api/html-preview/snapshot/[id]/route.ts
+   - apps/web/app/api/pdf/snapshot/[id]/route.ts
+   - apps/web/app/api/pdf/template-preview/[id]/route.ts
+Status after fixes:
+- API TSC: exit 0
+- Web TSC: exit 0
+- Login API: 200 OK (admin@demo-a.local / DemoAdmin1!)
+- PM2: api/web/proxy all online
+
+---
+2026-07-09 fix-nikud-modal-and-template
+Tasks: תיקון NikudPreviewModal + חיבור labelOverrides לתבנית HBS
+Issues fixed:
+1. default-rtl.hbs — כל הטקסט הקשיח (23 מקומות) הוחלף ב-{{labels.key}}. template עכשיו משתמש ב-labelOverrides בפועל.
+2. pdf-render.service.ts — חישוב labels מ-labelOverrides ?? (nikud ? NIKUD_DEFAULTS : PLAIN_DEFAULTS), מועבר לtemplat
+3. packages/shared/src/certificate.ts — נוסף CERTIFICATE_LABEL_DEFAULTS_NIKUD עם Hebrew מנוקד, תוקן title 'תעודת הערכה'→'תעודת ציונים'
+4. packages/shared/src/index.ts — exported CERTIFICATE_LABEL_DEFAULTS_NIKUD
+5. NikudPreviewModal.tsx — initLabelValues: מציג nikud defaults כאשר prefs.nikud=true, cohortLabel תמיד מוצג (לא conditional), preview: overflow auto + iframe height 1100px לגלילה מלאה
+6. NikudPicker.tsx — font-family Noto Serif Hebrew + lineHeight 2 + paddingBottom לרנדור ניקוד תקין
+Files:
+  - apps/api/src/certificates/templates/default-rtl.hbs
+  - apps/api/src/certificates/pdf-render.service.ts
+  - packages/shared/src/certificate.ts
+  - packages/shared/src/index.ts
+  - apps/web/components/NikudPreviewModal.tsx
+  - apps/web/components/NikudPicker.tsx
+Status: API TSC exit 0, Web TSC exit 0, API online, login OK
+
+---
+2026-07-09 nikud-modal-full-content
+Tasks: הצגת כל שדות התעודה בחלון הניקוד + שמירת nikudOverrides
+Changes:
+1. prisma/schema.prisma — נוסף nikudOverrides Json? @map("nikud_overrides") לCertificateSupplement
+2. prisma generate — Prisma client נוצר מחדש
+3. packages/shared/src/certificate-supplements.ts — nikudOverrides נוסף ל-CertificateSupplementDto, CertificateSupplementInput, UpsertCertificateSupplementItemDto; term נוסף ל-CertificateSupplementContextDto
+4. apps/api/src/certificates/certificates.service.ts — mapSupplementRow מחזיר nikudOverrides, getSupplementContext מחזיר term, upsertSupplements שומר nikudOverrides, supplementInputFromRow מעביר nikudOverrides
+5. apps/api/src/certificates/dto/certificate-supplements.dto.ts — nikudOverrides ב-API DTO
+6. apps/api/src/certificates/snapshot-builder.util.ts — apply nikudOverrides על student.fullName, class.name, term.name, class.cohort, subject.${id}
+7. CertificateUnifiedTable.tsx — onNikudEdit מעביר classInfo + termName
+8. CertificatesPage.tsx — state מחזיק classInfo + termName, מעביר לNikudPreviewModal
+9. NikudPreviewModal.tsx — הצגת כל שדות התעודה: שם תלמידה, כיתה, מחצית, מחזור, כל המקצועות + שמירה ב-nikudOverrides
+Status: API TSC exit 0, Web TSC exit 0, API online
+
+---
+2026-07-09 09:03 — NikudPreviewModal: 5 bugs fixed
+Tasks:
+  - Title default: 'תעודת הערכה' (restored from 'תעודת ציונים')
+  - CERTIFICATE_LABEL_DEFAULTS_NIKUD.title: 'תְּעוּדַת הַעֲרָכָה'
+  - Noto Serif Hebrew font added to Next.js layout (CSS var --font-noto-serif-hebrew)
+  - NikudPicker: font updated to use CSS var
+  - NikudPreviewModal: auto-nikud all fill-in fields on mount (parallel API calls)
+  - NikudPreviewModal: X/clear button per field
+  - NikudPreviewModal: 'date' label conditional on prefs.dateOnCertificate
+  - NikudPreviewModal: grade comments show for ALL subjects when prefs.commentPerGrade (not just existing ones)
+  - NikudPreviewModal: serif font + lineHeight:2 on inputs for proper nikud display
+Files:
+  - packages/shared/src/certificate.ts
+  - apps/web/app/layout.tsx
+  - apps/web/components/NikudPicker.tsx
+  - apps/web/components/NikudPreviewModal.tsx
+
+
+---
+2026-07-09 nikud-modal-session2
+Tasks: תיקון 4 באגים + פיצ'ר customTextBlocks
+
+Bugs fixed:
+1. patchNativeValue "Illegal invocation" — תוקן: בחירת prototype לפי instanceof HTMLTextAreaElement
+2. POST /certificates/nikud-text 400 Bad Request — תוקן: הוספת NikudTextBodyDto class עם @IsString()/@IsNotEmpty() (ValidationPipe whitelist strip)
+3. iframe preview חתוך — תוקן: מעבר מ-transform:scale (visual-only, clips) ל-CSS zoom (layout-based, no clip) + ResizeObserver
+4. lbl:besiata / lbl:title מוצגים פעמיים בתבנית מותאמת — תוקן: הסתרת סעיף "כותרת" כשcustomTextBlocks.length > 0
+
+Feature: customTextBlocks — טקסטים מותאמים ממנהלת בתבנית
+- API: extractCustomTextBlocks — שולף static_text blocks מlayoutJson של התבנית הפעילה
+- API: applyLabelOverridesToLayout — מחיל labelOverrides['block.<id>'] על static_text blocks לפני רינדור
+- Shared: customTextBlocks? נוסף לCertificateSupplementContextDto
+- Web: NikudPreviewModal — סעיף 11 "טקסטים מותאמים בתבנית", auto-nikud + שמירה ב-labelOverrides
+
+UX: modal נשאר פתוח אחרי שמור, תצוגה מקדימה מתרעננת אוטומטית (iframeKey++)
+UX: כפתור "דגש" (ּ) לפני ⌫ ב-NikudPicker
+
+Files:
+  - apps/web/components/NikudPreviewModal.tsx
+  - apps/web/components/NikudPicker.tsx
+  - apps/web/components/CertificateUnifiedTable.tsx
+  - apps/web/components/CertificatesPage.tsx
+  - apps/api/src/certificates/certificates.controller.ts (NikudTextBodyDto)
+  - apps/api/src/certificates/certificates.service.ts (extractCustomTextBlocks)
+  - apps/api/src/certificate-templates/template-render.util.ts (applyLabelOverridesToLayout)
+  - packages/shared/src/certificate-supplements.ts
+
+Status: API TSC exit 0, Web TSC exit 0
+
+---
+2026-07-09 bug-fixes-generate-and-nikud
+Tasks: תיקון 3 באגים
+
+1. 500 על /certificates/generate — Chromium תולה ב-sandbox ללא --no-sandbox
+   Fix: apps/api/src/certificates/pdf-render.service.ts
+   הוספת args: ['--no-sandbox', '--disable-setuid-sandbox'] לשני launch() calls
+   אומת: generate בודד → ok:true
+
+2. ניקוד שונה בתצוגה מקדימה אחרי שמור — mergeSupplementIntoSnapshot לא החיל nikudOverrides על student.fullName / class.name / term.name / subjectName
+   Fix: apps/api/src/certificates/snapshot-builder.util.ts
+   הוספת nko override לכל שדות האלו + resolvedSubjectName לכל subject
+   לפני התיקון: ניקוד המורה נשמר ב-DB אבל לא הוצג בתצוגה המקדימה
+
+3. lbl:besiata / lbl:title מופיעים פעמיים בתבנית מותאמת
+   Fix: apps/web/components/NikudPreviewModal.tsx
+   סעיף "כותרת" מוסתר כש-customTextBlocks.length > 0 (dead controls בנתיב תבנית מותאמת)
+
+Status: API TSC exit 0, Web TSC exit 0, generate verified ok
+
+---
+2026-07-09 21:00 | generate certificates fix (browser path)
+- BUG: POST /api-proxy/certificates/generate returned 500 after 41 seconds via browser
+- ROOT CAUSE: Next.js rewrite proxy has ~40s timeout; generate for 33 students takes 4-5 min
+- FIX 1: Created apps/web/app/api-proxy/certificates/generate/route.ts — custom Next.js route handler that bypasses the rewrite timeout (AbortSignal: 600s)
+- FIX 2: Refactored generate() in certificates.service.ts — 3-phase: (1) build all snapshots + nikud sequentially, (2) batch PDF rendering with ONE Chromium browser for all students, (3) save to DB
+- FIX 3: Added renderManyHtmlToPdf() to PdfRenderService — single browser, all PDFs rendered in sequence, browser launched only once
+- MISTAKES CORRECTED: Parallel nikud calls (rate-limit), in-flight dedup with poison-pill bug, nikudSubject parallel (100 concurrent Dicta calls)
+- FINAL: nikudFn = thin wrapper to NikudService (which already has persistent cache); sequential students; batch Chromium
+- VERIFIED: 36/36 OK in 2:51 via port 3000 (full browser path)
+- FILES: apps/api/src/certificates/certificates.service.ts, pdf-render.service.ts, pdf-render.port.ts, nikud-snapshot.util.ts (reverted), apps/web/app/api-proxy/certificates/generate/route.ts (new)
+
+2026-07-11T20:12:46Z — GAP ANALYSIS & SPEC SYNC
+- TASK: Sync spec docs with actual implementation (code is source of truth)
+- docs/plan.md: updated DATA MODEL (added ClassGroup, StudentClassGroup, TeacherAssignment, UserSubject, CertificateSupplement, RevokedToken; updated Class/locks/certificate_snapshots fields), fixed API section (removed wrong endpoints, added 30+ missing), updated ARCHITECTURE (packages, rate limiting), AUTHORIZATION (schoolId in login, token revocation), CONCURRENCY (classGroupId in lock key)
+- docs/prd.md: added Class Groups, Certificate Supplements, Hebrew Nikud, student bulk import, updated screens (help pages, my-students), added missing data model entities
+- docs/phases/04-models.md: added RevokedToken; corrected EditLock (classGroupId), CertificateSupplement (full fields), CertificateSnapshot (generatedBy); added soft-delete and constraint notes
+- docs/phases/07-controllers.md: added missing certificate endpoints (supplements, label-overrides, nikud-text, preview-html, snapshots/:id)
+- docs/phases/08-frontend.md: added /help, /help/teacher, /help/homeroom routes; clarified teacher dashboard and my-students purpose
