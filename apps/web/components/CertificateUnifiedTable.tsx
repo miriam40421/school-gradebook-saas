@@ -65,7 +65,12 @@ type Props = {
     studentId: string,
     supplement: CertificateSupplementDto,
     prefs: import('@school/shared').CertificatePrefs,
-    subjectNames: Record<string, string>,
+    subjects: import('@school/shared').CertificateSupplementSubjectDto[],
+    classInfo: { name: string; yearHebrew: string | null },
+    termName: string,
+    gradeValues: Record<string, string>,
+    customTextBlocks: Array<{ id: string; text: string }>,
+    classNikudOverrides: Record<string, string>,
   ) => void;
 };
 
@@ -445,9 +450,10 @@ export function CertificateUnifiedTable({
                           onClick={() => {
                             const sup = certContext?.supplements.find((s) => s.studentId === student.id)
                               ?? { studentId: student.id };
-                            const subjectNames: Record<string, string> = {};
+                            const gradeValues: Record<string, string> = {};
                             for (const subj of certContext?.subjects ?? []) {
-                              subjectNames[subj.id] = subj.name;
+                              const val = entryMap.get(`${student.id}:${subj.id}`) ?? '';
+                              if (val) gradeValues[subj.id] = val;
                             }
                             onNikudEdit(
                               snapshot.id,
@@ -455,7 +461,15 @@ export function CertificateUnifiedTable({
                               student.id,
                               sup as CertificateSupplementDto,
                               prefs,
-                              subjectNames,
+                              certContext?.subjects ?? [],
+                              {
+                                name: certContext?.class.name ?? '',
+                                yearHebrew: certContext?.class.yearHebrew ?? null,
+                              },
+                              certContext?.term?.name ?? '',
+                              gradeValues,
+                              certContext?.customTextBlocks ?? [],
+                              certContext?.nikudClassOverrides ?? {},
                             );
                           }}
                         >

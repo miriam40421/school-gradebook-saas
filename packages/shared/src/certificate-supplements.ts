@@ -11,13 +11,20 @@ export type CertificateSupplementDto = {
   homeroomSignature?: string | null;
   principalSignature?: string | null;
   gradeComments?: Record<string, string | null>;
+  /** Per-student nikud overrides: keys like "student.fullName", "grade.<id>" */
+  nikudOverrides?: Record<string, string>;
   updatedAt?: string;
 };
 
 export type CertificateSupplementSubjectDto = {
   id: string;
   name: string;
+  gradingSetTypeId: string;
   gradingSetTypeLabel: string;
+  categoryId: string;
+  categoryLabel: string;
+  subCategoryId: string | null;
+  subCategoryLabel: string | null;
 };
 
 export type CertificateSupplementContextDto = {
@@ -30,8 +37,15 @@ export type CertificateSupplementContextDto = {
     year: number;
     yearHebrew: string | null;
   };
+  term: {
+    id: string;
+    name: string;
+  };
   subjects: CertificateSupplementSubjectDto[];
   supplements: CertificateSupplementDto[];
+  customTextBlocks?: Array<{ id: string; text: string }>;
+  /** Class-wide nikud overrides: subject names, category names, class/term name */
+  nikudClassOverrides?: Record<string, string>;
 };
 
 export type UpsertCertificateSupplementItemDto = {
@@ -44,6 +58,7 @@ export type UpsertCertificateSupplementItemDto = {
   homeroomSignature?: string | null;
   principalSignature?: string | null;
   gradeComments?: Record<string, string | null>;
+  nikudOverrides?: Record<string, string>;
 };
 
 export type UpsertCertificateSupplementsDto = {
@@ -67,4 +82,5 @@ export type CertificateSupplementInput = {
   homeroomSignature?: string | null;
   principalSignature?: string | null;
   gradeComments?: Record<string, string | null>;
+  nikudOverrides?: Record<string, string>;
 };

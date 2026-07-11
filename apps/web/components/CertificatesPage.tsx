@@ -9,6 +9,7 @@ import type {
   CertificatePrefs,
   CertificateSnapshotSummaryDto,
   CertificateSupplementDto,
+  CertificateSupplementSubjectDto,
   GenerateCertificatesResultDto,
   GradingTermDto,
 } from '@school/shared';
@@ -76,7 +77,12 @@ function CertificatesContent({
     studentId: string;
     supplement: CertificateSupplementDto;
     prefs: CertificatePrefs;
-    subjectNames: Record<string, string>;
+    subjects: CertificateSupplementSubjectDto[];
+    classInfo: { name: string; yearHebrew: string | null };
+    termName: string;
+    gradeValues: Record<string, string>;
+    customTextBlocks: Array<{ id: string; text: string }>;
+    classNikudOverrides: Record<string, string>;
   } | null>(null);
   const [generatingStudentId, setGeneratingStudentId] = useState<string | null>(null);
 
@@ -219,8 +225,8 @@ function CertificatesContent({
             generateOne.mutate(studentId);
           }}
           onPreview={(id, studentName) => setPreview({ id, studentName })}
-          onNikudEdit={(snapshotId, studentName, studentId, supplement, prefs, subjectNames) =>
-            setNikudModal({ snapshotId, studentName, studentId, supplement, prefs, subjectNames })
+          onNikudEdit={(snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides) =>
+            setNikudModal({ snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides })
           }
         />
       )}
@@ -238,13 +244,17 @@ function CertificatesContent({
           snapshotId={nikudModal.snapshotId}
           studentName={nikudModal.studentName}
           supplement={nikudModal.supplement}
+          classNikudOverrides={nikudModal.classNikudOverrides}
           prefs={nikudModal.prefs}
-          subjectNames={nikudModal.subjectNames}
+          subjects={nikudModal.subjects}
+          gradeValues={nikudModal.gradeValues}
+          customTextBlocks={nikudModal.customTextBlocks}
+          classInfo={nikudModal.classInfo}
+          termName={nikudModal.termName}
           classId={classId}
           termId={termId}
           onClose={() => setNikudModal(null)}
-          onSaved={() => {
-            setNikudModal(null);
+          onAfterSave={() => {
             void qc.invalidateQueries({ queryKey: ['certificate-supplement-context', classId, termId] });
           }}
         />

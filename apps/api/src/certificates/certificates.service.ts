@@ -23,6 +23,9 @@ import {
   resolveCertificateTemplateForProfile,
   resolveCertificateTemplateKeyForClass,
   resolveProfileSubjects,
+  buildGradingTypeMap,
+  resolveSubjectCategoryPlacement,
+  normalizeCertificatePrefs,
   type CertificateTemplateDetailDto,
 } from '@school/shared';
 import { JwtPayload } from '../auth/jwt-payload.interface';
@@ -42,6 +45,64 @@ import { GenerateCertificatesBodyDto } from './dto/certificates.dto';
 import { UpsertCertificateSupplementsBodyDto } from './dto/certificate-supplements.dto';
 
 const MAX_STUDENTS_PER_BATCH = 50;
+
+function patchSettingsField(
+  settings: Record<string, unknown>,
+  profileId: string | null | undefined,
+  field: string,
+  overrides: Record<string, string>,
+): Record<string, unknown> {
+  const profiles = settings.certificateProfiles;
+  if (Array.isArray(profiles) && profiles.length > 0) {
+    let matched = false;
+    const updated = (profiles as Record<string, unknown>[]).map((p, idx) => {
+      const isTarget = profileId ? p['id'] === profileId : idx === 0;
+      if (!isTarget) return p;
+      matched = true;
+      const cert = (p['certificate'] ?? {}) as Record<string, unknown>;
+      const existing = (cert[field] ?? {}) as Record<string, string>;
+      return { ...p, certificate: { ...cert, [field]: { ...existing, ...overrides } } };
+    });
+    if (matched) return { ...settings, certificateProfiles: updated };
+  }
+  const cert = (settings['certificate'] ?? {}) as Record<string, unknown>;
+  const existing = (cert[field] ?? {}) as Record<string, string>;
+  return { ...settings, certificate: { ...cert, [field]: { ...existing, ...overrides } } };
+}
+
+function patchLabelOverridesInSettings(
+  settings: Record<string, unknown>,
+  profileId: string | null | undefined,
+  overrides: Record<string, string>,
+): Record<string, unknown> {
+  return patchSettingsField(settings, profileId, 'labelOverrides', overrides);
+}
+
+function patchNikudClassOverridesInSettings(
+  settings: Record<string, unknown>,
+  profileId: string | null | undefined,
+  overrides: Record<string, string>,
+): Record<string, unknown> {
+  return patchSettingsField(settings, profileId, 'nikudClassOverrides', overrides);
+}
+
+function resolveNikudClassOverrides(
+  settings: Record<string, unknown>,
+  profileId: string | null | undefined,
+): Record<string, string> {
+  const profiles = settings.certificateProfiles;
+  if (Array.isArray(profiles) && profiles.length > 0) {
+    const profile = profileId
+      ? (profiles as Record<string, unknown>[]).find((p) => p['id'] === profileId)
+      : (profiles as Record<string, unknown>[])[0];
+    if (profile) {
+      const cert = (profile['certificate'] ?? {}) as Record<string, unknown>;
+      return (cert['nikudClassOverrides'] ?? {}) as Record<string, string>;
+    }
+  }
+  const cert = (settings['certificate'] ?? {}) as Record<string, unknown>;
+  return (cert['nikudClassOverrides'] ?? {}) as Record<string, string>;
+}
 
 @Injectable()
 export class CertificatesService {
@@ -183,6 +244,7 @@ export class CertificatesService {
       homeroomSignature: string | null;
       principalSignature: string | null;
       gradeComments: unknown;
+      nikudOverrides: unknown;
       updatedAt: Date;
     },
     studentName?: string,
@@ -192,6 +254,12 @@ export class CertificatesService {
       typeof row.gradeComments === 'object' &&
       !Array.isArray(row.gradeComments)
         ? (row.gradeComments as Record<string, string | null>)
+        : undefined;
+    const nikudOverrides =
+      row.nikudOverrides &&
+      typeof row.nikudOverrides === 'object' &&
+      !Array.isArray(row.nikudOverrides)
+        ? (row.nikudOverrides as Record<string, string>)
         : undefined;
     return {
       studentId: row.studentId,
@@ -204,6 +272,7 @@ export class CertificatesService {
       homeroomSignature: row.homeroomSignature,
       principalSignature: row.principalSignature,
       gradeComments,
+      nikudOverrides,
       updatedAt: row.updatedAt.toISOString(),
     };
   }
@@ -221,6 +290,7 @@ export class CertificatesService {
       homeroomSignature: row.homeroomSignature,
       principalSignature: row.principalSignature,
       gradeComments: row.gradeComments,
+      nikudOverrides: row.nikudOverrides,
     };
   }
 
@@ -243,12 +313,12 @@ export class CertificatesService {
 
     const subjects = await this.prisma.subject.findMany({
       where: { schoolId: user.school_id },
-      include: { gradingSetType: { select: { label: true } } },
+      include: { gradingSetType: { select: { id: true, label: true } } },
       orderBy: [{ gradingSetType: { label: 'asc' } }, { name: 'asc' }],
     });
 
     const students = await this.prisma.student.findMany({
-      where: { schoolId: user.school_id, classId },
+      where: { schoolId: user.school_id, classId, deletedAt: null },
       orderBy: { fullName: 'asc' },
       select: { id: true, fullName: true },
     });
@@ -279,12 +349,14 @@ export class CertificatesService {
       classRow.certificateProfileId,
       subjects,
     );
+    const prefs = this.certificatePrefsForClass(settings, classRow.certificateProfileId);
+    const normalizedPrefs = normalizeCertificatePrefs(prefs);
+    const gradingSetTypes = await this.loadGradingSetTypes(user.school_id);
+    const typeMap = buildGradingTypeMap(gradingSetTypes);
+    const showSubCategories = normalizedPrefs.showSubCategoriesOnCertificate !== false;
 
     return {
-      certificatePrefs: this.certificatePrefsForClass(
-        settings,
-        classRow.certificateProfileId,
-      ),
+      certificatePrefs: prefs,
       certificateProfileId: profile?.id ?? classRow.certificateProfileId ?? null,
       certificateProfileName: profile?.name ?? null,
       class: {
@@ -293,13 +365,47 @@ export class CertificatesService {
         year: classRow.year,
         yearHebrew: classRow.yearHebrew,
       },
-      subjects: profileSubjects.map((s) => ({
-        id: s.id,
-        name: s.name,
-        gradingSetTypeLabel: s.gradingSetType.label,
-      })),
+      term: {
+        id: term.id,
+        name: term.name,
+      },
+      subjects: profileSubjects.map((s) => {
+        const placement = resolveSubjectCategoryPlacement(
+          s.gradingSetTypeId,
+          s.gradingSetType.label,
+          typeMap,
+          showSubCategories,
+        );
+        return {
+          id: s.id,
+          name: s.name,
+          gradingSetTypeId: s.gradingSetTypeId,
+          gradingSetTypeLabel: s.gradingSetType.label,
+          categoryId: placement.categoryId,
+          categoryLabel: placement.categoryLabel,
+          subCategoryId: placement.subCategoryId,
+          subCategoryLabel: placement.subCategoryLabel,
+        };
+      }),
       supplements,
+      customTextBlocks: await this.extractCustomTextBlocks(user.school_id, settings, classRow.certificateProfileId),
+      nikudClassOverrides: resolveNikudClassOverrides(settings, classRow.certificateProfileId),
     };
+  }
+
+  private async extractCustomTextBlocks(
+    schoolId: string,
+    settings: Record<string, unknown>,
+    certificateProfileId: string | null | undefined,
+  ): Promise<Array<{ id: string; text: string }>> {
+    const resolution = resolveCertificateTemplateForProfile(settings, certificateProfileId);
+    if (!resolution.templateId) return [];
+    const template = await this.loadCustomTemplate(schoolId, resolution.templateId);
+    if (!template) return [];
+    const layout = template.layoutJson as import('@school/shared').CertificateTemplateLayoutV1;
+    return layout.blocks
+      .filter((b): b is Extract<typeof b, { type: 'static_text' }> => b.type === 'static_text' && !!b.props.text.trim())
+      .map((b) => ({ id: b.id, text: b.props.text }));
   }
 
   async upsertSupplements(
@@ -319,6 +425,7 @@ export class CertificatesService {
       where: {
         schoolId: user.school_id,
         classId: dto.classId,
+        deletedAt: null,
         id: { in: studentIds },
       },
       select: { id: true, fullName: true },
@@ -351,6 +458,7 @@ export class CertificatesService {
           homeroomSignature: item.homeroomSignature ?? null,
           principalSignature: item.principalSignature ?? null,
           gradeComments: item.gradeComments ?? undefined,
+          nikudOverrides: item.nikudOverrides ?? undefined,
         },
         update: {
           classId: dto.classId,
@@ -362,6 +470,7 @@ export class CertificatesService {
           homeroomSignature: item.homeroomSignature ?? null,
           principalSignature: item.principalSignature ?? null,
           gradeComments: item.gradeComments ?? undefined,
+          ...(item.nikudOverrides !== undefined ? { nikudOverrides: item.nikudOverrides } : {}),
         },
       });
       results.push(
@@ -394,6 +503,7 @@ export class CertificatesService {
     const studentWhere = {
       schoolId: user.school_id,
       classId: dto.classId,
+      deletedAt: null,
       ...(dto.studentIds?.length ? { id: { in: dto.studentIds } } : {}),
     };
 
@@ -477,9 +587,18 @@ export class CertificatesService {
       ]),
     );
 
-    const results: GenerateCertificatesResultDto['results'] = [];
+    // NikudService has its own persistent cache (Map in the singleton service).
+    // Using it directly avoids cross-student duplicate Dicta calls and the
+    // poison-pill problem of caching failed promises.
+    const nikudFn = (t: string) => this.nikudService.nikud(t);
 
-    for (const student of students) {
+    // Phase 1 — build snapshots, apply nikud, render HTML strings.
+    // Students are processed sequentially to avoid Dicta rate-limiting
+    // (nikudSnapshot already parallelizes calls within a single student).
+    const phase1raw: Array<{ ok: true; student: (typeof students)[0]; snapshotId: string; snapshotJson: CertificateSnapshotJsonV1; storageKey: string; html: string; orientation: 'portrait' | 'landscape' } | { ok: false; student: (typeof students)[0]; error: string }> = [];
+    for (let ci = 0; ci < students.length; ci += 1) {
+      const chunk = students.slice(ci, ci + 1);
+      const chunkResults = await Promise.all(chunk.map(async (student) => {
       try {
         const supplementDto = supplementByStudent.get(student.id);
         const supplement = this.supplementInputFromRow(supplementDto);
@@ -531,49 +650,78 @@ export class CertificatesService {
         }
 
         if (prefs.nikud) {
-          Object.assign(
-            snapshotJson,
-            await nikudSnapshot(snapshotJson, (t) => this.nikudService.nikud(t)),
-          );
+          Object.assign(snapshotJson, await nikudSnapshot(snapshotJson, nikudFn));
         }
 
         const snapshotId = randomUUID();
-        const pdfBuffer = customTemplate
-          ? await renderTemplatePdf(
-              customTemplate,
-              snapshotJson,
-              this.storage,
-              this.pdfRender,
-              (t) => this.nikudService.nikud(t),
-            )
-          : await this.pdfRender.renderCertificateHtml(snapshotJson);
-        const storageKey = this.pdfKey(
-          user.school_id,
-          dto.termId,
-          student.id,
-          snapshotId,
-        );
-        await this.storage.putObject(storageKey, pdfBuffer, 'application/pdf');
+        const storageKey = this.pdfKey(user.school_id, dto.termId, student.id, snapshotId);
 
+        const html = customTemplate
+          ? await renderTemplateHtmlString(customTemplate, snapshotJson, this.storage, nikudFn)
+          : await this.pdfRender.renderCertificateHtmlString(snapshotJson);
+        const orientation: 'portrait' | 'landscape' = customTemplate?.orientation ?? 'portrait';
+
+        return { ok: true as const, student, snapshotId, snapshotJson, storageKey, html, orientation };
+      } catch (err) {
+        return {
+          ok: false as const,
+          student,
+          error: err instanceof Error ? err.message : 'Build failed',
+        };
+      }
+    }));
+      phase1raw.push(...chunkResults);
+    }
+    const phase1 = phase1raw;
+
+    // Phase 2 — batch PDF rendering with a single Chromium launch.
+    const okItems = phase1.filter((r): r is typeof r & { ok: true; html: string; orientation: 'portrait' | 'landscape'; snapshotId: string; snapshotJson: CertificateSnapshotJsonV1; storageKey: string; student: (typeof students)[0] } => r.ok);
+    let pdfBuffers: Buffer[] = [];
+    let batchError: string | null = null;
+    if (okItems.length > 0) {
+      try {
+        pdfBuffers = await this.pdfRender.renderManyHtmlToPdf(
+          okItems.map((r) => ({ html: r.html, orientation: r.orientation })),
+        );
+      } catch (err) {
+        batchError = err instanceof Error ? err.message : 'PDF rendering failed';
+      }
+    }
+
+    // Phase 3 — persist snapshots to DB.
+    const results: GenerateCertificatesResultDto['results'] = [];
+    let pdfIdx = 0;
+    for (const item of phase1) {
+      if (!item.ok) {
+        results.push({ studentId: item.student.id, ok: false, error: item.error });
+        continue;
+      }
+      if (batchError) {
+        results.push({ studentId: item.student.id, ok: false, error: batchError });
+        pdfIdx++;
+        continue;
+      }
+      try {
+        const pdfBuffer = pdfBuffers[pdfIdx++];
+        await this.storage.putObject(item.storageKey, pdfBuffer, 'application/pdf');
         await this.prisma.certificateSnapshot.create({
           data: {
-            id: snapshotId,
+            id: item.snapshotId,
             schoolId: user.school_id,
-            studentId: student.id,
+            studentId: item.student.id,
             classId: dto.classId,
             termId: dto.termId,
-            snapshotJson,
-            pdfStorageKey: storageKey,
+            snapshotJson: item.snapshotJson,
+            pdfStorageKey: item.storageKey,
             generatedBy: user.sub,
           },
         });
-
-        results.push({ studentId: student.id, snapshotId, ok: true });
+        results.push({ studentId: item.student.id, snapshotId: item.snapshotId, ok: true });
       } catch (err) {
         results.push({
-          studentId: student.id,
+          studentId: item.student.id,
           ok: false,
-          error: err instanceof Error ? err.message : 'Generation failed',
+          error: err instanceof Error ? err.message : 'Save failed',
         });
       }
     }
@@ -614,15 +762,18 @@ export class CertificatesService {
     const supplement = supplementRow
       ? this.supplementInputFromRow(this.mapSupplementRow(supplementRow))
       : undefined;
+    const schoolSettings = (school?.settingsJson ?? {}) as Record<string, unknown>;
     const currentPrefs = school
       ? this.certificatePrefsForClass(school.settingsJson, classRow?.certificateProfileId)
       : undefined;
+    const classNikud = resolveNikudClassOverrides(schoolSettings, classRow?.certificateProfileId);
 
     const snapshotJson = enrichSnapshotProfileName(
       mergeSupplementIntoSnapshot(
         row.snapshotJson as CertificateSnapshotJsonV1,
         supplement,
         currentPrefs,
+        classNikud,
       ),
       resolveCertificateProfile(
         school?.settingsJson as Record<string, unknown> | undefined,
@@ -730,18 +881,21 @@ export class CertificatesService {
     const supplement = supplementRow
       ? this.supplementInputFromRow(this.mapSupplementRow(supplementRow))
       : undefined;
+    const pdfSchoolSettings = (school?.settingsJson ?? {}) as Record<string, unknown>;
     const currentPrefs = school
       ? this.certificatePrefsForClass(
           school.settingsJson,
           classRow?.certificateProfileId,
         )
       : undefined;
+    const pdfClassNikud = resolveNikudClassOverrides(pdfSchoolSettings, classRow?.certificateProfileId);
 
     const snapshotJson = enrichSnapshotProfileName(
       mergeSupplementIntoSnapshot(
         row.snapshotJson as CertificateSnapshotJsonV1,
         supplement,
         currentPrefs,
+        pdfClassNikud,
       ),
       resolveCertificateProfile(
         school?.settingsJson as Record<string, unknown> | undefined,
@@ -791,5 +945,41 @@ export class CertificatesService {
     }
 
     return buffer;
+  }
+
+  async upsertLabelOverrides(
+    user: JwtPayload,
+    classId: string,
+    overrides: Record<string, string>,
+  ): Promise<void> {
+    const classRow = await this.assertClassViewAccess(user, classId);
+    const school = await this.prisma.school.findFirst({ where: { id: user.school_id } });
+    if (!school) throw new NotFoundException();
+
+    const settings = (school.settingsJson ?? {}) as Record<string, unknown>;
+    const updatedSettings = patchLabelOverridesInSettings(settings, classRow.certificateProfileId, overrides);
+
+    await this.prisma.school.update({
+      where: { id: user.school_id },
+      data: { settingsJson: updatedSettings as import('@prisma/client').Prisma.InputJsonValue },
+    });
+  }
+
+  async upsertNikudClassOverrides(
+    user: JwtPayload,
+    classId: string,
+    overrides: Record<string, string>,
+  ): Promise<void> {
+    const classRow = await this.assertClassViewAccess(user, classId);
+    const school = await this.prisma.school.findFirst({ where: { id: user.school_id } });
+    if (!school) throw new NotFoundException();
+
+    const settings = (school.settingsJson ?? {}) as Record<string, unknown>;
+    const updatedSettings = patchNikudClassOverridesInSettings(settings, classRow.certificateProfileId, overrides);
+
+    await this.prisma.school.update({
+      where: { id: user.school_id },
+      data: { settingsJson: updatedSettings as import('@prisma/client').Prisma.InputJsonValue },
+    });
   }
 }

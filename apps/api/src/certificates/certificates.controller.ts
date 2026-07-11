@@ -10,12 +10,19 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/jwt-payload.interface';
 import { CertificatesService } from './certificates.service';
 import { GenerateCertificatesBodyDto } from './dto/certificates.dto';
 import { UpsertCertificateSupplementsBodyDto } from './dto/certificate-supplements.dto';
+
+class NikudTextBodyDto {
+  @IsString()
+  @IsNotEmpty()
+  text!: string;
+}
 
 @Controller('certificates')
 export class CertificatesController {
@@ -65,12 +72,32 @@ export class CertificatesController {
     return this.certificates.getSnapshot(user, id);
   }
 
+  @Put('label-overrides')
+  @Authenticated()
+  @HttpCode(204)
+  async upsertLabelOverrides(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { classId: string; overrides: Record<string, string> },
+  ) {
+    await this.certificates.upsertLabelOverrides(user, body.classId, body.overrides);
+  }
+
+  @Put('nikud-class-overrides')
+  @Authenticated()
+  @HttpCode(204)
+  async upsertNikudClassOverrides(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { classId: string; overrides: Record<string, string> },
+  ) {
+    await this.certificates.upsertNikudClassOverrides(user, body.classId, body.overrides);
+  }
+
   @Post('nikud-text')
   @Authenticated()
   @HttpCode(200)
   async nikudText(
     @CurrentUser() user: JwtPayload,
-    @Body() body: { text: string },
+    @Body() body: NikudTextBodyDto,
   ) {
     const result = await this.certificates.nikudText(user, body.text);
     return { result };

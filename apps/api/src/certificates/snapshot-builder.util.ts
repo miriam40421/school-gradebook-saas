@@ -175,6 +175,7 @@ export function buildSnapshotJson(
   const gradeComments = supplement?.gradeComments ?? {};
   const typeMap = buildGradingTypeMap(input.gradingSetTypes ?? []);
 
+  const nkoForSubjects = supplement?.nikudOverrides ?? {};
   const subjects: CertificateSnapshotSubjectDto[] = input.subjects.map((s) => {
     const groupName = groupNameForSubject(
       s.id,
@@ -189,14 +190,22 @@ export function buildSnapshotJson(
       showSubCategories,
     );
     const showComment = commentPerGradeForCategory(prefs, placement.categoryId);
+    const rawSubjectLabel = certificateSubjectLabel(s.name, groupName, showGroup);
+    const resolvedSubjectName = nkoForSubjects[`subject.${s.id}`] || rawSubjectLabel;
+    const resolvedCategoryLabel = nkoForSubjects[`category.${placement.categoryId}`] || placement.categoryLabel;
+    const resolvedSubCategoryLabel = placement.subCategoryId
+      ? (nkoForSubjects[`subcategory.${placement.subCategoryId}`] || placement.subCategoryLabel)
+      : placement.subCategoryLabel;
+    const rawGrade = input.entries.get(s.id) ?? null;
+    const resolvedGrade = rawGrade ? (nkoForSubjects[`grade.${s.id}`] || rawGrade) : null;
     return {
       subjectId: s.id,
-      subjectName: certificateSubjectLabel(s.name, groupName, showGroup),
-      value: input.entries.get(s.id) ?? null,
+      subjectName: resolvedSubjectName,
+      value: resolvedGrade,
       categoryId: placement.categoryId,
-      categoryLabel: placement.categoryLabel,
+      categoryLabel: resolvedCategoryLabel,
       subCategoryId: placement.subCategoryId,
-      subCategoryLabel: placement.subCategoryLabel,
+      subCategoryLabel: resolvedSubCategoryLabel,
       showComment,
       ...(showComment
         ? {
@@ -211,6 +220,14 @@ export function buildSnapshotJson(
   const attendance = buildAttendance(prefs, supplement);
   const cohortValue = input.class.yearHebrew?.trim() || null;
 
+  // Apply per-student nikud overrides (set via the nikud modal) to raw field values.
+  // If a field already has nikud marks, nikudSnapshot will skip re-processing it.
+  const nko = supplement?.nikudOverrides ?? {};
+  const resolvedStudentName = nko['student.fullName'] || input.student.fullName;
+  const resolvedClassName = nko['class.name'] || input.class.name;
+  const resolvedTermName = nko['term.name'] || input.term.name;
+  const resolvedCohort = cohortValue ? (nko['class.cohort'] || cohortValue) : null;
+
   const snapshot: CertificateSnapshotJsonV1 = {
     schemaVersion: 1,
     templateKey: input.templateKey,
@@ -219,14 +236,14 @@ export function buildSnapshotJson(
     school: { id: input.school.id, name: input.school.name },
     class: {
       id: input.class.id,
-      name: input.class.name,
+      name: resolvedClassName,
       year: input.class.year,
       ...(prefs.showClassYearHebrew
-        ? { yearHebrew: cohortValue, cohort: cohortValue }
+        ? { yearHebrew: resolvedCohort, cohort: resolvedCohort }
         : {}),
     },
-    term: { id: input.term.id, name: input.term.name },
-    student: { id: input.student.id, fullName: input.student.fullName },
+    term: { id: input.term.id, name: resolvedTermName },
+    student: { id: input.student.id, fullName: resolvedStudentName },
     ...(prefs.showProfileNameOnCertificate && input.certificateProfileName?.trim()
       ? { certificateProfileName: input.certificateProfileName.trim() }
       : {}),
@@ -277,6 +294,7 @@ export function mergeSupplementIntoSnapshot(
   snapshot: CertificateSnapshotJsonV1,
   supplement?: CertificateSupplementInput,
   certificatePrefs?: CertificatePrefs,
+  classNikudOverrides?: Record<string, string>,
 ): CertificateSnapshotJsonV1 {
   const prefs = normalizeCertificatePrefs(
     certificatePrefs ?? snapshot.certificatePrefs,
@@ -284,6 +302,8 @@ export function mergeSupplementIntoSnapshot(
   const showSubCategories = prefs.showSubCategoriesOnCertificate !== false;
   const gradeComments = supplement?.gradeComments ?? {};
 
+  // class-level overrides as base, per-student overrides take precedence
+  const nko = { ...(classNikudOverrides ?? {}), ...(supplement?.nikudOverrides ?? {}) };
   const subjects: CertificateSnapshotSubjectDto[] = snapshot.subjects.map((s) => {
     const subjectId = s.subjectId;
     const commentRaw = subjectId ? gradeComments[subjectId] : undefined;
@@ -293,10 +313,19 @@ export function mergeSupplementIntoSnapshot(
       : null;
     const categoryId = s.categoryId ?? 'unknown';
     const showComment = commentPerGradeForCategory(prefs, categoryId);
+    const resolvedSubjectName = (subjectId && nko[`subject.${subjectId}`]) || s.subjectName;
+    const resolvedCategoryLabel = nko[`category.${categoryId}`] || s.categoryLabel;
+    const resolvedSubCategoryLabel = subCategoryId
+      ? (nko[`subcategory.${subCategoryId}`] || subCategoryLabel)
+      : subCategoryLabel;
+    const resolvedGrade = s.value ? (nko[`grade.${subjectId}`] || s.value) : s.value;
     return {
       ...s,
+      subjectName: resolvedSubjectName,
+      value: resolvedGrade,
+      categoryLabel: resolvedCategoryLabel,
       subCategoryId,
-      subCategoryLabel,
+      subCategoryLabel: resolvedSubCategoryLabel,
       showComment,
       ...(showComment
         ? {
@@ -311,6 +340,14 @@ export function mergeSupplementIntoSnapshot(
 
   const next: CertificateSnapshotJsonV1 = {
     ...snapshot,
+    student: { ...snapshot.student, fullName: nko['student.fullName'] || snapshot.student.fullName },
+    class: {
+      ...snapshot.class,
+      name: nko['class.name'] || snapshot.class.name,
+      ...(snapshot.class.cohort != null ? { cohort: nko['class.cohort'] || snapshot.class.cohort } : {}),
+      ...(snapshot.class.yearHebrew != null ? { yearHebrew: nko['class.cohort'] || snapshot.class.yearHebrew } : {}),
+    },
+    term: { ...snapshot.term, name: nko['term.name'] || snapshot.term.name },
     certificatePrefs: prefs,
     fill: certificateFillView(prefs),
     subjects,
