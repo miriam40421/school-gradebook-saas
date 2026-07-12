@@ -235,6 +235,17 @@ export function NikudPreviewModal({
   const [previewUpdated, setPreviewUpdated] = useState(false);
   const inputRefs = useRef<Record<string, HTMLTextAreaElement | HTMLInputElement | null>>({});
   const initialLabelValues = useRef(initLabelValues(prefs));
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+  const undoRef = useRef<Record<string, string[]>>({});
+  const redoRef = useRef<Record<string, string[]>>({});
+
+  function pushUndo(key: string, val: string) {
+    if (!undoRef.current[key]) undoRef.current[key] = [];
+    undoRef.current[key].push(val);
+    if (undoRef.current[key].length > 50) undoRef.current[key].shift();
+    redoRef.current[key] = [];
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -344,13 +355,69 @@ export function NikudPreviewModal({
   const autoNikud = useCallback(async (key: string, text: string) => {
     if (!text.trim()) return;
     setNikudLoading(key);
+    const snapshot = valuesRef.current[key] ?? '';
     try {
       const res = await apiFetch<{ result: string }>('/certificates/nikud-text', {
         method: 'POST',
         body: JSON.stringify({ text }),
       });
+      pushUndo(key, snapshot);
       setValues((prev) => ({ ...prev, [key]: res.result }));
     } catch { /* ignore */ } finally { setNikudLoading(null); }
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, key: string) => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      const stack = undoRef.current[key];
+      if (!stack?.length) return;
+      const prev = stack.pop()!;
+      if (!redoRef.current[key]) redoRef.current[key] = [];
+      redoRef.current[key].push(valuesRef.current[key] ?? '');
+      setValues((p) => ({ ...p, [key]: prev }));
+    } else if (ctrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      const stack = redoRef.current[key];
+      if (!stack?.length) return;
+      const next = stack.pop()!;
+      if (!undoRef.current[key]) undoRef.current[key] = [];
+      undoRef.current[key].push(valuesRef.current[key] ?? '');
+      setValues((p) => ({ ...p, [key]: next }));
+    }
+  }, []);
+
+  const runNikudAll = useCallback(async () => {
+    const current = valuesRef.current;
+    const toNikud = Object.entries(current).filter(([, v]) => v.trim() && !isNumeric(v) && !hasNikud(v));
+    if (toNikud.length === 0) return;
+    const originalTexts = new Map(toNikud);
+    setAutoNikudRunning(true);
+    void Promise.all(
+      toNikud.map(async ([key, text]) => {
+        try {
+          const res = await apiFetch<{ result: string }>('/certificates/nikud-text', {
+            method: 'POST',
+            body: JSON.stringify({ text }),
+          });
+          return [key, res.result] as [string, string];
+        } catch { return null; }
+      }),
+    ).then((results) => {
+      setValues((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const r of results) {
+          if (!r) continue;
+          const [key, nikudValue] = r;
+          if (prev[key] !== originalTexts.get(key)) continue;
+          next[key] = nikudValue;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
+      setAutoNikudRunning(false);
+    });
   }, []);
 
   const handleInsert = useCallback((char: string) => {
@@ -493,7 +560,8 @@ export function NikudPreviewModal({
             value={val}
             rows={2}
             onFocus={() => setActiveKey(key)}
-            onChange={(e) => setValues((p) => ({ ...p, [key]: e.target.value }))}
+            onKeyDown={(e) => handleKeyDown(e, key)}
+            onChange={(e) => { pushUndo(key, valuesRef.current[key] ?? ''); setValues((p) => ({ ...p, [key]: e.target.value })); }}
             dir="rtl"
             style={{ width: '100%', resize: 'vertical', padding: '0.35rem', fontSize: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontFamily: SERIF_FONT, lineHeight: 2 }}
           />
@@ -503,7 +571,8 @@ export function NikudPreviewModal({
             type="text"
             value={val}
             onFocus={() => setActiveKey(key)}
-            onChange={(e) => setValues((p) => ({ ...p, [key]: e.target.value }))}
+            onKeyDown={(e) => handleKeyDown(e, key)}
+            onChange={(e) => { pushUndo(key, valuesRef.current[key] ?? ''); setValues((p) => ({ ...p, [key]: e.target.value })); }}
             dir="rtl"
             style={{ width: '100%', padding: '0.35rem', fontSize: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontFamily: SERIF_FONT, lineHeight: 2 }}
           />
@@ -584,9 +653,18 @@ export function NikudPreviewModal({
 
         {/* Right: editable fields */}
         <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
-            <h2 style={{ fontSize: '0.92rem', fontWeight: 700 }} dir="rtl">ניקוד — {studentName}</h2>
-            <button type="button" onClick={onClose} aria-label="סגור" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', borderBottom: '1px solid #e2e8f0', gap: '0.5rem' }}>
+            <h2 style={{ fontSize: '0.92rem', fontWeight: 700, minWidth: 0 }} dir="rtl">ניקוד — {studentName}</h2>
+            <button
+              type="button"
+              disabled={autoNikudRunning}
+              onClick={runNikudAll}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0, fontSize: '0.72rem', padding: '0.25rem 0.6rem', border: '1px solid #a3e635', borderRadius: '0.375rem', background: autoNikudRunning ? '#f0fdf4' : '#ecfccb', cursor: autoNikudRunning ? 'default' : 'pointer', color: '#365314', fontWeight: 600 }}
+            >
+              <Wand2 style={{ width: 11, height: 11 }} />
+              {autoNikudRunning ? 'מנקד…' : 'נקד את התעודה'}
+            </button>
+            <button type="button" onClick={onClose} aria-label="סגור" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', flexShrink: 0 }}>
               <X style={{ width: 16, height: 16 }} />
             </button>
           </div>

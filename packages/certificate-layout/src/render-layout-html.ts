@@ -275,10 +275,10 @@ function renderMetaSegment(
   const label = resolveFieldLabel(fieldKey, snapshot);
   if (!label) return '';
   if (handwritten) {
-    return `<span class="meta-seg handwritten"><span class="field-label">${escapeHtml(label)}:</span><span class="field-line"></span></span>`;
+    return `<span class="meta-seg ${fieldKey} handwritten"><span class="field-label">${escapeHtml(label)}:</span><span class="field-line"></span></span>`;
   }
   const value = resolveField(snapshot, fieldKey).trim() || '—';
-  return `<span class="meta-seg computer"><span class="field-label">${escapeHtml(label)}:</span><span class="field-value">${escapeHtml(value)}</span></span>`;
+  return `<span class="meta-seg ${fieldKey} computer"><span class="field-label">${escapeHtml(label)}:</span><span class="field-value">${escapeHtml(value)}</span></span>`;
 }
 
 function renderHeaderMetaRow(snapshot: CertificateSnapshotJsonV1): string {
@@ -910,6 +910,7 @@ export function renderLayoutHtml(options: RenderLayoutOptions): string {
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .meta-seg.studentName { flex: 2 1 0; }
     .meta-seg.handwritten .field-line {
       flex: 1 1 auto;
       border-bottom: 1px solid #334155;

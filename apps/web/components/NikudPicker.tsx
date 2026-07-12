@@ -7,19 +7,35 @@ const NIKUD = [
   { char: 'ֵ', name: 'צרי' },
   { char: 'ֶ', name: 'סגול' },
   { char: 'ֹ', name: 'חולם' },
-  { char: 'ֻ', name: 'שורוק' },
-  { char: 'ּ', name: 'דגש' },
+  { char: 'ֻ', name: 'קיבוץ' },
+  { char: 'וּ', name: 'שורוק' },
   { char: 'ְ', name: 'שווא' },
   { char: 'ֱ', name: 'חטף סגול' },
   { char: 'ֲ', name: 'חטף פתח' },
   { char: 'ֳ', name: 'חטף קמץ' },
 ];
 
-type Props = {
-  onInsert: (char: string) => void;
+const BTN_BASE: React.CSSProperties = {
+  width: '2.6rem',
+  height: '2.6rem',
+  border: '1px solid #cbd5e1',
+  borderRadius: '0.375rem',
+  background: '#f8fafc',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  lineHeight: 2,
+  paddingBottom: '0.3rem',
+  color: '#111827',
 };
 
-export function NikudPicker({ onInsert }: Props) {
+type Props = {
+  onInsert: (char: string) => void;
+  onDelete: () => void;
+};
+
+export function NikudPicker({ onInsert, onDelete }: Props) {
   return (
     <div
       dir="rtl"
@@ -37,22 +53,44 @@ export function NikudPicker({ onInsert }: Props) {
           title={name}
           onClick={() => onInsert(char)}
           style={{
-            width: '2rem',
-            height: '2rem',
-            fontSize: '1.1rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '0.375rem',
-            background: '#f8fafc',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            lineHeight: 1,
+            ...BTN_BASE,
+            fontSize: '1.3rem',
+            fontFamily: 'var(--font-noto-serif-hebrew), "Noto Serif Hebrew", "SBL Hebrew", serif',
           }}
         >
-          {'א' + char}
+          <span style={{ color: '#111827' }}>{'א' + char}</span>
         </button>
       ))}
+      {/* Dagesh */}
+      <button
+        type="button"
+        title="דגש"
+        onClick={() => onInsert('ּ')}
+        style={{
+          ...BTN_BASE,
+          fontSize: '0.65rem',
+          fontFamily: 'var(--font-noto-serif-hebrew), "Noto Serif Hebrew", "SBL Hebrew", serif',
+          color: '#111827',
+        }}
+      >
+        דגש
+      </button>
+      {/* Backspace — delete char/nikud at cursor */}
+      <button
+        type="button"
+        title="מחק תו/ניקוד לפני הסמן"
+        onClick={onDelete}
+        style={{
+          ...BTN_BASE,
+          fontSize: '0.9rem',
+          color: '#dc2626',
+          borderColor: '#fca5a5',
+          background: '#fef2f2',
+          minWidth: '2.6rem',
+        }}
+      >
+        ⌫
+      </button>
     </div>
   );
 }
