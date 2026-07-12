@@ -215,6 +215,25 @@ function renderProfileNameField(snapshot: CertificateSnapshotJsonV1): string {
   return `<div class="profile-name-field">${escapeHtml(name)}</div>`;
 }
 
+const FIELD_KEY_TO_LABEL_OVERRIDE_KEY: Record<string, string> = {
+  studentName: 'studentNameLabel',
+  className: 'classLabel',
+  termName: 'termLabel',
+  cohort: 'cohortLabel',
+};
+
+function resolveFieldLabel(fieldKey: string, snapshot: CertificateSnapshotJsonV1): string | null {
+  const overrideKey = FIELD_KEY_TO_LABEL_OVERRIDE_KEY[fieldKey];
+  if (overrideKey) {
+    const overrides = snapshot.certificatePrefs?.labelOverrides;
+    if (overrides && typeof overrides === 'object') {
+      const override = (overrides as Record<string, string>)[overrideKey];
+      if (override) return override.replace(/:$/, '');
+    }
+  }
+  return certificateFieldLabel(fieldKey, Boolean(snapshot.certificatePrefs?.nikud));
+}
+
 function renderMetaField(
   fieldKey: string,
   snapshot: CertificateSnapshotJsonV1,
@@ -224,8 +243,7 @@ function renderMetaField(
   if (fieldKey === 'profileName') return renderProfileNameField(snapshot);
   if (!headerMetaFieldVisible(snapshot.certificatePrefs, fieldKey)) return '';
 
-  const nikud = Boolean(snapshot.certificatePrefs?.nikud);
-  const label = certificateFieldLabel(fieldKey, nikud);
+  const label = resolveFieldLabel(fieldKey, snapshot);
   if (handwritten && label) {
     return `<div class="meta-field handwritten"><span class="field-label">${escapeHtml(label)}:</span><span class="field-line"></span></div>`;
   }
@@ -240,7 +258,8 @@ function renderMetaField(
 
 function renderFooterDate(snapshot: CertificateSnapshotJsonV1): string {
   const nikud = Boolean(snapshot.certificatePrefs?.nikud);
-  const label = certificateFieldLabel('date', nikud) ?? (nikud ? 'תַּאֲרִיךְ' : 'תאריך');
+  const overrideDateLabel = (snapshot.certificatePrefs?.labelOverrides as Record<string, string> | undefined)?.['date'];
+  const label = overrideDateLabel ?? certificateFieldLabel('date', nikud) ?? (nikud ? 'תַּאֲרִיךְ' : 'תאריך');
   const content = snapshot.fill.dateHandwritten
     ? ''
     : escapeHtml(snapshot.displayDate?.trim() ?? '');
@@ -253,8 +272,7 @@ function renderMetaSegment(
   handwritten: boolean,
 ): string {
   if (!headerMetaFieldVisible(snapshot.certificatePrefs, fieldKey)) return '';
-  const nikud = Boolean(snapshot.certificatePrefs?.nikud);
-  const label = certificateFieldLabel(fieldKey, nikud);
+  const label = resolveFieldLabel(fieldKey, snapshot);
   if (!label) return '';
   if (handwritten) {
     return `<span class="meta-seg handwritten"><span class="field-label">${escapeHtml(label)}:</span><span class="field-line"></span></span>`;
