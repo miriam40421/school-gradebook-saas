@@ -293,16 +293,19 @@ export function NikudPreviewModal({
       addIfNeeded(`${LBL_PREFIX}block.${block.id}`, saved ?? block.text);
     }
 
-    // Auto-nikud standard certificate label fields (section headers, column titles, etc.)
-    // Handles saved overrides that were written before nikud was enabled.
-    for (const labelKey of Object.keys(CERTIFICATE_LABEL_DEFAULTS)) {
-      const lblKey = `${LBL_PREFIX}${labelKey}`;
-      const savedOverride = (prefs.labelOverrides ?? {})[labelKey];
-      const defaultVal = prefs.nikud
-        ? CERTIFICATE_LABEL_DEFAULTS_NIKUD[labelKey]
-        : CERTIFICATE_LABEL_DEFAULTS[labelKey];
-      const currentVal = savedOverride ?? defaultVal ?? '';
-      if (currentVal) addIfNeeded(lblKey, currentVal);
+    // Auto-nikud standard certificate label fields — built-in template only.
+    // For custom templates these keys have no effect on the output.
+    const isCustomTpl = customTextBlocks.length > 0;
+    if (!isCustomTpl) {
+      for (const labelKey of Object.keys(CERTIFICATE_LABEL_DEFAULTS)) {
+        const lblKey = `${LBL_PREFIX}${labelKey}`;
+        const savedOverride = (prefs.labelOverrides ?? {})[labelKey];
+        const defaultVal = prefs.nikud
+          ? CERTIFICATE_LABEL_DEFAULTS_NIKUD[labelKey]
+          : CERTIFICATE_LABEL_DEFAULTS[labelKey];
+        const currentVal = savedOverride ?? defaultVal ?? '';
+        if (currentVal) addIfNeeded(lblKey, currentVal);
+      }
     }
 
     if (fieldsToNikud.length === 0) return;
@@ -374,15 +377,15 @@ export function NikudPreviewModal({
     setError(null);
     try {
       // 1. Label overrides (green כלל הכיתה)
-      //    Standard labels: always save all current values (so auto-nikud changes are persisted
-      //    even if the user didn't manually edit them).
-      //    Block/custom labels: save only if changed from initial.
+      //    Standard labels: always save (built-in template only — for custom templates
+      //    these keys are not used by the renderer).
+      //    Block labels (block.xxx): save only if changed from initial.
       const changedLabels: Record<string, string> = {};
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(LBL_PREFIX)) {
           const labelKey = k.slice(LBL_PREFIX.length);
           if (labelKey in CERTIFICATE_LABEL_DEFAULTS) {
-            if (v.trim()) changedLabels[labelKey] = v;
+            if (!isCustomTemplate && v.trim()) changedLabels[labelKey] = v;
           } else {
             if (v !== initialLabelValues.current[k]) changedLabels[labelKey] = v;
           }
@@ -530,6 +533,10 @@ export function NikudPreviewModal({
     prefs.signatureHomeroom !== false || prefs.signaturePrincipal !== false || prefs.signatureParent !== false
   );
 
+  // Standard lbl: label fields only apply to the built-in Handlebars template.
+  // Custom templates use static_text blocks (block.xxx overrides) for their section headers.
+  const isCustomTemplate = customTextBlocks.length > 0;
+
   // Determine if any category has a subcategory
   const hasMultipleCategories = categories.length > 1 || categories.some(c => c.subCats.size > 0);
 
@@ -606,12 +613,16 @@ export function NikudPreviewModal({
               </>
             )}
 
-            {/* 2. פרטי תלמידה — תוויות */}
-            {sec('תוויות פרטי תלמידה')}
-            {lbl('studentNameLabel')}
-            {lbl('classLabel')}
-            {lbl('termLabel')}
-            {lbl('cohortLabel')}
+            {/* 2. פרטי תלמידה — תוויות (built-in template only) */}
+            {!isCustomTemplate && (
+              <>
+                {sec('תוויות פרטי תלמידה')}
+                {lbl('studentNameLabel')}
+                {lbl('classLabel')}
+                {lbl('termLabel')}
+                {lbl('cohortLabel')}
+              </>
+            )}
 
             {/* 3. פרטי תלמידה — ערכים */}
             {sec('ערכים — פרטי תלמידה')}
@@ -620,12 +631,16 @@ export function NikudPreviewModal({
             {nkoField('term.name', 'שם המחצית')}
             {classInfo.yearHebrew && nkoField('class.cohort', 'מחזור / שנה עברית')}
 
-            {/* 4. ציונים — כותרת + עמודות */}
-            {sec('כותרת ציונים')}
-            {lbl('gradesSection')}
-            {lbl('subject')}
-            {lbl('grade')}
-            {prefs.commentPerGrade && lbl('comment')}
+            {/* 4. ציונים — כותרת + עמודות (built-in template only) */}
+            {!isCustomTemplate && (
+              <>
+                {sec('כותרת ציונים')}
+                {lbl('gradesSection')}
+                {lbl('subject')}
+                {lbl('grade')}
+                {prefs.commentPerGrade && lbl('comment')}
+              </>
+            )}
 
             {/* 5. קטגוריות + מקצועות + ציונים — לפי סדר התעודה */}
             {categories.map((cat) => (
@@ -667,8 +682,8 @@ export function NikudPreviewModal({
               </div>
             ))}
 
-            {/* 6. נוכחות */}
-            {hasAttendance && (
+            {/* 6. נוכחות — labels only apply to built-in template */}
+            {hasAttendance && !isCustomTemplate && (
               <>
                 {sec('נוכחות')}
                 {lbl('attendance')}
@@ -683,7 +698,7 @@ export function NikudPreviewModal({
             {prefs.evaluation && (
               <>
                 {sec('הערכה')}
-                {lbl('evaluation')}
+                {!isCustomTemplate && lbl('evaluation')}
                 {renderField('evaluation', 'טקסט הערכה', true, 'לתלמידה זו')}
               </>
             )}
@@ -694,31 +709,35 @@ export function NikudPreviewModal({
                 {sec('חתימות')}
                 {prefs.signatureHomeroom !== false && (
                   <>
-                    {lbl('homeroomSig')}
+                    {!isCustomTemplate && lbl('homeroomSig')}
                     {renderField('homeroomSignature', 'שם המחנכת', false, 'לתלמידה זו')}
                   </>
                 )}
                 {prefs.signaturePrincipal !== false && (
                   <>
-                    {lbl('principalSig')}
+                    {!isCustomTemplate && lbl('principalSig')}
                     {renderField('principalSignature', 'שם המנהלת', false, 'לתלמידה זו')}
                   </>
                 )}
-                {prefs.signatureParent !== false && lbl('parentSig')}
+                {!isCustomTemplate && prefs.signatureParent !== false && lbl('parentSig')}
               </>
             )}
 
-            {/* 9. תאריך */}
-            {prefs.dateOnCertificate && (
+            {/* 9. תאריך (built-in template only) */}
+            {prefs.dateOnCertificate && !isCustomTemplate && (
               <>
                 {sec('תאריך')}
                 {lbl('date')}
               </>
             )}
 
-            {/* 10. שורת תחתית */}
-            {sec('שורת תחתית (נוצר)')}
-            {lbl('generatedAt')}
+            {/* 10. שורת תחתית (built-in template only) */}
+            {!isCustomTemplate && (
+              <>
+                {sec('שורת תחתית (נוצר)')}
+                {lbl('generatedAt')}
+              </>
+            )}
 
             {/* 11. טקסטים מותאמים מהתבנית */}
             {customTextBlocks.length > 0 && (
