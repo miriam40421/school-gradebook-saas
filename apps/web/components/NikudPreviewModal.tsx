@@ -116,7 +116,7 @@ function initLabelValues(prefs: CertificatePrefs): Record<string, string> {
   const defaults = prefs.nikud ? CERTIFICATE_LABEL_DEFAULTS_NIKUD : CERTIFICATE_LABEL_DEFAULTS;
   const result: Record<string, string> = {};
   for (const key of Object.keys(CERTIFICATE_LABEL_DEFAULTS)) {
-    result[`${LBL_PREFIX}${key}`] = overrides[key] ?? defaults[key] ?? '';
+    result[`${LBL_PREFIX}${key}`] = overrides[key] || defaults[key] || '';
   }
   return result;
 }

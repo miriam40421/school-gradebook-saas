@@ -259,7 +259,7 @@ function renderMetaField(
 function renderFooterDate(snapshot: CertificateSnapshotJsonV1): string {
   const nikud = Boolean(snapshot.certificatePrefs?.nikud);
   const overrideDateLabel = (snapshot.certificatePrefs?.labelOverrides as Record<string, string> | undefined)?.['date'];
-  const label = overrideDateLabel ?? certificateFieldLabel('date', nikud) ?? (nikud ? 'תַּאֲרִיךְ' : 'תאריך');
+  const label = overrideDateLabel || certificateFieldLabel('date', nikud) || (nikud ? 'תַּאֲרִיךְ' : 'תאריך');
   const content = snapshot.fill.dateHandwritten
     ? ''
     : escapeHtml(snapshot.displayDate?.trim() ?? '');
