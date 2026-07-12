@@ -293,6 +293,18 @@ export function NikudPreviewModal({
       addIfNeeded(`${LBL_PREFIX}block.${block.id}`, saved ?? block.text);
     }
 
+    // Auto-nikud standard certificate label fields (section headers, column titles, etc.)
+    // Handles saved overrides that were written before nikud was enabled.
+    for (const labelKey of Object.keys(CERTIFICATE_LABEL_DEFAULTS)) {
+      const lblKey = `${LBL_PREFIX}${labelKey}`;
+      const savedOverride = (prefs.labelOverrides ?? {})[labelKey];
+      const defaultVal = prefs.nikud
+        ? CERTIFICATE_LABEL_DEFAULTS_NIKUD[labelKey]
+        : CERTIFICATE_LABEL_DEFAULTS[labelKey];
+      const currentVal = savedOverride ?? defaultVal ?? '';
+      if (currentVal) addIfNeeded(lblKey, currentVal);
+    }
+
     if (fieldsToNikud.length === 0) return;
 
     // Snapshot of original (un-nikudified) texts — used to detect user edits that happen
@@ -361,12 +373,19 @@ export function NikudPreviewModal({
     setSaving(true);
     setError(null);
     try {
-      // 1. Label overrides (green כלל הכיתה) — changed vs initial
+      // 1. Label overrides (green כלל הכיתה)
+      //    Standard labels: always save all current values (so auto-nikud changes are persisted
+      //    even if the user didn't manually edit them).
+      //    Block/custom labels: save only if changed from initial.
       const changedLabels: Record<string, string> = {};
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(LBL_PREFIX)) {
           const labelKey = k.slice(LBL_PREFIX.length);
-          if (v !== initialLabelValues.current[k]) changedLabels[labelKey] = v;
+          if (labelKey in CERTIFICATE_LABEL_DEFAULTS) {
+            if (v.trim()) changedLabels[labelKey] = v;
+          } else {
+            if (v !== initialLabelValues.current[k]) changedLabels[labelKey] = v;
+          }
         }
       }
 
