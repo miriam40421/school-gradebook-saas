@@ -290,6 +290,11 @@ export function NikudPreviewModal({
     }
 
     if (fieldsToNikud.length === 0) return;
+
+    // Snapshot of original (un-nikudified) texts — used to detect user edits that happen
+    // while the async Dicta calls are in flight, so we don't overwrite them.
+    const originalTexts = new Map<string, string>(fieldsToNikud);
+
     setAutoNikudRunning(true);
     void Promise.all(
       fieldsToNikud.map(async ([key, text]) => {
@@ -302,9 +307,19 @@ export function NikudPreviewModal({
         } catch { return null; }
       }),
     ).then((results) => {
-      const updates: Record<string, string> = {};
-      for (const r of results) { if (r) updates[r[0]] = r[1]; }
-      if (Object.keys(updates).length > 0) setValues((prev) => ({ ...prev, ...updates }));
+      setValues((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const r of results) {
+          if (!r) continue;
+          const [key, nikudValue] = r;
+          // Skip update if user edited the field while API was in flight
+          if (prev[key] !== originalTexts.get(key)) continue;
+          next[key] = nikudValue;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
       setAutoNikudRunning(false);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
