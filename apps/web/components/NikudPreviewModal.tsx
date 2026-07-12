@@ -239,6 +239,7 @@ export function NikudPreviewModal({
   valuesRef.current = values;
   const undoRef = useRef<Record<string, string[]>>({});
   const redoRef = useRef<Record<string, string[]>>({});
+  const skipNextUndoPushRef = useRef(false);
 
   function pushUndo(key: string, val: string) {
     if (!undoRef.current[key]) undoRef.current[key] = [];
@@ -424,6 +425,8 @@ export function NikudPreviewModal({
     if (!activeKey) return;
     const el = inputRefs.current[activeKey];
     if (!el) return;
+    pushUndo(activeKey, valuesRef.current[activeKey] ?? '');
+    skipNextUndoPushRef.current = true;
     insertAtCursor(el, char);
     setValues((prev) => ({ ...prev, [activeKey]: el.value }));
   }, [activeKey]);
@@ -432,6 +435,8 @@ export function NikudPreviewModal({
     if (!activeKey) return;
     const el = inputRefs.current[activeKey];
     if (!el) return;
+    pushUndo(activeKey, valuesRef.current[activeKey] ?? '');
+    skipNextUndoPushRef.current = true;
     deleteAtCursor(el);
     setValues((prev) => ({ ...prev, [activeKey]: el.value }));
   }, [activeKey]);
@@ -561,7 +566,7 @@ export function NikudPreviewModal({
             rows={2}
             onFocus={() => setActiveKey(key)}
             onKeyDown={(e) => handleKeyDown(e, key)}
-            onChange={(e) => { pushUndo(key, valuesRef.current[key] ?? ''); setValues((p) => ({ ...p, [key]: e.target.value })); }}
+            onChange={(e) => { if (!skipNextUndoPushRef.current) pushUndo(key, valuesRef.current[key] ?? ''); skipNextUndoPushRef.current = false; setValues((p) => ({ ...p, [key]: e.target.value })); }}
             dir="rtl"
             style={{ width: '100%', resize: 'vertical', padding: '0.35rem', fontSize: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontFamily: SERIF_FONT, lineHeight: 2 }}
           />
@@ -572,7 +577,7 @@ export function NikudPreviewModal({
             value={val}
             onFocus={() => setActiveKey(key)}
             onKeyDown={(e) => handleKeyDown(e, key)}
-            onChange={(e) => { pushUndo(key, valuesRef.current[key] ?? ''); setValues((p) => ({ ...p, [key]: e.target.value })); }}
+            onChange={(e) => { if (!skipNextUndoPushRef.current) pushUndo(key, valuesRef.current[key] ?? ''); skipNextUndoPushRef.current = false; setValues((p) => ({ ...p, [key]: e.target.value })); }}
             dir="rtl"
             style={{ width: '100%', padding: '0.35rem', fontSize: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontFamily: SERIF_FONT, lineHeight: 2 }}
           />

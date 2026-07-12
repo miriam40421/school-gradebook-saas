@@ -910,7 +910,10 @@ export function renderLayoutHtml(options: RenderLayoutOptions): string {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .meta-seg.studentName { flex: 2 1 0; }
+    .meta-seg.studentName { flex: 1.5 1 0; }
+    .meta-seg.className { flex: 0.7 1 0; }
+    .meta-seg.termName { flex: 1.2 1 0; }
+    .meta-seg.classYearHebrew, .meta-seg.cohort { flex: 0.8 1 0; }
     .meta-seg.handwritten .field-line {
       flex: 1 1 auto;
       border-bottom: 1px solid #334155;
