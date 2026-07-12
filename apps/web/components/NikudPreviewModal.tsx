@@ -77,16 +77,17 @@ function deleteAtCursor(el: HTMLTextAreaElement | HTMLInputElement) {
   });
 }
 
-function ScaledIframePreview({ src }: { src: string }) {
+function ScaledIframePreview({ src, onLoad }: { src: string; onLoad?: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(0.7);
+  const [zoom, setZoom] = useState(0.85);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
-      if (w > 0) setZoom(w / 794);
+      // Use slightly larger zoom for readability (min 0.6, max 1)
+      if (w > 0) setZoom(Math.min(1, Math.max(0.6, w / 794)));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -98,6 +99,7 @@ function ScaledIframePreview({ src }: { src: string }) {
     <div ref={containerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: '#f8fafc' }}>
       <iframe
         src={src}
+        onLoad={onLoad}
         style={{ width: 794, height: 1500, border: 'none', display: 'block', zoom } as React.CSSProperties}
         title="תצוגה מקדימה"
       />
@@ -229,6 +231,8 @@ export function NikudPreviewModal({
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [previewRefreshing, setPreviewRefreshing] = useState(false);
+  const [previewUpdated, setPreviewUpdated] = useState(false);
   const inputRefs = useRef<Record<string, HTMLTextAreaElement | HTMLInputElement | null>>({});
   const initialLabelValues = useRef(initLabelValues(prefs));
 
@@ -429,6 +433,8 @@ export function NikudPreviewModal({
       ]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      setPreviewRefreshing(true);
+      setPreviewUpdated(false);
       setIframeKey((k) => k + 1);
       onAfterSave?.();
     } catch (e) {
@@ -526,7 +532,29 @@ export function NikudPreviewModal({
             תצוגה מקדימה
           </div>
           {htmlUrl ? (
-            <ScaledIframePreview key={iframeKey} src={`${htmlUrl}&_v=${iframeKey}`} />
+            <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <ScaledIframePreview
+                key={iframeKey}
+                src={`${htmlUrl}&_v=${iframeKey}`}
+                onLoad={() => {
+                  setPreviewRefreshing(false);
+                  if (iframeKey > 0) {
+                    setPreviewUpdated(true);
+                    setTimeout(() => setPreviewUpdated(false), 2500);
+                  }
+                }}
+              />
+              {previewRefreshing && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(248,250,252,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                  <span style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem', color: '#64748b', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>⏳ מעדכן תצוגה מקדימה…</span>
+                </div>
+              )}
+              {previewUpdated && (
+                <div style={{ position: 'absolute', top: '0.5rem', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: '#fff', borderRadius: '0.5rem', padding: '0.3rem 0.8rem', fontSize: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', zIndex: 11 }}>
+                  ✓ תצוגה התעדכנה
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{ padding: '2rem', color: '#94a3b8' }}>לא מחובר</div>
           )}
