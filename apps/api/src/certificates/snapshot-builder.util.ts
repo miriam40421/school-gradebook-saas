@@ -302,8 +302,8 @@ export function mergeSupplementIntoSnapshot(
   const showSubCategories = prefs.showSubCategoriesOnCertificate !== false;
   const gradeComments = supplement?.gradeComments ?? {};
 
-  // class-level overrides as base, per-student overrides take precedence
-  const nko = { ...(classNikudOverrides ?? {}), ...(supplement?.nikudOverrides ?? {}) };
+  // class-level overrides win over any stale per-student data for the same key
+  const nko = { ...(supplement?.nikudOverrides ?? {}), ...(classNikudOverrides ?? {}) };
   const subjects: CertificateSnapshotSubjectDto[] = snapshot.subjects.map((s) => {
     const subjectId = s.subjectId;
     const commentRaw = subjectId ? gradeComments[subjectId] : undefined;

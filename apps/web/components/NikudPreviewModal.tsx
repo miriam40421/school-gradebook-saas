@@ -511,7 +511,7 @@ export function NikudPreviewModal({
             תצוגה מקדימה
           </div>
           {htmlUrl ? (
-            <ScaledIframePreview key={iframeKey} src={htmlUrl} />
+            <ScaledIframePreview key={iframeKey} src={`${htmlUrl}&_v=${iframeKey}`} />
           ) : (
             <div style={{ padding: '2rem', color: '#94a3b8' }}>לא מחובר</div>
           )}
