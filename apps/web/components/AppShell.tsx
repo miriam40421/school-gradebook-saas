@@ -32,8 +32,9 @@ const adminNav: NavItem[] = [
   { href: '/grading-sets', label: he.navGradingSets, icon: Settings },
   { href: '/subjects', label: he.navSubjects, icon: BookOpen },
   { href: '/school', label: he.navSchool, icon: School },
-  { href: '/classes', label: he.navClasses, icon: GraduationCap },
+  { href: '/school/certificate-profile', label: he.navCertificateProfile, icon: Award },
   { href: '/users', label: he.navUsers, icon: Users },
+  { href: '/classes', label: he.navClasses, icon: GraduationCap },
   { href: '/gradebook', label: he.navAdminGradebook, icon: ClipboardList },
   { href: '/certificate-templates', label: he.navCertificateTemplates, icon: Award },
   { href: '/certificates', label: he.navCertificates, icon: Award },
@@ -42,7 +43,6 @@ const adminNav: NavItem[] = [
 
 const homeroomNav: NavItem[] = [
   { href: '/teacher', label: he.navGradebook, icon: ClipboardList },
-  { href: '/teacher/certificates', label: he.navTeacherCertificates, icon: Award },
   { href: '/my-students', label: he.navMyStudents, icon: Users },
   { href: '/help/homeroom', label: he.navHelp, icon: HelpCircle },
 ];
@@ -60,7 +60,11 @@ function NavLinks({
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
         const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+          pathname === item.href ||
+          (pathname.startsWith(`${item.href}/`) &&
+            !items.some(
+              (other) => other.href !== item.href && pathname.startsWith(other.href),
+            ));
         const Icon = item.icon;
         return (
           <Link
@@ -98,17 +102,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   const nav =
-    user.role === Role.HomeroomTeacher
-      ? homeroomNav
-      : user.role === Role.Admin
-        ? adminNav
-        : [
-            { href: '/teacher', label: he.navGradebook, icon: ClipboardList },
-            { href: '/help/teacher', label: he.navHelp, icon: HelpCircle },
-          ];
+    user.role === Role.SuperAdmin
+      ? [{ href: '/super-admin', label: he.navSuperAdminSchools, icon: School }]
+      : user.role === Role.HomeroomTeacher
+        ? homeroomNav
+        : user.role === Role.Admin
+          ? adminNav
+          : [
+              { href: '/teacher', label: he.navGradebook, icon: ClipboardList },
+              { href: '/help/teacher', label: he.navHelp, icon: HelpCircle },
+            ];
 
   const title =
-    user.role === Role.HomeroomTeacher ? he.homeroomPortal : he.schoolAdmin;
+    user.role === Role.SuperAdmin
+      ? he.superAdminPortal
+      : user.role === Role.HomeroomTeacher
+        ? he.homeroomPortal
+        : he.schoolAdmin;
 
   const sidebar = (
     <>

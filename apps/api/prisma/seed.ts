@@ -30,6 +30,17 @@ async function main() {
   await prisma.school.deleteMany();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, BCRYPT_ROUNDS);
+  const superAdminHash = await bcrypt.hash('SuperAdmin1!', BCRYPT_ROUNDS);
+
+  await prisma.user.create({
+    data: {
+      schoolId: null,
+      role: 'super_admin',
+      name: 'Super Admin',
+      email: 'superadmin@platform.local',
+      passwordHash: superAdminHash,
+    },
+  });
 
   const schoolA = await prisma.school.create({
     data: { name: 'בית ספר לדוגמה', settingsJson: {} },

@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { TokenRevocationService } from './token-revocation.service';
+import { EmailService } from '../super-admin/email.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { TokenRevocationService } from './token-revocation.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenRevocationService],
+  providers: [AuthService, JwtStrategy, TokenRevocationService, EmailService],
   exports: [AuthService, JwtModule, TokenRevocationService],
 })
 export class AuthModule {}

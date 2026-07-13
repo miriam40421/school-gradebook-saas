@@ -1,19 +1,20 @@
 import type { LockStatusDto } from './locks';
 
 export enum Role {
+  SuperAdmin = 'super_admin',
   Admin = 'admin',
   HomeroomTeacher = 'homeroom_teacher',
   SubjectTeacher = 'subject_teacher',
 }
 
-export const ROLES = [Role.Admin, Role.HomeroomTeacher, Role.SubjectTeacher] as const;
+export const ROLES = [Role.SuperAdmin, Role.Admin, Role.HomeroomTeacher, Role.SubjectTeacher] as const;
 
 export type AuthUserDto = {
   id: string;
   name: string;
   email: string;
   role: Role;
-  schoolId: string;
+  schoolId: string | null;
 };
 
 export type LoginResponse = {
@@ -104,6 +105,9 @@ export {
 
 export {
   certificateSubjectLabel,
+  CERTIFICATE_LABEL_DEFAULTS,
+  CERTIFICATE_LABEL_DEFAULTS_NIKUD,
+  CERTIFICATE_LABEL_DISPLAY_NAMES,
   type CertificatePrefs,
 } from './certificate';
 

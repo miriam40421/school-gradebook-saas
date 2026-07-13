@@ -20,6 +20,7 @@ import { LocksModule } from './locks/locks.module';
 import { StorageModule } from './storage/storage.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { CertificateTemplatesModule } from './certificate-templates/certificate-templates.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CertificateTemplatesModule } from './certificate-templates/certificate-
     LocksModule,
     CertificatesModule,
     CertificateTemplatesModule,
+    SuperAdminModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

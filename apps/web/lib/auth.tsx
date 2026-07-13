@@ -45,11 +45,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
-    const isLogin = pathname === '/login';
+    const isLogin =
+      pathname === '/login' ||
+      pathname === '/super-admin/login' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password';
     if (!user && !isLogin) {
       router.replace('/login');
     } else if (user && isLogin) {
-      if (user.role === Role.HomeroomTeacher) {
+      if (user.role === Role.SuperAdmin) {
+        router.replace('/super-admin');
+      } else if (user.role === Role.HomeroomTeacher) {
         router.replace('/my-students');
       } else if (user.role === Role.SubjectTeacher) {
         router.replace('/teacher');
@@ -66,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     setToken(data.accessToken);
     setUser(data.user);
-    if (data.user.role === Role.HomeroomTeacher) {
+    if (data.user.role === Role.SuperAdmin) {
+      router.replace('/super-admin');
+    } else if (data.user.role === Role.HomeroomTeacher) {
       router.replace('/my-students');
     } else if (data.user.role === Role.SubjectTeacher) {
       router.replace('/teacher');

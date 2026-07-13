@@ -24,6 +24,8 @@ model School {
 
   settingsJson    Json             @default("{}") @map("settings_json")
 
+  logoStorageKey  String?          @map("logo_storage_key")
+
   users           User[]
 
   classes         Class[]
@@ -66,7 +68,7 @@ model User {
 
   id              String   @id @default(uuid())
 
-  schoolId        String   @map("school_id")
+  schoolId        String?  @map("school_id")
 
   role            String
 
@@ -76,7 +78,7 @@ model User {
 
   passwordHash    String   @map("password_hash")
 
-  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school          School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   homeroomClasses Class[]  @relation("ClassHomeroom")
 
@@ -89,6 +91,8 @@ model User {
   editLocks       EditLock[]
 
   generatedCertificates CertificateSnapshot[] @relation("CertificateGenerator")
+
+  passwordResetTokens   PasswordResetToken[]
 
 
 
@@ -670,6 +674,8 @@ model CertificateSupplement {
 
   gradeComments      Json?    @map("grade_comments")
 
+  nikudOverrides     Json?    @map("nikud_overrides")
+
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   school  School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -737,6 +743,32 @@ model RevokedToken {
   @@index([expiresAt])
 
   @@map("revoked_tokens")
+
+}
+
+
+
+model PasswordResetToken {
+
+  id        String    @id @default(uuid())
+
+  userId    String    @map("user_id")
+
+  token     String    @unique
+
+  expiresAt DateTime  @map("expires_at")
+
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+
+  @@index([expiresAt])
+
+  @@map("password_reset_tokens")
 
 }
 

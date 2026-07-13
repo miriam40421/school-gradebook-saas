@@ -200,3 +200,163 @@ Status: API TSC exit 0, Web TSC exit 0, generate verified ok
 - docs/phases/04-models.md: added RevokedToken; corrected EditLock (classGroupId), CertificateSupplement (full fields), CertificateSnapshot (generatedBy); added soft-delete and constraint notes
 - docs/phases/07-controllers.md: added missing certificate endpoints (supplements, label-overrides, nikud-text, preview-html, snapshots/:id)
 - docs/phases/08-frontend.md: added /help, /help/teacher, /help/homeroom routes; clarified teacher dashboard and my-students purpose
+
+2026-07-11T22:26:29Z — PHASE BRIDGE FILES CREATED
+- נוצרו 6 קבצים חדשים ב-docs/phases/ המגשרים בין פאזות עסקיות (plan.md) לתיעוד טכני (01-09)
+- phase1-foundation.md, phase2-gradebook.md, phase3-locking.md, phase4-certificates.md, phase5-template-designer.md, phase6-ui-polish.md
+- קבצי 01-09 לא שונו — רק נוספו קבצים חדשים
+
+2026-07-12 — fix: nikud class override bugs
+  - mergeSupplementIntoSnapshot: class wins over stale per-student (flipped merge order)
+  - iframe URL cache-busting with &_v=${iframeKey} after save
+  - html-preview route: Cache-Control: no-store
+  Files: snapshot-builder.util.ts, NikudPreviewModal.tsx, app/api/html-preview/.../route.ts
+
+[2026-07-12 11:10] session=nikud-preview-fix | tasks: fix nikud preview not reflecting changes for class-level fields | files: apps/web/components/NikudPreviewModal.tsx, apps/api/src/certificates/snapshot-builder.util.ts, apps/web/app/api/html-preview/snapshot/[id]/route.ts | result: (1) flip mergeSupplementIntoSnapshot merge order so class-level wins over stale per-student; (2) iframe cache-busting &_v=N + Cache-Control: no-store; (3) race condition fix in auto-nikud — snapshot originalTexts, skip update if user edited; (4) zoom 0.7→0.85 + loading overlay + "preview updated" badge. Backend confirmed working via direct API test.
+
+[2026-07-12 16:15] fix: label overrides auto-nikud + always-save
+- auto-nikud effect now processes all lbl: standard label fields
+- handleSave always persists standard labels (not just changed ones)
+- files: apps/web/components/NikudPreviewModal.tsx
+- commit: c3008cb
+
+[2026-07-12 16:36] fix: custom template — hide irrelevant lbl: sections
+- standard lbl: keys not processed by applyLabelOverridesToLayout
+- hid sections 2,4,6,9,10 + lbl: labels in 7,8 for custom templates
+- verified block.xxx override works end-to-end
+- commit: f853609
+
+[2026-07-12 16:49] fix: standard lbl: overrides on custom templates
+- applyLabelOverridesToLayout: content-based matching for grades_table/evaluation/attendance_field/signatures/signature_field/static_text
+- reverted UI hiding — all sections visible and functional
+- verified: homeroomSig override appears in preview HTML
+- commits: f853609 (reverted), 618d94d (fix)
+
+[2026-07-12 17:44] fix: labelOverrides for field/date/header_meta blocks
+files: packages/certificate-layout/src/render-layout-html.ts
+tasks:
+  - resolveFieldLabel(): reads labelOverrides for studentName->studentNameLabel, className->classLabel, termName->termLabel, cohort->cohortLabel
+  - renderFooterDate(): reads labelOverrides.date for date block
+  - renderMetaSegment(): same override lookup for header_meta_row blocks
+  - verified live: TEST value appeared in preview HTML for both field-label and sig-label
+  - IMPORTANT: packages/certificate-layout must be built (pnpm --filter @school/certificate-layout build) after src changes
+  - commit: 2669ba9
+2026-07-12 21:14 fix: date label + modal init
+  - renderFooterDate: ?? → || (empty override now falls back to nikud default)
+  - initLabelValues: ?? → || (empty stored overrides fall back to CERTIFICATE_LABEL_DEFAULTS)
+  files: packages/certificate-layout/src/render-layout-html.ts, apps/web/components/NikudPreviewModal.tsx
+  commit: 9235cc5
+2026-07-12 21:38 feat: nikud modal UX improvements
+  - NikudPicker: שורוק (וּ) added, קיבוץ renamed
+  - NikudPreviewModal: Ctrl+Z/Y per field; נקד את התעודה button
+  - nikud-snapshot: certificateProfileName not nikudified
+  - render-layout-html: studentName flex:2 (student name no longer cut off)
+  commit: 94c971e
+
+[2026-07-13] close: nikud-snapshot plan
+- Plan /home/runner/.claude/plans/precious-jingling-grove.md — COMPLETE
+- All fields implemented: yearHebrew, displayDate, cohort, hasNikud, maybeNikud
+- certificateProfileName: intentionally NOT nikudified (decision in commit 94c971e)
+- Updated docs/prd.md Hebrew Nikud section to match implementation
+
+[2026-07-13] feat: school-wide logo with certificate fallback
+Tasks:
+  - Added logoStorageKey to School model (migration: 20260713102051_add_school_logo_storage_key)
+  - POST /school/logo — upload school logo to MinIO
+  - GET /school/logo-asset — serve school logo
+  - template-render.util.ts: injectDefaultLogoKey() — fills logo blocks with no storageKey using school logo as fallback
+  - Fallback hierarchy: block.props.storageKey → template.logoStorageKey → schoolLogoKey
+  - Thread schoolLogoKey through 3 render call sites in certificates.service.ts + previewPdf in certificate-templates.service.ts
+  - Frontend: logo upload card in /school page with preview
+Files:
+  - apps/api/prisma/schema.prisma
+  - apps/api/prisma/migrations/20260713102051_add_school_logo_storage_key/
+  - apps/api/src/school/school.service.ts
+  - apps/api/src/school/school.controller.ts
+  - apps/api/src/school/school.module.ts
+  - apps/api/src/certificate-templates/template-render.util.ts
+  - apps/api/src/certificates/certificates.service.ts
+  - apps/api/src/certificate-templates/certificate-templates.service.ts
+  - apps/web/app/school/page.tsx
+  - apps/web/lib/he.ts
+Status: API TSC exit 0, Web TSC exit 0
+
+[2026-07-13] Split school settings page into two tabs
+- Tab 1: הגדרות בית ספר (logo + school name)
+- Tab 2: מבנה תעודה (certificate profiles, subjects, fill modes)
+- One form, one save — both tabs share the same mutation
+- Files: apps/web/app/school/page.tsx
+
+[2026-07-13] Split school page into two nav items
+- /school → הגדרות בית ספר (logo + name only)
+- /school/certificate-profile → פרופיל תעודה (profiles, subjects, fill modes)
+- Fixed nav active-state bug (startsWith could highlight both items simultaneously)
+- Files: apps/web/app/school/page.tsx, apps/web/app/school/certificate-profile/page.tsx, apps/web/components/AppShell.tsx, apps/web/lib/he.ts
+
+[2026-07-13] Super-Admin Phase 1
+- Role.SuperAdmin = 'super_admin' added to shared package
+- User.schoolId made nullable (migration: add_super_admin_nullable_school)
+- POST /auth/platform/login — email+password only, no schoolId
+- GET/POST /super-admin/schools — SuperAdminOnly guard
+- Login page: toggle for super-admin login (hides schoolId field)
+- /super-admin page: school list + create school form
+- AppShell: superAdminNav + portal title
+- auth.tsx: redirect super_admin → /super-admin
+- Seed: superadmin@platform.local / SuperAdmin1!
+Files: packages/shared/src/index.ts, apps/api/prisma/schema.prisma, apps/api/src/auth/*, apps/api/src/super-admin/*, apps/api/src/app.module.ts, apps/web/app/super-admin/page.tsx, apps/web/app/login/page.tsx, apps/web/components/AppShell.tsx, apps/web/lib/auth.tsx, apps/web/lib/he.ts
+
+[2026-07-14] Super-Admin Phase 2 — Email + Edit School + Forgot Password
+
+### Email Service (Resend)
+- apps/api/src/super-admin/email.service.ts (new)
+  - sendSchoolWelcome — on school creation
+  - sendSchoolUpdate — on schoolName/adminEmail/adminPassword change
+  - sendPasswordReset — forgot password flow
+  - EMAIL_OVERRIDE env → all emails → developer address in dev
+  - Falls back to console.log if no RESEND_API_KEY
+- apps/api/.env: RESEND_API_KEY, RESEND_FROM, EMAIL_OVERRIDE, APP_URL
+- EmailService added to SuperAdminModule + AuthModule providers
+
+### Edit School Page
+- GET /super-admin/schools/:id → school + first admin user
+- PATCH /super-admin/schools/:id (UpdateSchoolDto: schoolName/adminName/adminEmail/adminPassword all optional)
+- apps/web/app/super-admin/schools/[id]/page.tsx (new)
+  - dirty-check: save disabled when no changes
+  - password field optional (blank = no change)
+- apps/web/app/super-admin/page.tsx: added "עריכה" link column
+
+### Forgot Password Flow
+- PasswordResetToken model added to Prisma schema (migration: 20260713172532_add_password_reset_tokens)
+  - token: random 32 bytes hex, unique
+  - expiresAt: 2h from creation
+  - usedAt: nullable (set on use, prevents reuse)
+- POST /auth/forgot-password (ForgotPasswordDto: schoolId UUID + email)
+  - always returns { success: true } — never reveals if user exists
+  - x-app-url header used to build reset URL
+  - APP_URL env var fallback
+- POST /auth/reset-password (token + password MinLength 6)
+  - throttled 5/15min
+- apps/web/app/forgot-password/page.tsx (new) — Suspense wrapper
+- apps/web/app/reset-password/page.tsx (new) — Suspense wrapper
+- apps/web/app/login/page.tsx: eye icon toggle + "שכחתי סיסמה" link
+- apps/web/lib/auth.tsx: /forgot-password + /reset-password added to public routes
+- apps/web/lib/he.ts: 14 new strings for forgot/reset flow
+
+Files changed:
+  apps/api/src/super-admin/email.service.ts (new)
+  apps/api/src/super-admin/super-admin.service.ts
+  apps/api/src/super-admin/super-admin.controller.ts
+  apps/api/src/super-admin/super-admin.module.ts
+  apps/api/src/super-admin/dto/update-school.dto.ts (new)
+  apps/api/src/auth/auth.service.ts
+  apps/api/src/auth/auth.controller.ts
+  apps/api/src/auth/auth.module.ts
+  apps/api/prisma/schema.prisma
+  apps/api/.env
+  apps/web/app/super-admin/page.tsx
+  apps/web/app/super-admin/schools/[id]/page.tsx (new)
+  apps/web/app/forgot-password/page.tsx (new)
+  apps/web/app/reset-password/page.tsx (new)
+  apps/web/app/login/page.tsx
+  apps/web/lib/auth.tsx
+  apps/web/lib/he.ts
