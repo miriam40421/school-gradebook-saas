@@ -7,4 +7,8 @@ export interface PdfRenderService {
     html: string,
     orientation: 'portrait' | 'landscape',
   ): Promise<Buffer>;
+  /** Render many HTML strings to PDFs using a single Chromium launch. */
+  renderManyHtmlToPdf(
+    items: Array<{ html: string; orientation?: 'portrait' | 'landscape' }>,
+  ): Promise<Buffer[]>;
 }

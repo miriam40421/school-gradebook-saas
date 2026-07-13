@@ -8,6 +8,6 @@ import { PDF_RENDER_SERVICE } from './pdf-render.port';
 @Module({
   controllers: [CertificatesController],
   providers: [CertificatesService, NikudService, pdfRenderProvider],
-  exports: [CertificatesService, PDF_RENDER_SERVICE],
+  exports: [CertificatesService, NikudService, PDF_RENDER_SERVICE],
 })
 export class CertificatesModule {}

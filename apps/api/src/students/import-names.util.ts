@@ -44,6 +44,8 @@ export async function parseNamesFromBuffer(
   buffer: Buffer,
   filename: string,
 ): Promise<string[]> {
+  // eslint-disable-next-line no-console
+  console.log('[import-debug] filename:', filename, 'size:', buffer.length);
   const lower = filename.toLowerCase();
   if (lower.endsWith('.docx')) {
     return parseWord(buffer);
@@ -180,6 +182,19 @@ function headerRowHasLabels(headers: string[]): boolean {
   });
 }
 
+/**
+ * Returns true if the value looks like a real person name component:
+ * contains Hebrew letters and no digits.
+ * Used to distinguish data rows from unrecognized header rows.
+ */
+function looksLikeNameCell(value: string): boolean {
+  const v = value.trim();
+  if (!v) return false;
+  if (!/[א-ת]/.test(v)) return false; // must have Hebrew
+  if (/\d/.test(v)) return false;                // digits → probably a label
+  return true;
+}
+
 function buildNameFromCells(cells: string[], cols: ColumnMap): string | null {
   const at = (idx?: number) =>
     idx !== undefined ? String(cells[idx] ?? '').trim() : '';
@@ -207,20 +222,68 @@ function buildNameFromCells(cells: string[], cols: ColumnMap): string | null {
 }
 
 function parseRows(rows: string[][]): string[] {
-  if (rows.length === 0) {
-    return [];
-  }
-  const header = rows[0].map((c) => String(c).trim());
-  const hasHeader = headerRowHasLabels(header);
-  const cols = hasHeader ? detectColumns(header) : {};
-  const start = hasHeader ? 1 : 0;
-  const names: string[] = [];
-  for (let i = start; i < rows.length; i++) {
-    const cells = rows[i].map((c) => String(c ?? '').trim());
-    const value = buildNameFromCells(cells, cols);
-    if (value) {
-      names.push(value);
+  if (rows.length === 0) return [];
+
+  // Scan first 5 rows for a recognized header row (with known column labels)
+  for (let i = 0; i < Math.min(rows.length, 5); i++) {
+    const header = rows[i].map((c) => String(c).trim());
+    if (headerRowHasLabels(header)) {
+      const cols = detectColumns(header);
+      const names: string[] = [];
+      for (let j = i + 1; j < rows.length; j++) {
+        const cells = rows[j].map((c) => String(c ?? '').trim());
+        const value = buildNameFromCells(cells, cols);
+        if (value) names.push(value);
+      }
+      return dedupeNames(names);
     }
+  }
+
+  // No recognized header found.
+  // Strategy:
+  //   - If the file has any multi-cell rows (2+ cols), single-cell rows at the top are titles.
+  //   - If the first multi-cell row has cells that don't look like names (digits / no Hebrew)
+  //     it's an unrecognized header → skip it.
+  //   - If the file is all single-cell rows it's a single-column name list → start from row 0.
+  const hasTwoColRows = rows.some(
+    (r) => r.filter((c) => String(c).trim()).length >= 2,
+  );
+  let dataStart = 0;
+  for (let i = 0; i < Math.min(rows.length, 5); i++) {
+    const cells = rows[i].map((c) => String(c).trim()).filter(Boolean);
+    if (cells.length === 0) continue;
+
+    if (hasTwoColRows && cells.length === 1) {
+      // Multi-col file: lone cell at top is a document title → skip
+      dataStart = i + 1;
+      continue;
+    }
+
+    if (cells.length >= 2) {
+      // Multi-cell row: if not all cells look like names it's a header → skip once
+      if (!cells.every(looksLikeNameCell)) {
+        dataStart = i + 1;
+      } else {
+        dataStart = i;
+      }
+      break;
+    }
+
+    // Single cell: check if it looks like an actual name
+    if (!looksLikeNameCell(cells[0])) {
+      // Label / column-title (e.g. "עמודה1", "שם") → skip and keep looking
+      dataStart = i + 1;
+      continue;
+    }
+    dataStart = i;
+    break;
+  }
+
+  const names: string[] = [];
+  for (let i = dataStart; i < rows.length; i++) {
+    const cells = rows[i].map((c) => String(c ?? '').trim());
+    const value = buildNameFromCells(cells, {});
+    if (value) names.push(value);
   }
   return dedupeNames(names);
 }
@@ -251,21 +314,55 @@ function parseText(content: string): string[] {
   return parseRows(rows);
 }
 
+function cellToString(c: ExcelJS.CellValue | null | undefined): string {
+  if (c == null) return '';
+  if (typeof c === 'string') return c;
+  if (typeof c === 'number' || typeof c === 'boolean') return String(c);
+  if (c instanceof Date) return '';
+  if (typeof c === 'object') {
+    // CellRichTextValue: { richText: Array<{ text: string }> }
+    if ('richText' in c && Array.isArray((c as ExcelJS.CellRichTextValue).richText)) {
+      return (c as ExcelJS.CellRichTextValue).richText.map((r) => r.text ?? '').join('');
+    }
+    // CellHyperlinkValue: { text: string, hyperlink: string }
+    if ('text' in c && typeof (c as { text: string }).text === 'string') {
+      return (c as { text: string }).text;
+    }
+    // CellFormulaValue: { formula: string, result?: string | number | ... }
+    if ('result' in c) {
+      const result = (c as ExcelJS.CellFormulaValue).result;
+      if (typeof result === 'string') return result;
+      if (typeof result === 'number') return String(result);
+      return '';
+    }
+  }
+  return '';
+}
+
 async function parseExcel(buffer: Buffer): Promise<string[]> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(buffer as any);
   const worksheet = workbook.worksheets[0];
   if (!worksheet) {
+    // eslint-disable-next-line no-console
+    console.log('[import-debug] no worksheet found');
     return [];
   }
   const rows: string[][] = [];
   worksheet.eachRow((row) => {
-    // ExcelJS row.values is 1-based (index 0 is null), slice(1) removes it
-    const cells = (row.values as (ExcelJS.CellValue | null)[])
-      .slice(1)
-      .map((c) => (c === null || c === undefined ? '' : String(c)));
-    rows.push(cells);
+    // ExcelJS row.values is 1-based sparse array; Array.from densifies holes → undefined → ''
+    const rawValues = (row.values as (ExcelJS.CellValue | null | undefined)[]).slice(1);
+    const cells = Array.from({ length: rawValues.length }, (_, i) => cellToString(rawValues[i]));
+    const firstNonEmpty = cells.findIndex((c) => c.trim());
+    if (firstNonEmpty === -1) return; // skip entirely empty rows
+    // Trim leading empty cells so data in column H looks same as column A
+    let lastNonEmpty = cells.length - 1;
+    while (lastNonEmpty > firstNonEmpty && !cells[lastNonEmpty].trim()) lastNonEmpty--;
+    rows.push(cells.slice(firstNonEmpty, lastNonEmpty + 1));
   });
+  // eslint-disable-next-line no-console
+  console.log('[import-debug] excel rows:', JSON.stringify(rows.slice(0, 5)));
   return parseRows(rows);
 }
 
@@ -273,7 +370,8 @@ function dedupeNames(names: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const n of names) {
-    const key = n.trim();
+    // Strip null bytes — PostgreSQL rejects 0x00 in UTF-8 strings
+    const key = n.replace(/\x00/g, '').trim();
     if (!key || seen.has(key)) {
       continue;
     }

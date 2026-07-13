@@ -62,6 +62,82 @@ export type CertificatePrefs = {
   classYearHebrewFillMode?: CertificateFillMode;
   termNameFillMode?: CertificateFillMode;
   dateFillMode?: CertificateFillMode;
+  /** Per-profile overrides for static certificate label text (e.g. "מקצוע", "ציון"). */
+  labelOverrides?: Record<string, string>;
+};
+
+/** Default label texts for the built-in certificate template. Keys match `CertificatePrefs.labelOverrides`. */
+export const CERTIFICATE_LABEL_DEFAULTS: Record<string, string> = {
+  besiata: 'בסיעתא דשמיא',
+  title: 'תעודת הערכה',
+  studentNameLabel: 'שם התלמידה:',
+  classLabel: 'כיתה:',
+  termLabel: 'מחצית:',
+  cohortLabel: 'מחזור:',
+  gradesSection: 'ציונים',
+  subject: 'מקצוע',
+  grade: 'ציון',
+  comment: 'הערה',
+  attendance: 'נוכחות',
+  absences: 'חיסורים',
+  lateness: 'איחורים',
+  hourAbsences: 'חיסורי שעות',
+  hourLateness: 'איחורי שעות',
+  evaluation: 'הערכה',
+  homeroomSig: 'חתימת המחנכת',
+  principalSig: 'חתימת המנהלת',
+  parentSig: 'חתימת ההורים',
+  date: 'תאריך',
+  generatedAt: 'נוצר:',
+};
+
+/** Pre-nikud'd label texts matching the built-in template when `CertificatePrefs.nikud` is true. */
+export const CERTIFICATE_LABEL_DEFAULTS_NIKUD: Record<string, string> = {
+  besiata: 'בְּסִיַּעְתָּא דִּשְׁמַיָּא',
+  title: 'תְּעוּדַת הַעֲרָכָה',
+  studentNameLabel: 'שֵׁם הַתַּלְמִידָה:',
+  classLabel: 'כִּיתָּה:',
+  termLabel: 'מַחֲצִית:',
+  cohortLabel: 'מַחֲזוֹר:',
+  gradesSection: 'צִיּוּנִים',
+  subject: 'מִקְצוֹעַ',
+  grade: 'צִיּוּן',
+  comment: 'הֶעָרָה',
+  attendance: 'נוֹכְחוּת',
+  absences: 'חִסּוּרִים',
+  lateness: 'אִחוּרִים',
+  hourAbsences: 'חִסּוּרֵי שָׁעוֹת',
+  hourLateness: 'אִחוּרֵי שָׁעוֹת',
+  evaluation: 'הַעֲרָכָה',
+  homeroomSig: 'חֲתִימַת הַמְּחַנֶּכֶת',
+  principalSig: 'חֲתִימַת הַמְּנַהֶלֶת',
+  parentSig: 'חֲתִימַת הַהוֹרִים',
+  date: 'תַּאֲרִיךְ',
+  generatedAt: 'נוֹצַר:',
+};
+
+export const CERTIFICATE_LABEL_DISPLAY_NAMES: Record<string, string> = {
+  besiata: 'בסיעתא דשמיא',
+  title: 'כותרת התעודה',
+  studentNameLabel: 'תווית שם תלמידה',
+  classLabel: 'תווית כיתה',
+  termLabel: 'תווית מחצית',
+  cohortLabel: 'תווית מחזור',
+  gradesSection: 'כותרת טבלת ציונים',
+  subject: 'עמודת מקצוע',
+  grade: 'עמודת ציון',
+  comment: 'עמודת הערה',
+  attendance: 'כותרת נוכחות',
+  absences: 'חיסורים',
+  lateness: 'איחורים',
+  hourAbsences: 'חיסורי שעות',
+  hourLateness: 'איחורי שעות',
+  evaluation: 'כותרת הערכה',
+  homeroomSig: 'חתימת המחנכת',
+  principalSig: 'חתימת המנהלת',
+  parentSig: 'חתימת ההורים',
+  date: 'תאריך',
+  generatedAt: 'שורת תאריך יצירה',
 };
 
 export function certificateSubjectLabel(

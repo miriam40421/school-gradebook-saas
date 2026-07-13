@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_Hebrew } from 'next/font/google';
+import { Noto_Sans_Hebrew, Noto_Serif_Hebrew } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -10,6 +10,13 @@ const notoSansHebrew = Noto_Sans_Hebrew({
   display: 'swap',
 });
 
+const notoSerifHebrew = Noto_Serif_Hebrew({
+  subsets: ['hebrew', 'latin'],
+  weight: ['400', '700'],
+  variable: '--font-noto-serif-hebrew',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'ניהול בית ספר',
   description: 'הגדרת בית ספר רב-משתמשים',
@@ -17,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={notoSansHebrew.variable}>
+    <html lang="he" dir="rtl" className={`${notoSansHebrew.variable} ${notoSerifHebrew.variable}`}>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
       </body>

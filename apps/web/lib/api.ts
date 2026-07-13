@@ -113,6 +113,20 @@ export async function fetchAuthenticatedAssetBlob(path: string): Promise<Blob> {
   return new Blob([bytes], { type: mime });
 }
 
+export function triggerBlobDownload(blob: Blob, filename: string): void {
+  // Force application/octet-stream so the browser treats it as a download,
+  // not a viewable file (Chrome intercepts application/pdf blobs into the PDF viewer).
+  const forceDownload = new Blob([blob], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(forceDownload);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** @deprecated Prefer in-app preview via CertificatePdfPreview */
 export async function openAuthenticatedPdf(path: string): Promise<void> {
   const blob = await fetchAuthenticatedPdfBlob(path);

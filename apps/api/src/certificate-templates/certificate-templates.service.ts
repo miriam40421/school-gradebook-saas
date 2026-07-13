@@ -29,6 +29,7 @@ import { renderTemplatePdf } from './template-render.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { STORAGE_PORT, type StoragePort } from '../storage/storage.port';
 import { PDF_RENDER_SERVICE, type PdfRenderService } from '../certificates/pdf-render.port';
+import { NikudService } from '../certificates/nikud.service';
 import { buildDemoCertificateSnapshot } from './demo-snapshot.fixture';
 import { createDefaultLayoutScaffold } from './layout-scaffold.util';
 import {
@@ -50,6 +51,7 @@ export class CertificateTemplatesService {
     private prisma: PrismaService,
     @Inject(STORAGE_PORT) private storage: StoragePort,
     @Inject(PDF_RENDER_SERVICE) private pdfRender: PdfRenderService,
+    private nikudService: NikudService,
   ) {}
 
   private mapSummary(row: {
@@ -332,7 +334,8 @@ export class CertificateTemplatesService {
         gradingSetTypeLabel: s.gradingSetType.label,
       })),
     });
-    return renderTemplatePdf(template, snapshot, this.storage, this.pdfRender);
+    const nikudFn = (t: string) => this.nikudService.nikud(t);
+    return renderTemplatePdf(template, snapshot, this.storage, this.pdfRender, nikudFn, school?.logoStorageKey);
   }
 
   async loadTemplateForGenerate(schoolId: string, templateId: string) {

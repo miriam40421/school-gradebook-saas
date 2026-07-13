@@ -437,43 +437,77 @@ export default function MyStudentsPage() {
 
 
       <div className="card" style={{ marginTop: '0.75rem' }}>
-
         <h2>{he.importStudents}</h2>
 
-        <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{he.importStudentsHint}</p>
+        {/* ── הוראות פורמט קובץ ── */}
+        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+
+          {/* Excel */}
+          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '0.5rem', padding: '0.75rem 1rem' }}>
+            <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+              📊 Excel (.xlsx / .xls) או CSV
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#15803d', lineHeight: 1.6 }}>
+              <strong>אפשרות א׳ — שתי עמודות (מומלץ):</strong>
+              <br />
+              <span style={{ opacity: 0.85 }}>הכותרות יכולות להיות כל דבר — או בלי כותרות בכלל.</span>
+              <div style={{ fontFamily: 'monospace', background: '#dcfce7', borderRadius: '0.25rem', padding: '0.3rem 0.5rem', marginTop: '0.2rem', marginBottom: '0.4rem', display: 'inline-block' }}>
+                משפחה &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp; פרטי<br />
+                כהן &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp; רחל<br />
+                בן-דוד &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp; שירה
+              </div>
+              <br />
+              <strong>אפשרות ב׳ — עמודה אחת (שם מלא בכל תא):</strong>
+              <div style={{ fontFamily: 'monospace', background: '#dcfce7', borderRadius: '0.25rem', padding: '0.3rem 0.5rem', marginTop: '0.2rem', display: 'inline-block' }}>
+                כהן רחל<br />
+                בן-דוד שירה
+              </div>
+            </div>
+          </div>
+
+          {/* Word */}
+          <div style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '0.5rem', padding: '0.75rem 1rem' }}>
+            <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+              📝 Word (.docx)
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#1d4ed8', lineHeight: 1.6 }}>
+              <strong>טבלה</strong> — שתי עמודות, עם כותרות <strong>או בלי כותרות</strong>. <strong>— או —</strong> רשימה פשוטה, כל שם בשורה נפרדת.
+              <br />כותרת מסמך לפני הטבלה? לא בעיה — המערכת מדלגת עליה.
+            </div>
+          </div>
+
+          {/* אזהרה מקף */}
+          <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '0.5rem', padding: '0.6rem 1rem', fontSize: '0.8rem', color: '#92400e' }}>
+            ⚠️ <strong>שם משפחה בת שתי מילים</strong> — חברי במקף: <strong>בן-דוד</strong> (לא "בן דוד"), אחרת המילה השנייה תיכנס לעמודת השם הפרטי.
+          </div>
+
+          {/* מה מותר */}
+          <div style={{ fontSize: '0.78rem', color: '#64748b', paddingRight: '0.25rem', lineHeight: 1.7 }}>
+            ✅ מותר: כותרות כלשהן (או בלי כותרות), שורות ריקות, עיצוב (צבע/bold), כותרת מסמך — המערכת מתעלמת מהם.<br />
+            ✅ פורמטים: .xlsx, .xls, .csv, .docx<br />
+            ❌ לא נתמך: .doc ישן (שמרי כ-docx), גיליון שני (רק גיליון ראשון נקרא).
+          </div>
+        </div>
 
         <input
-
           ref={fileRef}
-
           type="file"
-
           accept=".xlsx,.xls,.csv,.txt,.docx"
-
           onChange={(e) => {
-
             const file = e.target.files?.[0];
-
             if (file) importFile.mutate(file);
-
           }}
-
         />
 
         {importFile.isPending && <p>{he.importing}</p>}
 
         {importFile.isSuccess && (
-
-          <p>{he.importedCount(importFile.data?.imported ?? 0)}</p>
-
+          <p style={{ color: '#166534', fontWeight: 600 }}>✅ {he.importedCount(importFile.data?.imported ?? 0)}</p>
         )}
 
         {importFile.isError && (
-
           <p className="error">{translateApiError((importFile.error as Error).message)}</p>
-
         )}
-
       </div>
 
 

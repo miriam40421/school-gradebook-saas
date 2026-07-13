@@ -9,9 +9,11 @@ import { Role } from '@school/shared';
 import type { CertificateSupplementContextDto, GradebookMatrixDto, GradingTermDto } from '@school/shared';
 import { TeacherShell } from '@/components/TeacherShell';
 import { GradebookGrid } from '@/components/GradebookGrid';
+import { TeacherCertificatesTab } from '@/components/TeacherCertificatesTab';
 import { hasCertificateColumns } from '@/lib/gradebook-columns.util';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { cn } from '@/lib/cn';
 import { he, translateApiError } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +22,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-type ClassRow = { id: string; name: string; year: number };
+type ClassRow = { id: string; name: string; year: number; yearHebrew?: string | null; certificateProfileId?: string | null };
 type MyAssignment = {
   id: string;
   subjectId: string;
@@ -51,6 +53,7 @@ function TeacherGradebookPage() {
   const termId = params.get('termId') ?? '';
   const subjectId = params.get('subjectId') ?? '';
   const assignmentId = params.get('assignmentId') ?? '';
+  const activeTab = params.get('tab') === 'certificates' ? 'certificates' : 'gradebook';
 
   const isSubjectTeacher = user?.role === Role.SubjectTeacher;
   const isHomeroom = user?.role === Role.HomeroomTeacher;
@@ -92,6 +95,10 @@ function TeacherGradebookPage() {
   const effectiveAssignmentId = effectiveAssignment?.id ?? '';
   const needSubjectPick = isSubjectTeacher && classAssignments.length > 1 && !effectiveAssignment;
 
+  const selectedTerm = terms.find((t) => t.id === termId);
+  const selectedClass = classes.find((c) => c.id === classId);
+  const termLocked = Boolean(selectedTerm?.isLocked);
+
   const { data: matrix, refetch, isLoading, error } = useQuery({
     queryKey: ['gradebook', classId, termId, effectiveSubjectId, effectiveAssignmentId],
     queryFn: () => {
@@ -100,7 +107,7 @@ function TeacherGradebookPage() {
       if (effectiveAssignmentId) q.set('assignmentId', effectiveAssignmentId);
       return apiFetch<GradebookMatrixDto>(`/gradebook?${q.toString()}`);
     },
-    enabled: Boolean(classId && termId && !needSubjectPick),
+    enabled: Boolean(classId && termId && !needSubjectPick && activeTab === 'gradebook'),
   });
 
   const { data: certContext, refetch: refetchCertContext } = useQuery({
@@ -125,24 +132,30 @@ function TeacherGradebookPage() {
     termId?: string;
     subjectId?: string;
     assignmentId?: string;
+    tab?: string;
   }) => {
     const q = new URLSearchParams();
     const cid = next.classId ?? classId;
     const tid = next.termId ?? termId;
     const sid = 'subjectId' in next ? (next.subjectId ?? '') : subjectId;
     const aid = 'assignmentId' in next ? (next.assignmentId ?? '') : assignmentId;
+    const tab = next.tab ?? activeTab;
     if (cid) q.set('classId', cid);
     if (tid) q.set('termId', tid);
     if (sid) q.set('subjectId', sid);
     if (aid) q.set('assignmentId', aid);
+    if (tab !== 'gradebook') q.set('tab', tab);
     router.push(`/teacher/gradebook?${q.toString()}`);
   };
+
+  const tabBase =
+    'px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none';
 
   return (
     <TeacherShell>
       <PageHeader
-        title={he.navGradebook}
-        description={isHomeroom ? he.homeroomGradebookHint : he.teacherGradebookHint}
+        title={isHomeroom ? he.homeroomPortal : he.navGradebook}
+        description={isHomeroom ? undefined : he.teacherGradebookHint}
       />
 
       <nav className="mb-4 flex items-center gap-1 text-sm text-text-muted">
@@ -150,9 +163,12 @@ function TeacherGradebookPage() {
           {he.backToClasses}
         </Link>
         <ChevronRight className="h-4 w-4" aria-hidden />
-        <span className="text-text">{he.navGradebook}</span>
+        <span className="text-text">
+          {activeTab === 'certificates' ? he.navTeacherCertificates : he.navGradebook}
+        </span>
       </nav>
 
+      {/* Class / Term selectors — shared across tabs */}
       <Card className="mb-4 space-y-4">
         {!isSubjectTeacher && (
           <div>
@@ -184,7 +200,10 @@ function TeacherGradebookPage() {
           <Select value={termId} onChange={(e) => pushParams({ termId: e.target.value })}>
             <option value="">{he.selectPlaceholder}</option>
             {terms.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+                {t.isLocked ? ` (${he.lockedLabel})` : ''}
+              </option>
             ))}
           </Select>
         </div>
@@ -208,49 +227,102 @@ function TeacherGradebookPage() {
         )}
       </Card>
 
-      {needSubjectPick && (
-        <Alert variant="warning" className="mb-4">{he.pickSubjectForGradebook}</Alert>
+      {/* Tab switcher — homeroom only (subject teacher has no certificates) */}
+      {isHomeroom && (
+        <div
+          dir="rtl"
+          className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+          role="tablist"
+        >
+          <button
+            role="tab"
+            aria-selected={activeTab === 'gradebook'}
+            type="button"
+            onClick={() => pushParams({ tab: 'gradebook' })}
+            className={cn(
+              tabBase,
+              activeTab === 'gradebook'
+                ? 'bg-white text-primary font-semibold shadow-elevation1'
+                : 'text-text-muted hover:text-text',
+            )}
+          >
+            {he.teacherTabGradebook}
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'certificates'}
+            type="button"
+            onClick={() => pushParams({ tab: 'certificates' })}
+            className={cn(
+              tabBase,
+              activeTab === 'certificates'
+                ? 'bg-white text-primary font-semibold shadow-elevation1'
+                : 'text-text-muted hover:text-text',
+            )}
+          >
+            {he.teacherTabCertificates}
+          </button>
+        </div>
       )}
 
-      {classId && termId && !needSubjectPick && isLoading && (
-        <Skeleton className="h-48 w-full" />
-      )}
-
-      {error && (
-        <Alert variant="error" className="mb-4">
-          <p>{translateApiError((error as Error).message)}</p>
-          <p className="mt-1 text-xs">{he.gradebookAmbiguousHint}</p>
-        </Alert>
-      )}
-
-      {matrix && user && (
+      {/* ─── Gradebook tab ─── */}
+      {activeTab === 'gradebook' && (
         <>
-          {certContext && isHomeroom && (
-            <p className="mb-3 text-sm text-text-muted">
-              {he.gradebookActiveCertProfile(
-                certContext.certificateProfileName ?? he.classCertProfileDefault,
-              )}
-              {!hasCertificateColumns(certContext.certificatePrefs) && (
-                <> · {he.gradebookNoComputerCertCols}</>
-              )}
-            </p>
+          {needSubjectPick && (
+            <Alert variant="warning" className="mb-4">{he.pickSubjectForGradebook}</Alert>
           )}
-          <GradebookGrid
-            classId={classId}
-            termId={termId}
-            matrix={matrix}
-            userId={user.id}
-            getLockClassGroupId={(sid) =>
-              effectiveAssignment?.subjectId === sid
-                ? (effectiveAssignment.classGroupId ?? null)
-                : null
-            }
-            onSaved={() => void refetch()}
-            certSupplementContext={isHomeroom ? (certContext ?? null) : null}
-            canEditCertSupplements={isHomeroom}
-            onCertSupplementsSaved={() => void refetchCertContext()}
-          />
+
+          {classId && termId && !needSubjectPick && isLoading && (
+            <Skeleton className="h-48 w-full" />
+          )}
+
+          {error && (
+            <Alert variant="error" className="mb-4">
+              <p>{translateApiError((error as Error).message)}</p>
+              <p className="mt-1 text-xs">{he.gradebookAmbiguousHint}</p>
+            </Alert>
+          )}
+
+          {matrix && user && (
+            <>
+              {certContext && isHomeroom && (
+                <p className="mb-3 text-sm text-text-muted">
+                  {he.gradebookActiveCertProfile(
+                    certContext.certificateProfileName ?? he.classCertProfileDefault,
+                  )}
+                  {!hasCertificateColumns(certContext.certificatePrefs) && (
+                    <> · {he.gradebookNoComputerCertCols}</>
+                  )}
+                </p>
+              )}
+              <GradebookGrid
+                classId={classId}
+                termId={termId}
+                matrix={matrix}
+                userId={user.id}
+                getLockClassGroupId={(sid) =>
+                  effectiveAssignment?.subjectId === sid
+                    ? (effectiveAssignment.classGroupId ?? null)
+                    : null
+                }
+                onSaved={() => void refetch()}
+                certSupplementContext={isHomeroom ? (certContext ?? null) : null}
+                canEditCertSupplements={isHomeroom}
+                onCertSupplementsSaved={() => void refetchCertContext()}
+              />
+            </>
+          )}
         </>
+      )}
+
+      {/* ─── Certificates tab ─── */}
+      {activeTab === 'certificates' && isHomeroom && (
+        <TeacherCertificatesTab
+          classId={classId}
+          termId={termId}
+          termLocked={termLocked}
+          classInfo={selectedClass ?? null}
+        />
       )}
     </TeacherShell>
   );

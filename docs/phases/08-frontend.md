@@ -26,12 +26,15 @@
 - `/certificates` — generate + list
 - `/certificate-templates` — list
 - `/certificate-templates/[id]/edit` — designer
+- `/help` — admin onboarding guide (4 setup phases)
 
 ### Teacher (Homeroom)
-- `/teacher` — dashboard
+- `/teacher` — dashboard (shows classes or subject assignments by role)
 - `/teacher/gradebook` — edit grades
-- `/teacher/certificates`
-- `/my-students`
+- `/teacher/certificates` — generate + download certificates
+- `/my-students` — student list, class group assignments, certificate supplements
+- `/help/teacher` — subject teacher help guide
+- `/help/homeroom` — homeroom teacher help guide
 
 ### Teacher (Subject)
 - `/teacher/gradebook` — own subjects only

@@ -43,7 +43,7 @@ export class UsersService {
 
   private sanitize(user: {
     id: string;
-    schoolId: string;
+    schoolId: string | null;
     role: string;
     name: string;
     email: string;

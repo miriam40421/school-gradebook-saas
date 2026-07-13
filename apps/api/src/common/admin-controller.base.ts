@@ -7,3 +7,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export function AdminOnly() {
   return applyDecorators(UseGuards(JwtAuthGuard, RolesGuard), Roles(Role.Admin));
 }
+
+export function SuperAdminOnly() {
+  return applyDecorators(UseGuards(JwtAuthGuard, RolesGuard), Roles(Role.SuperAdmin));
+}

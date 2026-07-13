@@ -54,6 +54,8 @@ import {
   normalizeCertificateProfiles,
   normalizeCertificateTemplatePage,
   resolveCertificatePrefsForClass,
+  resolveCertificateProfile,
+  resolveProfileSubjects,
 } from '@school/shared';
 import { he, translateApiError } from '@/lib/he';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -334,6 +336,11 @@ export default function CertificateTemplateEditPage() {
   const { data: gradingSetTypes = [] } = useQuery({
     queryKey: ['grading-set-types'],
     queryFn: () => apiFetch<GradingSetTypeRow[]>('/grading-set-types'),
+  });
+
+  const { data: allSubjects = [] } = useQuery({
+    queryKey: ['subjects'],
+    queryFn: () => apiFetch<{ id: string; gradingSetTypeId: string }[]>('/subjects'),
   });
 
   const certProfiles = useMemo(() => {
@@ -759,7 +766,20 @@ export default function CertificateTemplateEditPage() {
   const doApplyWizard = () => {
     if (!effectiveLayout) return;
     setConfirmWizard(false);
-    const categoryIds = parentCategories.map((c) => c.id);
+    // Only include parent categories that have at least one subject in the current profile
+    const currentProfile = resolveCertificateProfile(schoolData?.settingsJson, previewProfileId);
+    const profileSubjects = resolveProfileSubjects(currentProfile, allSubjects);
+    const profileSubjectTypeIds = new Set(profileSubjects.map((s) => s.gradingSetTypeId));
+    // Map subject gradingSetTypeId → parent category id (type may be a child)
+    const typeToParent = new Map(
+      gradingSetTypes.map((t) => [t.id, t.parentId ?? t.id]),
+    );
+    const activeCategoryIds = new Set(
+      [...profileSubjectTypeIds].map((tid) => typeToParent.get(tid) ?? tid),
+    );
+    const categoryIds = parentCategories
+      .filter((c) => activeCategoryIds.has(c.id))
+      .map((c) => c.id);
     const wizardLayout = buildReadyCertificateLayout({
       orientation: effectiveLayout.page.orientation,
       categoryIds,

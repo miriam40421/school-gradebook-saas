@@ -18,5 +18,5 @@
 | TeacherAssignments | CRUD /teacher-assignments, GET /my/teacher-assignments | Admin + Teacher |
 | Gradebook | GET /gradebook?classId&termId, POST /bulk-update | RBAC |
 | Locks | POST /acquire, /release, /heartbeat, GET /locks | Teacher |
-| Certificates | POST /generate, GET /snapshots, /snapshots/:id/pdf, GET /supplement-context | Admin+Teacher |
+| Certificates | POST /generate, GET /snapshots, GET /snapshots/:id, GET /snapshots/:id/pdf, GET /snapshots/:id/preview-html, GET /supplement-context, PUT /supplements, PUT /label-overrides, POST /nikud-text | Admin+Teacher |
 | CertificateTemplates | CRUD /certificate-templates, POST /preview, /logo, /background, GET /asset | Admin |

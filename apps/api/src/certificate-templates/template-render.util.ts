@@ -101,6 +101,24 @@ function mimeForStorageKey(key: string): string {
   return 'image/png';
 }
 
+function injectDefaultLogoKey(
+  layout: CertificateTemplateLayoutV1,
+  defaultKey: string | null | undefined,
+): CertificateTemplateLayoutV1 {
+  if (!defaultKey) return layout;
+  const hasLogoBlock = layout.blocks.some((b) => b.type === 'logo' && b.props.storageKey);
+  if (hasLogoBlock) return layout;
+  return {
+    ...layout,
+    blocks: layout.blocks.map((block) => {
+      if (block.type === 'logo') {
+        return { ...block, props: { ...block.props, storageKey: defaultKey } };
+      }
+      return block;
+    }),
+  };
+}
+
 async function resolveTemplateAssetUrls(
   layout: CertificateTemplateLayoutV1,
   storage: StoragePort,
@@ -115,9 +133,6 @@ async function resolveTemplateAssetUrls(
     if (block.type === 'logo' && block.props.storageKey) {
       keys.add(block.props.storageKey);
     }
-  }
-  if (![...keys].some((k) => k.includes('/logo.')) && fallbackLogoKey) {
-    keys.add(fallbackLogoKey);
   }
   const urls: Record<string, string> = {};
   for (const key of keys) {
@@ -137,18 +152,17 @@ export async function renderTemplateHtmlString(
   snapshot: CertificateSnapshotJsonV1,
   storage: StoragePort,
   nikudFn?: (text: string) => Promise<string>,
+  schoolLogoKey?: string | null,
 ): Promise<string> {
   const labelOverrides = (snapshot.certificatePrefs?.labelOverrides ?? {}) as Record<string, string>;
   const baseLayout = applyLabelOverridesToLayout(template.layoutJson, labelOverrides);
   const layoutJson = snapshot.certificatePrefs?.nikud && nikudFn
     ? await nikudifyLayout(baseLayout, nikudFn)
     : baseLayout;
-  const assetUrls = await resolveTemplateAssetUrls(
-    layoutJson,
-    storage,
-    template.logoStorageKey,
-  );
-  return renderLayoutHtml({ layout: layoutJson, snapshot, logoUrls: assetUrls, assetUrls });
+  const effectiveLogoKey = template.logoStorageKey ?? schoolLogoKey ?? null;
+  const layoutWithLogo = injectDefaultLogoKey(layoutJson, effectiveLogoKey);
+  const assetUrls = await resolveTemplateAssetUrls(layoutWithLogo, storage, effectiveLogoKey);
+  return renderLayoutHtml({ layout: layoutWithLogo, snapshot, logoUrls: assetUrls, assetUrls });
 }
 
 export async function renderTemplatePdf(
@@ -157,19 +171,18 @@ export async function renderTemplatePdf(
   storage: StoragePort,
   pdfRender: PdfRenderService,
   nikudFn?: (text: string) => Promise<string>,
+  schoolLogoKey?: string | null,
 ): Promise<Buffer> {
   const labelOverrides = (snapshot.certificatePrefs?.labelOverrides ?? {}) as Record<string, string>;
   const baseLayout = applyLabelOverridesToLayout(template.layoutJson, labelOverrides);
   const layoutJson = snapshot.certificatePrefs?.nikud && nikudFn
     ? await nikudifyLayout(baseLayout, nikudFn)
     : baseLayout;
-  const assetUrls = await resolveTemplateAssetUrls(
-    layoutJson,
-    storage,
-    template.logoStorageKey,
-  );
+  const effectiveLogoKey = template.logoStorageKey ?? schoolLogoKey ?? null;
+  const layoutWithLogo = injectDefaultLogoKey(layoutJson, effectiveLogoKey);
+  const assetUrls = await resolveTemplateAssetUrls(layoutWithLogo, storage, effectiveLogoKey);
   const html = renderLayoutHtml({
-    layout: layoutJson,
+    layout: layoutWithLogo,
     snapshot,
     logoUrls: assetUrls,
     assetUrls,

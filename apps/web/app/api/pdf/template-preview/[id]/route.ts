@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const token = req.nextUrl.searchParams.get('token');
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const certificateProfileId = req.nextUrl.searchParams.get('certificateProfileId');
-  const backendUrl = `http://localhost:3001/certificate-templates/${params.id}/preview`;
+  const backendUrl = `http://localhost:3001/certificate-templates/${id}/preview`;
 
   const res = await fetch(backendUrl, {
     method: 'POST',

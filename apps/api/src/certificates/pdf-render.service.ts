@@ -6,6 +6,8 @@ import type { CertificateSnapshotJsonV1 } from '@school/shared';
 import {
   certificateFillView,
   normalizeCertificatePrefs,
+  CERTIFICATE_LABEL_DEFAULTS,
+  CERTIFICATE_LABEL_DEFAULTS_NIKUD,
 } from '@school/shared';
 import { PDF_RENDER_SERVICE, type PdfRenderService } from './pdf-render.port';
 
@@ -21,6 +23,12 @@ export class MockPdfRenderService implements PdfRenderService {
 
   async renderHtmlToPdf(_html: string, _orientation: 'portrait' | 'landscape'): Promise<Buffer> {
     return Buffer.from('%PDF-1.4 mock layout certificate\n');
+  }
+
+  async renderManyHtmlToPdf(
+    items: Array<{ html: string; orientation?: 'portrait' | 'landscape' }>,
+  ): Promise<Buffer[]> {
+    return items.map(() => Buffer.from('%PDF-1.4 mock layout certificate\n'));
   }
 }
 
@@ -57,8 +65,15 @@ export class PlaywrightPdfRenderService implements PdfRenderService {
       fill: raw.fill ?? certificateFillView(prefs),
       evaluation: raw.evaluation ?? legacy.homeroomComment ?? null,
     };
+    const labelBase = prefs.nikud ? CERTIFICATE_LABEL_DEFAULTS_NIKUD : CERTIFICATE_LABEL_DEFAULTS;
+    const labels = Object.fromEntries(
+      Object.entries(labelBase).map(([key, def]) => [
+        key,
+        prefs.labelOverrides?.[key] ?? def,
+      ]),
+    );
     try {
-      return { html: this.loadTemplate()(data) };
+      return { html: this.loadTemplate()({ ...data, labels }) };
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Template render failed';
       throw new Error(`Certificate template error: ${msg}`);
@@ -71,50 +86,46 @@ export class PlaywrightPdfRenderService implements PdfRenderService {
 
   async renderCertificateHtml(snapshot: unknown): Promise<Buffer> {
     const { html } = this.buildSnapshotData(snapshot);
-    try {
-      const { chromium } = await import('playwright');
-      const browser = await chromium.launch({
-        headless: true,
-        ...(CHROMIUM_EXEC ? { executablePath: CHROMIUM_EXEC } : {}),
-      });
-      try {
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle' });
-        const pdf = await page.pdf({ format: 'A4', printBackground: true });
-        return Buffer.from(pdf);
-      } finally {
-        await browser.close();
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('Executable doesn') || msg.includes('browserType.launch')) {
-        throw new Error(
-          'Playwright Chromium not installed. Run: cd apps/api && npx playwright install chromium',
-        );
-      }
-      throw err;
-    }
+    const [result] = await this.renderManyHtmlToPdf([{ html }]);
+    return result;
   }
 
   async renderHtmlToPdf(
     html: string,
     orientation: 'portrait' | 'landscape',
   ): Promise<Buffer> {
+    const [result] = await this.renderManyHtmlToPdf([{ html, orientation }]);
+    return result;
+  }
+
+  async renderManyHtmlToPdf(
+    items: Array<{ html: string; orientation?: 'portrait' | 'landscape' }>,
+  ): Promise<Buffer[]> {
+    if (items.length === 0) return [];
     try {
       const { chromium } = await import('playwright');
       const browser = await chromium.launch({
         headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
         ...(CHROMIUM_EXEC ? { executablePath: CHROMIUM_EXEC } : {}),
       });
       try {
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle' });
-        const pdf = await page.pdf({
-          format: 'A4',
-          landscape: orientation === 'landscape',
-          printBackground: true,
-        });
-        return Buffer.from(pdf);
+        const results: Buffer[] = [];
+        for (const item of items) {
+          const page = await browser.newPage();
+          try {
+            await page.setContent(item.html, { waitUntil: 'networkidle' });
+            const pdf = await page.pdf({
+              format: 'A4',
+              landscape: item.orientation === 'landscape',
+              printBackground: true,
+            });
+            results.push(Buffer.from(pdf));
+          } finally {
+            await page.close();
+          }
+        }
+        return results;
       } finally {
         await browser.close();
       }

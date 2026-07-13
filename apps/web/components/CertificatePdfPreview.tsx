@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Download, ExternalLink, X } from 'lucide-react';
-import { getToken } from '@/lib/api';
+import { getToken, triggerBlobDownload } from '@/lib/api';
 import { he } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -15,8 +15,8 @@ type Props = {
 
 export function CertificatePdfPreview({ snapshotId, studentName, onClose }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -25,10 +25,7 @@ export function CertificatePdfPreview({ snapshotId, studentName, onClose }: Prop
       return;
     }
     const params = new URLSearchParams({ token });
-    const url = `/api/pdf/snapshot/${snapshotId}?${params.toString()}`;
-    const dlUrl = `/api/pdf/snapshot/${snapshotId}?${params.toString()}&download=1`;
-    setPdfUrl(url);
-    setDownloadUrl(dlUrl);
+    setPdfUrl(`/api/pdf/snapshot/${snapshotId}?${params.toString()}`);
   }, [snapshotId]);
 
   useEffect(() => {
@@ -36,6 +33,25 @@ export function CertificatePdfPreview({ snapshotId, studentName, onClose }: Prop
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const handleDownload = useCallback(async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const token = getToken();
+      if (!token) throw new Error('לא מחובר');
+      const params = new URLSearchParams({ token });
+      const res = await fetch(`/api/pdf/snapshot/${snapshotId}?${params.toString()}`);
+      if (!res.ok) throw new Error('שגיאה בהורדת הקובץ');
+      const blob = await res.blob();
+      const filename = `תעודה-${studentName.replace(/\s+/g, '-')}.pdf`;
+      triggerBlobDownload(blob, filename);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בהורדת הקובץ');
+    } finally {
+      setDownloading(false);
+    }
+  }, [snapshotId, studentName]);
 
   return (
     <div
@@ -72,16 +88,16 @@ export function CertificatePdfPreview({ snapshotId, studentName, onClose }: Prop
                 <ExternalLink className="h-4 w-4" aria-hidden />
                 {he.certificatesPreview} — פתח בכרטיסייה חדשה
               </Button>
-              <a
-                href={downloadUrl ?? pdfUrl}
-                download={`certificate-${studentName.replace(/\s+/g, '-')}.pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-text hover:bg-slate-50"
+              <Button
+                type="button"
+                variant="secondary"
+                loading={downloading}
+                disabled={downloading}
+                onClick={() => void handleDownload()}
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {he.certificatesDownload}
-              </a>
+                {downloading ? 'מוריד…' : he.certificatesDownload}
+              </Button>
             </>
           )}
         </div>

@@ -1,7 +1,7 @@
 /** Canonical storage: «שם משפחה» then «שם פרטי» (e.g. כהן רחל). */
 
 export function normalizeStudentFullName(input: string): string {
-  return input.trim().replace(/\s+/g, ' ');
+  return input.replace(/\x00/g, '').trim().replace(/\s+/g, ' ');
 }
 
 export function splitStudentFullName(fullName: string): {

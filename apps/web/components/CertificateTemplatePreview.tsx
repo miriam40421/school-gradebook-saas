@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Download, ExternalLink, X } from 'lucide-react';
-import { getToken } from '@/lib/api';
+import { getToken, triggerBlobDownload } from '@/lib/api';
 import { he, translateApiError } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +22,7 @@ export function CertificateTemplatePreview({
 }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -39,6 +40,26 @@ export function CertificateTemplatePreview({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const handleDownload = useCallback(async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const token = getToken();
+      if (!token) throw new Error('לא מחובר');
+      const params = new URLSearchParams({ token });
+      if (certificateProfileId) params.set('certificateProfileId', certificateProfileId);
+      const res = await fetch(`/api/pdf/template-preview/${templateId}?${params.toString()}`);
+      if (!res.ok) throw new Error('שגיאה בהורדת הקובץ');
+      const blob = await res.blob();
+      const filename = `תבנית-${templateName.replace(/\s+/g, '-')}.pdf`;
+      triggerBlobDownload(blob, filename);
+    } catch (err) {
+      setError(err instanceof Error ? translateApiError(err.message) : 'שגיאה בהורדת הקובץ');
+    } finally {
+      setDownloading(false);
+    }
+  }, [templateId, templateName, certificateProfileId]);
 
   return (
     <div
@@ -75,16 +96,16 @@ export function CertificateTemplatePreview({
                 <ExternalLink className="h-4 w-4" aria-hidden />
                 {he.certTemplatesPreview} — פתח בכרטיסייה חדשה
               </Button>
-              <a
-                href={pdfUrl}
-                download={`template-preview-${templateName.replace(/\s+/g, '-')}.pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-text hover:bg-slate-50"
+              <Button
+                type="button"
+                variant="secondary"
+                loading={downloading}
+                disabled={downloading}
+                onClick={() => void handleDownload()}
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {he.certificatesDownload}
-              </a>
+                {downloading ? 'מוריד…' : he.certificatesDownload}
+              </Button>
             </>
           )}
         </div>

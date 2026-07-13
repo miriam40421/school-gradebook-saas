@@ -43,6 +43,10 @@ export class UpsertCertificateSupplementItemDto {
   @IsOptional()
   @IsObject()
   gradeComments?: Record<string, string | null>;
+
+  @IsOptional()
+  @IsObject()
+  nikudOverrides?: Record<string, string>;
 }
 
 export class UpsertCertificateSupplementsBodyDto {

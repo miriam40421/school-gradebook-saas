@@ -139,7 +139,7 @@
 <body>
 
   <div style="text-align:right;font-size:0.8rem;color:#475569;line-height:1.3;margin-bottom:0.35rem;">
-    <div>{{#if certificatePrefs.nikud}}בְּסִיַּעְתָּא דִּשְׁמַיָּא{{else}}בסיעתא דשמיא{{/if}}</div>
+    <div>{{labels.besiata}}</div>
     {{#if certificatePrefs.showProfileNameOnCertificate}}
     {{#if certificateProfileName}}
     <div style="font-size:0.95rem;margin-top:0;">{{certificateProfileName}}</div>
@@ -147,27 +147,27 @@
     {{/if}}
   </div>
 
-  <h2 style="text-align:center;margin-top:0;">{{#if certificatePrefs.nikud}}תְּעוּדַת צִיּוּנִים{{else}}תעודת ציונים{{/if}}</h2>
+  <h2 style="text-align:center;margin-top:0;">{{labels.title}}</h2>
 
   <div class="meta" dir="rtl" style="display:flex;flex-wrap:nowrap;align-items:flex-end;gap:1rem;margin:1rem 0;line-height:1.6;">
 
     <span style="display:inline-flex;align-items:flex-end;gap:0.25rem;flex:1;min-width:0;">
-      <strong>{{#if certificatePrefs.nikud}}שֵׁם הַתַּלְמִידָה:{{else}}שם התלמידה:{{/if}}</strong>
+      <strong>{{labels.studentNameLabel}}</strong>
       {{#if fill.studentNameHandwritten}}<span class="handwritten-cell"></span>{{else}}{{student.fullName}}{{/if}}
     </span>
 
     <span style="display:inline-flex;align-items:flex-end;gap:0.25rem;flex:1;min-width:0;">
-      <strong>{{#if certificatePrefs.nikud}}כִּיתָּה:{{else}}כיתה:{{/if}}</strong>
+      <strong>{{labels.classLabel}}</strong>
       {{#if fill.classNameHandwritten}}<span class="handwritten-cell"></span>{{else}}{{class.name}}{{/if}}
     </span>
 
     <span style="display:inline-flex;align-items:flex-end;gap:0.25rem;flex:1;min-width:0;">
-      <strong>{{#if certificatePrefs.nikud}}מַחֲצִית:{{else}}מחצית:{{/if}}</strong>
+      <strong>{{labels.termLabel}}</strong>
       {{#if fill.termNameHandwritten}}<span class="handwritten-cell"></span>{{else}}{{term.name}}{{/if}}
     </span>
 
     <span style="display:inline-flex;align-items:flex-end;gap:0.25rem;flex:1;min-width:0;">
-      <strong>{{#if certificatePrefs.nikud}}מַחֲזוֹר:{{else}}מחזור:{{/if}}</strong>
+      <strong>{{labels.cohortLabel}}</strong>
       {{#if fill.classYearHebrewHandwritten}}<span class="handwritten-cell"></span>{{else}}{{#if class.cohort}}{{class.cohort}}{{else}}{{class.yearHebrew}}{{/if}}{{/if}}
     </span>
 
@@ -175,7 +175,7 @@
 
 
 
-  <h3 style="margin-top:0.65rem;">{{#if certificatePrefs.nikud}}צִיּוּנִים{{else}}ציונים{{/if}}</h3>
+  <h3 style="margin-top:0.65rem;">{{labels.gradesSection}}</h3>
 
   {{#if subjectCategories}}
 
@@ -189,10 +189,10 @@
   <table>
     <thead>
       <tr>
-        <th>{{#if @root.certificatePrefs.nikud}}מִקְצוֹעַ{{else}}מקצוע{{/if}}</th>
-        <th>{{#if @root.certificatePrefs.nikud}}צִיּוּן{{else}}ציון{{/if}}</th>
+        <th>{{@root.labels.subject}}</th>
+        <th>{{@root.labels.grade}}</th>
         {{#if ../showComment}}
-        <th>{{#if @root.certificatePrefs.nikud}}הֶעָרָה{{else}}הערה{{/if}}</th>
+        <th>{{@root.labels.comment}}</th>
         {{/if}}
       </tr>
     </thead>
@@ -228,10 +228,10 @@
   <table>
     <thead>
       <tr>
-        <th>{{#if @root.certificatePrefs.nikud}}מִקְצוֹעַ{{else}}מקצוע{{/if}}</th>
-        <th>{{#if @root.certificatePrefs.nikud}}צִיּוּן{{else}}ציון{{/if}}</th>
+        <th>{{@root.labels.subject}}</th>
+        <th>{{@root.labels.grade}}</th>
         {{#if ../showComment}}
-        <th>{{#if @root.certificatePrefs.nikud}}הֶעָרָה{{else}}הערה{{/if}}</th>
+        <th>{{@root.labels.comment}}</th>
         {{/if}}
       </tr>
     </thead>
@@ -272,13 +272,13 @@
 
       <tr>
 
-        <th>{{#if certificatePrefs.nikud}}מִקְצוֹעַ{{else}}מקצוע{{/if}}</th>
+        <th>{{labels.subject}}</th>
 
-        <th>{{#if certificatePrefs.nikud}}צִיּוּן{{else}}ציון{{/if}}</th>
+        <th>{{labels.grade}}</th>
 
         {{#if showAnyGradeComment}}
 
-        <th>{{#if @root.certificatePrefs.nikud}}הֶעָרָה{{else}}הערה{{/if}}</th>
+        <th>{{@root.labels.comment}}</th>
 
         {{/if}}
 
@@ -340,7 +340,7 @@
 
   {{#if attendance}}
 
-  <h3>{{#if certificatePrefs.nikud}}נוֹכְחוּת{{else}}נוכחות{{/if}}</h3>
+  <h3>{{labels.attendance}}</h3>
 
   <table class="attendance{{#if certificatePrefs.attendanceBorder}} section-bordered{{/if}}">
 
@@ -350,7 +350,7 @@
 
       <tr>
 
-        <td>{{#if certificatePrefs.nikud}}חִסּוּרִים{{else}}חיסורים{{/if}}</td>
+        <td>{{labels.absences}}</td>
 
         <td>
 
@@ -366,7 +366,7 @@
 
       <tr>
 
-        <td>{{#if certificatePrefs.nikud}}אִחוּרִים{{else}}איחורים{{/if}}</td>
+        <td>{{labels.lateness}}</td>
 
         <td>
 
@@ -382,7 +382,7 @@
 
       <tr>
 
-        <td>{{#if certificatePrefs.nikud}}חִסּוּרֵי שָׁעוֹת{{else}}חיסורי שעות{{/if}}</td>
+        <td>{{labels.hourAbsences}}</td>
 
         <td>
 
@@ -398,7 +398,7 @@
 
       <tr>
 
-        <td>{{#if certificatePrefs.nikud}}אִחוּרֵי שָׁעוֹת{{else}}איחורי שעות{{/if}}</td>
+        <td>{{labels.hourLateness}}</td>
 
         <td>
 
@@ -420,7 +420,7 @@
 
   {{#if certificatePrefs.evaluation}}
 
-  <h3 style="text-align:center;margin:0.65rem 0 0.35rem;">{{#if certificatePrefs.nikud}}הַעֲרָכָה{{else}}הערכה{{/if}}</h3>
+  <h3 style="text-align:center;margin:0.65rem 0 0.35rem;">{{labels.evaluation}}</h3>
 
   <div class="comment-box{{#if certificatePrefs.evaluationBorder}} section-bordered{{/if}}" style="text-align:center;">
 
@@ -446,41 +446,41 @@
 
     {{#if fill.signaturesHandwritten}}
 
-    {{#if certificatePrefs.signatureHomeroom}}<div>{{#if certificatePrefs.nikud}}חֲתִימַת הַמְּחַנֶּכֶת{{else}}חתימת המחנכת{{/if}}</div>{{/if}}
+    {{#if certificatePrefs.signatureHomeroom}}<div>{{labels.homeroomSig}}</div>{{/if}}
 
-    {{#if certificatePrefs.signaturePrincipal}}<div>{{#if certificatePrefs.nikud}}חֲתִימַת הַמְּנַהֶלֶת{{else}}חתימת המנהלת{{/if}}</div>{{/if}}
+    {{#if certificatePrefs.signaturePrincipal}}<div>{{labels.principalSig}}</div>{{/if}}
 
-    {{#if certificatePrefs.signatureParent}}<div>{{#if certificatePrefs.nikud}}חֲתִימַת הַהוֹרִים{{else}}חתימת ההורים{{/if}}</div>{{/if}}
+    {{#if certificatePrefs.signatureParent}}<div>{{labels.parentSig}}</div>{{/if}}
 
-    {{#if displayDate}}<div>{{#if certificatePrefs.nikud}}תַּאֲרִיךְ{{else}}תאריך{{/if}}</div>{{/if}}
+    {{#if displayDate}}<div>{{labels.date}}</div>{{/if}}
 
     {{else}}
 
     {{#if certificatePrefs.signatureHomeroom}}
     <div>
       {{#if signatures.homeroom}}{{signatures.homeroom}}{{/if}}
-      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{#if certificatePrefs.nikud}}חֲתִימַת הַמְּחַנֶּכֶת{{else}}חתימת המחנכת{{/if}}</div>
+      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{labels.homeroomSig}}</div>
     </div>
     {{/if}}
 
     {{#if certificatePrefs.signaturePrincipal}}
     <div>
       {{#if signatures.principal}}{{signatures.principal}}{{/if}}
-      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{#if certificatePrefs.nikud}}חֲתִימַת הַמְּנַהֶלֶת{{else}}חתימת המנהלת{{/if}}</div>
+      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{labels.principalSig}}</div>
     </div>
     {{/if}}
 
     {{#if certificatePrefs.signatureParent}}
     <div>
       {{#if signatures.parent}}{{signatures.parent}}{{/if}}
-      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{#if certificatePrefs.nikud}}חֲתִימַת הַהוֹרִים{{else}}חתימת ההורים{{/if}}</div>
+      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{labels.parentSig}}</div>
     </div>
     {{/if}}
 
     {{#if displayDate}}
     <div>
       {{#unless fill.dateHandwritten}}{{displayDate}}{{/unless}}
-      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{#if certificatePrefs.nikud}}תַּאֲרִיךְ{{else}}תאריך{{/if}}</div>
+      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{labels.date}}</div>
     </div>
     {{/if}}
 
@@ -492,11 +492,11 @@
 
   <div class="signatures {{#if fill.dateHandwritten}}signatures-handwritten{{else}}signatures-computer{{/if}}" dir="rtl">
     {{#if fill.dateHandwritten}}
-    <div>{{#if certificatePrefs.nikud}}תַּאֲרִיךְ{{else}}תאריך{{/if}}</div>
+    <div>{{labels.date}}</div>
     {{else}}
     <div>
       {{displayDate}}
-      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{#if certificatePrefs.nikud}}תַּאֲרִיךְ{{else}}תאריך{{/if}}</div>
+      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">{{labels.date}}</div>
     </div>
     {{/if}}
   </div>
@@ -505,7 +505,7 @@
 
 
 
-  <div class="footer">{{#if certificatePrefs.nikud}}נוֹצַר:{{else}}נוצר:{{/if}} {{generatedAt}}</div>
+  <div class="footer">{{labels.generatedAt}} {{generatedAt}}</div>
 
 </body>
 

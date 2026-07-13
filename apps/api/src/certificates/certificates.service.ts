@@ -657,7 +657,7 @@ export class CertificatesService {
         const storageKey = this.pdfKey(user.school_id, dto.termId, student.id, snapshotId);
 
         const html = customTemplate
-          ? await renderTemplateHtmlString(customTemplate, snapshotJson, this.storage, nikudFn)
+          ? await renderTemplateHtmlString(customTemplate, snapshotJson, this.storage, nikudFn, school.logoStorageKey)
           : await this.pdfRender.renderCertificateHtmlString(snapshotJson);
         const orientation: 'portrait' | 'landscape' = customTemplate?.orientation ?? 'portrait';
 
@@ -796,6 +796,7 @@ export class CertificatesService {
         snapshotJson,
         this.storage,
         (t) => this.nikudService.nikud(t),
+        school?.logoStorageKey,
       );
     }
 
@@ -927,6 +928,7 @@ export class CertificatesService {
         this.storage,
         this.pdfRender,
         (t) => this.nikudService.nikud(t),
+        school?.logoStorageKey,
       );
     }
 
