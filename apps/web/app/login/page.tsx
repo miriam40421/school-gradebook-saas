@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { apiFetch, setToken } from '@/lib/api';
@@ -14,12 +14,10 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRouter } from 'next/navigation';
-import { Role } from '@school/shared';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
   const router = useRouter();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [schoolId, setSchoolId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,14 +30,19 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      if (isSuperAdmin) {
-        const data = await apiFetch<{ accessToken: string; user: AuthUserDto }>(
-          '/auth/platform/login',
-          { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) },
-        );
-        setToken(data.accessToken);
-        router.replace('/super-admin');
-        window.location.replace('/super-admin');
+      if (!schoolId.trim()) {
+        try {
+          const data = await apiFetch<{ accessToken: string; user: AuthUserDto }>(
+            '/auth/platform/login',
+            { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) },
+          );
+          setToken(data.accessToken);
+          router.replace('/super-admin');
+          window.location.replace('/super-admin');
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : he.loginFailed;
+          setError(translateApiError(msg));
+        }
       } else {
         await login(schoolId.trim(), email.trim(), password);
       }
@@ -64,33 +67,26 @@ export default function LoginPage() {
       <Card className="relative z-10 w-full max-w-md shadow-elevation4">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-            {isSuperAdmin
-              ? <ShieldCheck className="h-6 w-6 text-primary" aria-hidden />
-              : <LogIn className="h-6 w-6 text-primary" aria-hidden />}
+            <LogIn className="h-6 w-6 text-primary" aria-hidden />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-text">
-              {isSuperAdmin ? he.superAdminPortal : he.loginTitle}
-            </h1>
-            {!isSuperAdmin && <p className="text-sm text-text-muted">{he.loginSubtitle}</p>}
+            <h1 className="text-xl font-semibold text-text">{he.loginTitle}</h1>
+            <p className="text-sm text-text-muted">{he.loginSubtitle}</p>
           </div>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
-          {!isSuperAdmin && (
-            <div>
-              <Label htmlFor="schoolId">{he.schoolId}</Label>
-              <Input
-                id="schoolId"
-                type="text"
-                value={schoolId}
-                onChange={(e) => setSchoolId(e.target.value)}
-                required={!isSuperAdmin}
-                autoComplete="organization"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              />
-            </div>
-          )}
+          <div>
+            <Label htmlFor="schoolId">{he.schoolId}</Label>
+            <Input
+              id="schoolId"
+              type="text"
+              value={schoolId}
+              onChange={(e) => setSchoolId(e.target.value)}
+              autoComplete="organization"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+          </div>
           <div>
             <Label htmlFor="email">{he.email}</Label>
             <Input
@@ -125,32 +121,20 @@ export default function LoginPage() {
                   : <Eye className="h-4 w-4" aria-hidden />}
               </button>
             </div>
-            {!isSuperAdmin && (
-              <div className="mt-1 text-end">
-                <Link
-                  href={`/forgot-password${schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : ''}`}
-                  className="text-xs text-primary hover:underline"
-                >
-                  {he.forgotPassword}
-                </Link>
-              </div>
-            )}
+            <div className="mt-1 text-end">
+              <Link
+                href={`/forgot-password${schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : ''}`}
+                className="text-xs text-primary hover:underline"
+              >
+                {he.forgotPassword}
+              </Link>
+            </div>
           </div>
           {error && <Alert variant="error">{error}</Alert>}
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? he.signingIn : he.signIn}
           </Button>
         </form>
-
-        <div className="mt-4 border-t border-slate-100 pt-3 text-center">
-          <button
-            type="button"
-            onClick={() => { setIsSuperAdmin((v) => !v); setError(''); }}
-            className="text-xs text-text-muted hover:text-text"
-          >
-            {isSuperAdmin ? he.loginTitle : he.superAdminLoginToggle}
-          </button>
-        </div>
       </Card>
     </main>
   );

@@ -68,7 +68,7 @@ export class AuthService {
     });
     if (!user) {
       this.logger.warn(JSON.stringify({ event: 'platform_login_failure', email: normalizedEmail, ip, reason: 'user_not_found' }));
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('NOT_PLATFORM_USER');
     }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {

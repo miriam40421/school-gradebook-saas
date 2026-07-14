@@ -27,6 +27,7 @@ export const he = {
   loginFailed: 'ההתחברות נכשלה',
   networkError: 'לא ניתן להתחבר לשרת. ודאי שה-API רץ (פורט 3001).',
   invalidCredentials: 'אימייל או סיסמה שגויים',
+  missingSchoolId: 'יש להזין מזהה בית ספר',
   forgotPassword: 'שכחתי סיסמה',
   forgotPasswordTitle: 'איפוס סיסמה',
   forgotPasswordSubtitle: 'הכניסי את מזהה בית הספר והאימייל שלך ונשלח קישור לאיפוס.',
@@ -700,6 +701,7 @@ export function translateApiError(message: string): string {
   }
   if (m === 'SCHOOL_BLOCKED') return he.schoolBlockedLogin;
   if (m === 'SCHOOL_DELETED') return he.schoolDeletedLogin;
+  if (m === 'NOT_PLATFORM_USER') return he.missingSchoolId;
   if (m === 'Forbidden') return 'אין הרשאה — יצירת כיתה רק למנהלת. התחברי כמשתמש מנהל.';
   if (
     m.includes('Certificate editing and generation are for homeroom teachers only') ||
