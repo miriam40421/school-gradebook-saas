@@ -86,8 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
     clearToken();
-    setUser(null);
-    router.replace('/login');
+    window.location.replace('/login');
   };
 
   return (

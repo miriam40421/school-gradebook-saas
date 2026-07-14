@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Ip, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
@@ -59,16 +59,8 @@ export class AuthController {
 
   @Post('forgot-password')
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  forgotPassword(
-    @Body() dto: ForgotPasswordDto,
-    @Headers('x-app-url') appUrl?: string,
-    @Headers('referer') referer?: string,
-  ) {
-    let origin = appUrl;
-    if (!origin && referer) {
-      try { origin = new URL(referer).origin; } catch {}
-    }
-    return this.auth.forgotPassword(dto.schoolId, dto.email, origin);
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto.schoolId, dto.email);
   }
 
   @Post('reset-password')

@@ -28,11 +28,15 @@ export class AuthService {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'user_not_found' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    if (user.school?.deletedAt) {
+    if (!user.school) {
+      this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_not_found' }));
+      throw new ForbiddenException('SCHOOL_DELETED');
+    }
+    if (user.school.deletedAt) {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_deleted' }));
       throw new ForbiddenException('SCHOOL_DELETED');
     }
-    if (user.school?.isBlocked) {
+    if (user.school.isBlocked) {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_blocked' }));
       throw new ForbiddenException('SCHOOL_BLOCKED');
     }
@@ -95,7 +99,7 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(schoolId: string, email: string, origin?: string) {
+  async forgotPassword(schoolId: string, email: string) {
     const normalizedEmail = email.toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { schoolId_email: { schoolId, email: normalizedEmail } },
@@ -103,13 +107,18 @@ export class AuthService {
     // Always return success — don't reveal if user exists
     if (!user || user.deletedAt) return { success: true };
 
+    // Invalidate all prior unused tokens before creating a new one
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
+
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
     await this.prisma.passwordResetToken.create({
       data: { userId: user.id, token, expiresAt },
     });
 
-    const appUrl = origin ?? process.env.APP_URL ?? 'http://localhost:3000';
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
     void this.email.sendPasswordReset({ to: user.email, resetUrl, userName: user.name });
 
@@ -117,15 +126,30 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const record = await this.prisma.passwordResetToken.findUnique({ where: { token } });
-    if (!record || record.usedAt || record.expiresAt < new Date()) {
-      throw new BadRequestException('הקישור אינו תקף או שפג תוקפו');
-    }
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
-      this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-    ]);
+    await this.prisma.$transaction(async (tx) => {
+      const record = await tx.passwordResetToken.findUnique({
+        where: { token },
+        include: { user: { select: { deletedAt: true, schoolId: true } } },
+      });
+      if (!record || record.usedAt || record.expiresAt < new Date()) {
+        throw new BadRequestException('הקישור אינו תקף או שפג תוקפו');
+      }
+      if (record.user.deletedAt) {
+        throw new BadRequestException('הקישור אינו תקף או שפג תוקפו');
+      }
+      if (record.user.schoolId) {
+        const school = await tx.school.findUnique({
+          where: { id: record.user.schoolId },
+          select: { deletedAt: true, isBlocked: true },
+        });
+        if (!school || school.deletedAt || school.isBlocked) {
+          throw new BadRequestException('הקישור אינו תקף או שפג תוקפו');
+        }
+      }
+      await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+      await tx.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+    });
     return { success: true };
   }
 
@@ -142,9 +166,12 @@ export class AuthService {
     }
     const user = await this.prisma.user.findFirst({
       where: { id: userId, schoolId, deletedAt: null },
-      include: { school: true },
+      include: { school: { select: { id: true, name: true, isBlocked: true, deletedAt: true } } },
     });
     if (!user) {
+      throw new UnauthorizedException();
+    }
+    if (!user.school || user.school.deletedAt || user.school.isBlocked) {
       throw new UnauthorizedException();
     }
     return {
@@ -155,7 +182,7 @@ export class AuthService {
         role: user.role,
         schoolId: user.schoolId,
       },
-      school: user.school ? { id: user.school.id, name: user.school.name } : null,
+      school: { id: user.school.id, name: user.school.name },
     };
   }
 }

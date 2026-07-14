@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
@@ -7,6 +7,8 @@ import { EmailService } from './email.service';
 
 @Injectable()
 export class SuperAdminService {
+  private readonly logger = new Logger(SuperAdminService.name);
+
   constructor(private prisma: PrismaService, private email: EmailService) {}
 
   async listSchools(includeDeleted = false) {
@@ -51,47 +53,54 @@ export class SuperAdminService {
   }
 
   async updateSchool(id: string, dto: UpdateSchoolDto) {
-    const school = await this.prisma.school.findUnique({ where: { id } });
-    if (!school || school.deletedAt) throw new NotFoundException('School not found');
+    const passwordHash = dto.adminPassword ? await bcrypt.hash(dto.adminPassword, 12) : undefined;
 
-    if (dto.schoolName) {
-      await this.prisma.school.update({ where: { id }, data: { name: dto.schoolName.trim() } });
-    }
+    const result = await this.prisma.$transaction(async (tx) => {
+      const school = await tx.school.findUnique({ where: { id } });
+      if (!school || school.deletedAt) throw new NotFoundException('School not found');
 
-    const admin = await this.prisma.user.findFirst({
-      where: { schoolId: id, role: 'admin', deletedAt: null },
-      orderBy: { name: 'asc' },
-    });
-
-    if (dto.adminName || dto.adminEmail || dto.adminPassword) {
-      if (!admin) throw new NotFoundException('Admin user not found');
-
-      if (dto.adminEmail) {
-        const conflict = await this.prisma.user.findFirst({
-          where: { schoolId: id, email: dto.adminEmail.toLowerCase(), deletedAt: null, id: { not: admin.id } },
-        });
-        if (conflict) throw new ConflictException('Email already exists in school');
+      if (dto.schoolName) {
+        await tx.school.update({ where: { id }, data: { name: dto.schoolName.trim() } });
       }
 
-      const data: { name?: string; email?: string; passwordHash?: string } = {};
-      if (dto.adminName) data.name = dto.adminName.trim();
-      if (dto.adminEmail) data.email = dto.adminEmail.toLowerCase();
-      if (dto.adminPassword) data.passwordHash = await bcrypt.hash(dto.adminPassword, 12);
-      await this.prisma.user.update({ where: { id: admin.id }, data });
-    }
+      const admin = await tx.user.findFirst({
+        where: { schoolId: id, role: 'admin', deletedAt: null },
+        orderBy: { name: 'asc' },
+      });
+
+      if (dto.adminName || dto.adminEmail || dto.adminPassword) {
+        if (!admin) throw new NotFoundException('Admin user not found');
+
+        if (dto.adminEmail) {
+          const conflict = await tx.user.findFirst({
+            where: { schoolId: id, email: dto.adminEmail.toLowerCase(), deletedAt: null, id: { not: admin.id } },
+          });
+          if (conflict) throw new ConflictException('Email already exists in school');
+        }
+
+        const data: { name?: string; email?: string; passwordHash?: string } = {};
+        if (dto.adminName) data.name = dto.adminName.trim();
+        if (dto.adminEmail) data.email = dto.adminEmail.toLowerCase();
+        if (passwordHash) data.passwordHash = passwordHash;
+        await tx.user.update({ where: { id: admin.id }, data });
+      }
+
+      return {
+        schoolNameAfter: dto.schoolName ? dto.schoolName.trim() : school.name,
+        adminEmail: dto.adminEmail ? dto.adminEmail.toLowerCase() : (admin?.email ?? ''),
+      };
+    });
 
     if (dto.schoolName || dto.adminEmail || dto.adminPassword) {
-      const schoolNameAfter = dto.schoolName ? dto.schoolName.trim() : school.name;
-      const emailAfter = dto.adminEmail ? dto.adminEmail.toLowerCase() : (admin?.email ?? '');
-      if (emailAfter) {
-        void this.email.sendSchoolUpdate({
-          to: emailAfter,
-          schoolName: schoolNameAfter,
+      if (result.adminEmail) {
+        this.email.sendSchoolUpdate({
+          to: result.adminEmail,
+          schoolName: result.schoolNameAfter,
           schoolId: id,
-          adminEmail: emailAfter,
+          adminEmail: result.adminEmail,
           changedPassword: dto.adminPassword,
           schoolNameChanged: !!dto.schoolName,
-        });
+        }).catch((err: unknown) => this.logger.error('sendSchoolUpdate failed', err));
       }
     }
 
@@ -116,13 +125,13 @@ export class SuperAdminService {
     const school = await this.prisma.school.findUnique({ where: { id } });
     if (!school) throw new NotFoundException('School not found');
     if (!school.deletedAt) throw new NotFoundException('School is not deleted');
-    await this.prisma.school.update({ where: { id }, data: { deletedAt: null } });
+    await this.prisma.school.update({ where: { id }, data: { deletedAt: null, isBlocked: false } });
     return { success: true };
   }
 
   async createSchool(dto: CreateSchoolDto) {
     const hash = await bcrypt.hash(dto.adminPassword, 12);
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const school = await tx.school.create({
         data: { name: dto.schoolName.trim() },
       });
@@ -135,20 +144,21 @@ export class SuperAdminService {
           passwordHash: hash,
         },
       });
-      const result = {
+      return {
         school: { id: school.id, name: school.name },
         admin: { id: admin.id, email: admin.email },
       };
-
-      void this.email.sendSchoolWelcome({
-        to: admin.email,
-        schoolName: school.name,
-        schoolId: school.id,
-        adminEmail: admin.email,
-        adminPassword: dto.adminPassword,
-      });
-
-      return result;
     });
+
+    // Send email only after transaction commits successfully
+    this.email.sendSchoolWelcome({
+      to: result.admin.email,
+      schoolName: result.school.name,
+      schoolId: result.school.id,
+      adminEmail: result.admin.email,
+      adminPassword: dto.adminPassword,
+    }).catch((err: unknown) => this.logger.error('sendSchoolWelcome failed', err));
+
+    return result;
   }
 }
