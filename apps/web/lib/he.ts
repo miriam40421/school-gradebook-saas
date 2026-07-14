@@ -64,7 +64,8 @@ export const he = {
   showDeleted: 'הצג מחוקים',
   hideDeleted: 'הסתר מחוקים',
   superAdminStatusDeleted: 'מחוק',
-  schoolBlockedLogin: 'גישה לבית הספר חסומה. פנה לתמיכה.',
+  schoolBlockedLogin: 'בית הספר חסום זמנית. פני לתמיכה.',
+  schoolDeletedLogin: 'בית הספר אינו פעיל במערכת. פני לתמיכה.',
   logout: 'יציאה',
   navDashboard: 'לוח בקרה',
   navSchool: 'הגדרות בית ספר',
@@ -697,6 +698,8 @@ export function translateApiError(message: string): string {
   if (m === 'Internal server error' || m.includes('Internal server')) {
     return 'שגיאת שרת — הריצי בטרמינל: pnpm db:migrate ואז הפעילי מחדש את pnpm dev';
   }
+  if (m === 'SCHOOL_BLOCKED') return he.schoolBlockedLogin;
+  if (m === 'SCHOOL_DELETED') return he.schoolDeletedLogin;
   if (m === 'Forbidden') return 'אין הרשאה — יצירת כיתה רק למנהלת. התחברי כמשתמש מנהל.';
   if (
     m.includes('Certificate editing and generation are for homeroom teachers only') ||

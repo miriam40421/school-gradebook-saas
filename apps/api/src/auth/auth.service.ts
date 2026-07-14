@@ -28,9 +28,13 @@ export class AuthService {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'user_not_found' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    if (user.school?.isBlocked || user.school?.deletedAt) {
+    if (user.school?.deletedAt) {
+      this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_deleted' }));
+      throw new ForbiddenException('SCHOOL_DELETED');
+    }
+    if (user.school?.isBlocked) {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_blocked' }));
-      throw new ForbiddenException('גישה לבית הספר חסומה');
+      throw new ForbiddenException('SCHOOL_BLOCKED');
     }
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
