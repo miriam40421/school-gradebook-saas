@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminOnly } from '../common/admin-controller.base';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CreateSubjectDto, UpdateSubjectDto } from './dto/subject.dto';
 import { SubjectsService } from './subjects.service';
 
@@ -11,18 +11,18 @@ export class SubjectsController {
   constructor(private subjects: SubjectsService) {}
 
   @Get()
-  list(@CurrentUser() user: JwtPayload) {
+  list(@CurrentUser() user: SchoolUserPayload) {
     return this.subjects.list(user.school_id);
   }
 
   @Post()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateSubjectDto) {
+  create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateSubjectDto) {
     return this.subjects.create(user.school_id, dto);
   }
 
   @Patch(':id')
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateSubjectDto,
   ) {
@@ -30,7 +30,7 @@ export class SubjectsController {
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.subjects.remove(user.school_id, id);
   }
 }

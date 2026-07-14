@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Role } from '@school/shared';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   assertHomeroomClassAccess,
@@ -69,7 +69,7 @@ export class StudentsService {
     }
   }
 
-  private homeroomClassFilter(user: JwtPayload) {
+  private homeroomClassFilter(user: SchoolUserPayload) {
     if (user.role === Role.Admin) {
       return {};
     }
@@ -79,7 +79,7 @@ export class StudentsService {
     throw new ForbiddenException();
   }
 
-  async list(user: JwtPayload, classId?: string) {
+  async list(user: SchoolUserPayload, classId?: string) {
     if (user.role === Role.SubjectTeacher) {
       throw new ForbiddenException();
     }
@@ -112,7 +112,7 @@ export class StudentsService {
     return sortStudentsByFamilyName(rows);
   }
 
-  async create(user: JwtPayload, dto: CreateStudentDto) {
+  async create(user: SchoolUserPayload, dto: CreateStudentDto) {
     assertHomeroomWrite(user);
     await assertHomeroomClassAccess(this.prisma, user, dto.classId);
     await this.assertClassInSchool(user.school_id, dto.classId);
@@ -127,7 +127,7 @@ export class StudentsService {
   }
 
   async updateGroupMemberships(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     studentId: string,
     classGroupIds: string[],
   ) {
@@ -166,7 +166,7 @@ export class StudentsService {
     });
   }
 
-  async importMany(user: JwtPayload, dto: ImportStudentsDto) {
+  async importMany(user: SchoolUserPayload, dto: ImportStudentsDto) {
     assertHomeroomWrite(user);
     await assertHomeroomClassAccess(this.prisma, user, dto.classId);
     const names = dto.names.map((n) => normalizeStudentFullName(n)).filter(Boolean);
@@ -188,7 +188,7 @@ export class StudentsService {
   }
 
   async importFile(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     buffer: Buffer,
     filename: string,
@@ -200,7 +200,7 @@ export class StudentsService {
     return this.importMany(user, { classId, names });
   }
 
-  async update(user: JwtPayload, id: string, dto: UpdateStudentDto) {
+  async update(user: SchoolUserPayload, id: string, dto: UpdateStudentDto) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
       where: { id, schoolId: user.school_id, deletedAt: null },
@@ -232,7 +232,7 @@ export class StudentsService {
     });
   }
 
-  async remove(user: JwtPayload, id: string) {
+  async remove(user: SchoolUserPayload, id: string) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
       where: { id, schoolId: user.school_id, deletedAt: null },

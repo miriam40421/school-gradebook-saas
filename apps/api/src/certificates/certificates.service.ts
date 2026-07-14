@@ -28,7 +28,7 @@ import {
   normalizeCertificatePrefs,
   type CertificateTemplateDetailDto,
 } from '@school/shared';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { canAccessClassForGradebook } from '../gradebook/gradebook-rbac.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { STORAGE_PORT, type StoragePort } from '../storage/storage.port';
@@ -164,7 +164,7 @@ export class CertificatesService {
     return rows.map((r) => r.classId);
   }
 
-  private async assertClassViewAccess(user: JwtPayload, classId: string) {
+  private async assertClassViewAccess(user: SchoolUserPayload, classId: string) {
     const classRow = await this.prisma.class.findFirst({
       where: { id: classId, schoolId: user.school_id },
     });
@@ -188,7 +188,7 @@ export class CertificatesService {
     return classRow;
   }
 
-  private assertCanGenerate(user: JwtPayload, classRow: { homeroomTeacherId: string | null }) {
+  private assertCanGenerate(user: SchoolUserPayload, classRow: { homeroomTeacherId: string | null }) {
     if (user.role === Role.Admin) {
       throw new ForbiddenException(
         'Certificate editing and generation are for homeroom teachers only',
@@ -295,7 +295,7 @@ export class CertificatesService {
   }
 
   async getSupplementContext(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     termId: string,
   ): Promise<CertificateSupplementContextDto> {
@@ -409,7 +409,7 @@ export class CertificatesService {
   }
 
   async upsertSupplements(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     dto: UpsertCertificateSupplementsBodyDto,
   ): Promise<CertificateSupplementDto[]> {
     const classRow = await this.assertClassViewAccess(user, dto.classId);
@@ -481,7 +481,7 @@ export class CertificatesService {
   }
 
   async generate(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     dto: GenerateCertificatesBodyDto,
   ): Promise<GenerateCertificatesResultDto> {
     const classRow = await this.assertClassViewAccess(user, dto.classId);
@@ -729,12 +729,12 @@ export class CertificatesService {
     return { results };
   }
 
-  async nikudText(user: JwtPayload, text: string): Promise<string> {
+  async nikudText(user: SchoolUserPayload, text: string): Promise<string> {
     void user;
     return this.nikudService.nikud(text);
   }
 
-  async getPreviewHtml(user: JwtPayload, id: string): Promise<string> {
+  async getPreviewHtml(user: SchoolUserPayload, id: string): Promise<string> {
     const row = await this.prisma.certificateSnapshot.findFirst({
       where: { id, schoolId: user.school_id },
     });
@@ -804,7 +804,7 @@ export class CertificatesService {
   }
 
   async listSnapshots(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     termId: string,
   ): Promise<CertificateSnapshotSummaryDto[]> {
@@ -831,7 +831,7 @@ export class CertificatesService {
   }
 
   async getSnapshot(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     id: string,
   ): Promise<CertificateSnapshotDetailDto> {
     const row = await this.prisma.certificateSnapshot.findFirst({
@@ -854,7 +854,7 @@ export class CertificatesService {
     };
   }
 
-  async getPdfBuffer(user: JwtPayload, id: string): Promise<Buffer> {
+  async getPdfBuffer(user: SchoolUserPayload, id: string): Promise<Buffer> {
     const row = await this.prisma.certificateSnapshot.findFirst({
       where: { id, schoolId: user.school_id },
     });
@@ -950,7 +950,7 @@ export class CertificatesService {
   }
 
   async upsertLabelOverrides(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     overrides: Record<string, string>,
   ): Promise<void> {
@@ -968,7 +968,7 @@ export class CertificatesService {
   }
 
   async upsertNikudClassOverrides(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     overrides: Record<string, string>,
   ): Promise<void> {

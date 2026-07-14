@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { BulkGradeUpdateDto } from './dto/gradebook.dto';
 import { GradebookService } from './gradebook.service';
 
@@ -12,7 +12,7 @@ export class GradebookController {
 
   @Get()
   getMatrix(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId: string,
     @Query('termId') termId: string,
     @Query('classGroupId') classGroupId?: string,
@@ -30,7 +30,7 @@ export class GradebookController {
   }
 
   @Post('bulk-update')
-  bulkUpdate(@CurrentUser() user: JwtPayload, @Body() dto: BulkGradeUpdateDto) {
+  bulkUpdate(@CurrentUser() user: SchoolUserPayload, @Body() dto: BulkGradeUpdateDto) {
     return this.gradebook.bulkUpdate(user, dto);
   }
 }

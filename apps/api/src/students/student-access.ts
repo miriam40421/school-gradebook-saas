@@ -1,11 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Role } from '@school/shared';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { PrismaService } from '../prisma/prisma.service';
 
 export async function assertHomeroomClassAccess(
   prisma: PrismaService,
-  user: JwtPayload,
+  user: SchoolUserPayload,
   classId: string,
 ) {
   if (user.role === Role.Admin) {
@@ -28,7 +28,7 @@ export async function assertHomeroomClassAccess(
 
 export async function assertHomeroomStudentAccess(
   prisma: PrismaService,
-  user: JwtPayload,
+  user: SchoolUserPayload,
   studentId: string,
 ) {
   const student = await prisma.student.findFirst({
@@ -42,7 +42,7 @@ export async function assertHomeroomStudentAccess(
   return student;
 }
 
-export function assertHomeroomWrite(user: JwtPayload) {
+export function assertHomeroomWrite(user: SchoolUserPayload) {
   if (user.role !== Role.HomeroomTeacher) {
     throw new ForbiddenException('Only homeroom teacher can manage students');
   }

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { AdminOnly } from '../common/admin-controller.base';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CreateClassGroupDto, UpdateClassGroupDto } from './dto/class-group.dto';
 import { ClassGroupsService } from './class-groups.service';
 
@@ -19,13 +19,13 @@ export class ClassGroupsController {
   constructor(private groups: ClassGroupsService) {}
 
   @Get()
-  list(@CurrentUser() user: JwtPayload, @Param('classId') classId: string) {
+  list(@CurrentUser() user: SchoolUserPayload, @Param('classId') classId: string) {
     return this.groups.list(user.school_id, classId);
   }
 
   @Post()
   create(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('classId') classId: string,
     @Body() dto: CreateClassGroupDto,
   ) {
@@ -34,7 +34,7 @@ export class ClassGroupsController {
 
   @Patch(':id')
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('classId') classId: string,
     @Param('id') id: string,
     @Body() dto: UpdateClassGroupDto,
@@ -44,7 +44,7 @@ export class ClassGroupsController {
 
   @Delete(':id')
   remove(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('classId') classId: string,
     @Param('id') id: string,
   ) {

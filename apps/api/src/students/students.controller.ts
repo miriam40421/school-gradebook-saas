@@ -15,7 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Authenticated, HomeroomOrAdmin } from '../common/auth-decorators';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { assertHomeroomWrite } from './student-access';
 import {
   CreateStudentDto,
@@ -33,20 +33,20 @@ export class StudentsController {
   @Get()
   @HomeroomOrAdmin()
   list(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId?: string,
   ) {
     return this.students.list(user, classId);
   }
 
   @Post()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateStudentDto) {
+  create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateStudentDto) {
     assertHomeroomWrite(user);
     return this.students.create(user, dto);
   }
 
   @Post('import')
-  importJson(@CurrentUser() user: JwtPayload, @Body() dto: ImportStudentsDto) {
+  importJson(@CurrentUser() user: SchoolUserPayload, @Body() dto: ImportStudentsDto) {
     assertHomeroomWrite(user);
     return this.students.importMany(user, dto);
   }
@@ -59,7 +59,7 @@ export class StudentsController {
     }),
   )
   importFile(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -75,7 +75,7 @@ export class StudentsController {
 
   @Patch(':id')
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateStudentDto,
   ) {
@@ -85,7 +85,7 @@ export class StudentsController {
 
   @Patch(':id/group-memberships')
   updateGroupMemberships(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateStudentGroupMembershipsDto,
   ) {
@@ -94,7 +94,7 @@ export class StudentsController {
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     assertHomeroomWrite(user);
     return this.students.remove(user, id);
   }

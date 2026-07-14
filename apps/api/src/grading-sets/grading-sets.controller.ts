@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminOnly } from '../common/admin-controller.base';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import {
   CreateGradingSetDto,
   CreateGradingSetValueDto,
@@ -16,18 +16,18 @@ export class GradingSetsController {
   constructor(private gradingSets: GradingSetsService) {}
 
   @Get()
-  list(@CurrentUser() user: JwtPayload) {
+  list(@CurrentUser() user: SchoolUserPayload) {
     return this.gradingSets.list(user.school_id);
   }
 
   @Post()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateGradingSetDto) {
+  create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateGradingSetDto) {
     return this.gradingSets.create(user.school_id, dto);
   }
 
   @Patch(':id')
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateGradingSetDto,
   ) {
@@ -35,18 +35,18 @@ export class GradingSetsController {
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.gradingSets.remove(user.school_id, id);
   }
 
   @Get(':id/values')
-  listValues(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  listValues(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.gradingSets.listValues(user.school_id, id);
   }
 
   @Post(':id/values')
   addValue(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: CreateGradingSetValueDto,
   ) {
@@ -55,7 +55,7 @@ export class GradingSetsController {
 
   @Patch(':id/values/:valueId')
   updateValue(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Param('valueId') valueId: string,
     @Body() dto: UpdateGradingSetValueDto,
@@ -65,7 +65,7 @@ export class GradingSetsController {
 
   @Delete(':id/values/:valueId')
   removeValue(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Param('valueId') valueId: string,
   ) {

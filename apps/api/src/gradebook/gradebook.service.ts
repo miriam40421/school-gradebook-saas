@@ -11,7 +11,7 @@ import type {
   GradebookSubjectDto,
 } from '@school/shared';
 import { Role, certificateSubjectLabel, sortByFamilyName, resolveCertificateProfile, resolveCertificatePrefsForClass, buildGradingTypeMap, buildGradingTypeAncestorChain, subjectCategoryColumns } from '@school/shared';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { TermLockedException } from '../common/term-locked.exception';
 import { LocksService } from '../locks/locks.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -102,7 +102,7 @@ export class GradebookService {
   }
 
   private async assertClassAccess(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classRow: { id: string; homeroomTeacherId: string | null },
   ) {
     const assignmentClassIds =
@@ -140,7 +140,7 @@ export class GradebookService {
   }
 
   async getMatrix(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     termId: string,
     classGroupId?: string,
@@ -370,7 +370,7 @@ export class GradebookService {
   }
 
   async bulkUpdate(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     dto: BulkGradeUpdateDto,
   ): Promise<BulkGradeUpdateResultDto> {
     const classRow = await this.prisma.class.findFirst({

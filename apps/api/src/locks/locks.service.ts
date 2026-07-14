@@ -10,7 +10,7 @@ import type {
   LockStatusDto,
 } from '@school/shared';
 import { Role } from '@school/shared';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { TermLockedException } from '../common/term-locked.exception';
 import {
   canAccessClassForGradebook,
@@ -75,7 +75,7 @@ export class LocksService {
   }
 
   private async assertEditScope(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classRow: ClassAccessContext,
     assignments: TeacherAssignmentScope[],
     subjectId: string,
@@ -97,7 +97,7 @@ export class LocksService {
   }
 
   async resolveAcquireScope(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classRow: ClassAccessContext,
     assignments: TeacherAssignmentScope[],
     body: AcquireLockDto,
@@ -125,7 +125,7 @@ export class LocksService {
   }
 
   async acquire(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     body: AcquireLockDto,
   ): Promise<AcquireLockResultDto> {
     const classRow = await this.prisma.class.findFirst({
@@ -235,7 +235,7 @@ export class LocksService {
     };
   }
 
-  private async getLockForUser(lockId: string, user: JwtPayload) {
+  private async getLockForUser(lockId: string, user: SchoolUserPayload) {
     const row = await this.prisma.editLock.findFirst({
       where: { id: lockId, schoolId: user.school_id },
       include: { holder: { select: { id: true, name: true } } },
@@ -244,7 +244,7 @@ export class LocksService {
     return row;
   }
 
-  async release(user: JwtPayload, lockId: string): Promise<void> {
+  async release(user: SchoolUserPayload, lockId: string): Promise<void> {
     const row = await this.getLockForUser(lockId, user);
     if (isLockExpired(row.expiresAt)) {
       await this.prisma.editLock.delete({ where: { id: row.id } });
@@ -257,7 +257,7 @@ export class LocksService {
   }
 
   async heartbeat(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     lockId: string,
   ): Promise<{ lockId: string; expiresAt: string }> {
     const row = await this.getLockForUser(lockId, user);
@@ -279,7 +279,7 @@ export class LocksService {
   }
 
   async listForClassTerm(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     termId: string,
   ): Promise<LockStatusDto[]> {
@@ -336,7 +336,7 @@ export class LocksService {
   }
 
   async assertLocksForBulkUpdate(
-    user: JwtPayload,
+    user: SchoolUserPayload,
     classId: string,
     termId: string,
     classRow: ClassAccessContext,

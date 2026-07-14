@@ -5,7 +5,10 @@ import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
 
 export function Authenticated() {
-  return applyDecorators(UseGuards(JwtAuthGuard));
+  return applyDecorators(
+    UseGuards(JwtAuthGuard, RolesGuard),
+    Roles(Role.Admin, Role.HomeroomTeacher, Role.SubjectTeacher),
+  );
 }
 
 export function HomeroomOrAdmin() {

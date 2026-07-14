@@ -13,7 +13,7 @@ import type { Response } from 'express';
 import { IsNotEmpty, IsString } from 'class-validator';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CertificatesService } from './certificates.service';
 import { GenerateCertificatesBodyDto } from './dto/certificates.dto';
 import { UpsertCertificateSupplementsBodyDto } from './dto/certificate-supplements.dto';
@@ -31,7 +31,7 @@ export class CertificatesController {
   @Get('supplement-context')
   @Authenticated()
   supplementContext(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId: string,
     @Query('termId') termId: string,
   ) {
@@ -41,7 +41,7 @@ export class CertificatesController {
   @Put('supplements')
   @Authenticated()
   upsertSupplements(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() dto: UpsertCertificateSupplementsBodyDto,
   ) {
     return this.certificates.upsertSupplements(user, dto);
@@ -50,7 +50,7 @@ export class CertificatesController {
   @Post('generate')
   @Authenticated()
   generate(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() dto: GenerateCertificatesBodyDto,
   ) {
     return this.certificates.generate(user, dto);
@@ -59,7 +59,7 @@ export class CertificatesController {
   @Get('snapshots')
   @Authenticated()
   list(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId: string,
     @Query('termId') termId: string,
   ) {
@@ -68,7 +68,7 @@ export class CertificatesController {
 
   @Get('snapshots/:id')
   @Authenticated()
-  detail(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  detail(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.certificates.getSnapshot(user, id);
   }
 
@@ -76,7 +76,7 @@ export class CertificatesController {
   @Authenticated()
   @HttpCode(204)
   async upsertLabelOverrides(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() body: { classId: string; overrides: Record<string, string> },
   ) {
     await this.certificates.upsertLabelOverrides(user, body.classId, body.overrides);
@@ -86,7 +86,7 @@ export class CertificatesController {
   @Authenticated()
   @HttpCode(204)
   async upsertNikudClassOverrides(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() body: { classId: string; overrides: Record<string, string> },
   ) {
     await this.certificates.upsertNikudClassOverrides(user, body.classId, body.overrides);
@@ -96,7 +96,7 @@ export class CertificatesController {
   @Authenticated()
   @HttpCode(200)
   async nikudText(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() body: NikudTextBodyDto,
   ) {
     const result = await this.certificates.nikudText(user, body.text);
@@ -106,7 +106,7 @@ export class CertificatesController {
   @Get('snapshots/:id/preview-html')
   @Authenticated()
   async previewHtml(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Res() res: Response,
   ) {
@@ -119,7 +119,7 @@ export class CertificatesController {
   @Get('snapshots/:id/pdf')
   @Authenticated()
   async pdf(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Res() res: Response,
   ) {

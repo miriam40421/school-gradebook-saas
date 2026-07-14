@@ -17,7 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminOnly } from '../common/admin-controller.base';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CertificateTemplatesService } from './certificate-templates.service';
 import {
   CreateCertificateTemplateDto,
@@ -31,26 +31,26 @@ export class CertificateTemplatesController {
   constructor(private templates: CertificateTemplatesService) {}
 
   @Get()
-  list(@CurrentUser() user: JwtPayload) {
+  list(@CurrentUser() user: SchoolUserPayload) {
     return this.templates.list(user.school_id);
   }
 
   @Post()
   create(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Body() dto: CreateCertificateTemplateDto,
   ) {
     return this.templates.create(user.school_id, dto);
   }
 
   @Get(':id')
-  get(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  get(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.templates.getById(user.school_id, id);
   }
 
   @Patch(':id')
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateCertificateTemplateDto,
   ) {
@@ -58,7 +58,7 @@ export class CertificateTemplatesController {
   }
 
   @Delete(':id')
-  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  async remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     await this.templates.remove(user.school_id, id);
     return { ok: true };
   }
@@ -66,7 +66,7 @@ export class CertificateTemplatesController {
   @Post(':id/logo')
   @UseInterceptors(FileInterceptor('file'))
   uploadLogo(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -79,7 +79,7 @@ export class CertificateTemplatesController {
   @Post(':id/background')
   @UseInterceptors(FileInterceptor('file'))
   uploadBackground(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -91,7 +91,7 @@ export class CertificateTemplatesController {
 
   @Get(':id/asset')
   async getAsset(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Query('key') key: string,
     @Res() res: Response,
@@ -112,7 +112,7 @@ export class CertificateTemplatesController {
   @Post(':id/preview')
   @HttpCode(200)
   async preview(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() body: PreviewCertificateTemplateDto,
     @Res() res: Response,

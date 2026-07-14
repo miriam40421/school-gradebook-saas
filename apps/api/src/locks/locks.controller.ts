@@ -4,7 +4,7 @@ import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { AcquireLockDto, LockIdDto } from './dto/locks.dto';
 import { LocksService } from './locks.service';
 
@@ -16,27 +16,27 @@ export class LocksController {
   @Post('acquire')
   @UseGuards(RolesGuard)
   @Roles(Role.HomeroomTeacher, Role.SubjectTeacher)
-  acquire(@CurrentUser() user: JwtPayload, @Body() dto: AcquireLockDto) {
+  acquire(@CurrentUser() user: SchoolUserPayload, @Body() dto: AcquireLockDto) {
     return this.locks.acquire(user, dto);
   }
 
   @Post('release')
   @UseGuards(RolesGuard)
   @Roles(Role.HomeroomTeacher, Role.SubjectTeacher)
-  release(@CurrentUser() user: JwtPayload, @Body() dto: LockIdDto) {
+  release(@CurrentUser() user: SchoolUserPayload, @Body() dto: LockIdDto) {
     return this.locks.release(user, dto.lockId);
   }
 
   @Post('heartbeat')
   @UseGuards(RolesGuard)
   @Roles(Role.HomeroomTeacher, Role.SubjectTeacher)
-  heartbeat(@CurrentUser() user: JwtPayload, @Body() dto: LockIdDto) {
+  heartbeat(@CurrentUser() user: SchoolUserPayload, @Body() dto: LockIdDto) {
     return this.locks.heartbeat(user, dto.lockId);
   }
 
   @Get()
   list(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Query('classId') classId: string,
     @Query('termId') termId: string,
   ) {

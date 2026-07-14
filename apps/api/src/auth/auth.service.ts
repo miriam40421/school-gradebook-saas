@@ -35,7 +35,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      school_id: user.schoolId!,
+      school_id: user.schoolId ?? null,
       role: user.role as Role,
     };
     const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
@@ -69,7 +69,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      school_id: null as unknown as string,
+      school_id: null,
       role: user.role as Role,
     };
     const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
@@ -120,7 +120,7 @@ export class AuthService {
     return { success: true };
   }
 
-  async me(userId: string, schoolId: string) {
+  async me(userId: string, schoolId: string | null) {
     if (!schoolId) {
       const user = await this.prisma.user.findFirst({
         where: { id: userId, role: 'super_admin', deletedAt: null },

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { AdminOnly } from '../common/admin-controller.base';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CreateGradingTermDto, UpdateGradingTermDto } from './dto/grading-term.dto';
 import { GradingTermsService } from './grading-terms.service';
 
@@ -12,20 +12,20 @@ export class GradingTermsController {
 
   @Get()
   @Authenticated()
-  list(@CurrentUser() user: JwtPayload) {
+  list(@CurrentUser() user: SchoolUserPayload) {
     return this.gradingTerms.list(user.school_id);
   }
 
   @Post()
   @AdminOnly()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateGradingTermDto) {
+  create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateGradingTermDto) {
     return this.gradingTerms.create(user.school_id, dto);
   }
 
   @Patch(':id')
   @AdminOnly()
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateGradingTermDto,
   ) {
@@ -34,7 +34,7 @@ export class GradingTermsController {
 
   @Delete(':id')
   @AdminOnly()
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.gradingTerms.remove(user.school_id, id);
   }
 }

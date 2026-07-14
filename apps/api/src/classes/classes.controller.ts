@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { AdminOnly } from '../common/admin-controller.base';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { SchoolUserPayload } from '../auth/jwt-payload.interface';
 import { CreateClassDto, UpdateClassDto } from './dto/class.dto';
 import { ClassesService } from './classes.service';
 
@@ -12,20 +12,20 @@ export class ClassesController {
 
   @Get()
   @Authenticated()
-  list(@CurrentUser() user: JwtPayload) {
+  list(@CurrentUser() user: SchoolUserPayload) {
     return this.classes.list(user.school_id, user);
   }
 
   @Post()
   @AdminOnly()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateClassDto) {
+  create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateClassDto) {
     return this.classes.create(user.school_id, dto);
   }
 
   @Patch(':id')
   @AdminOnly()
   update(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateClassDto,
   ) {
@@ -34,7 +34,7 @@ export class ClassesController {
 
   @Delete(':id')
   @AdminOnly()
-  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
     return this.classes.remove(user.school_id, id);
   }
 }
