@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { SuperAdminOnly } from '../common/admin-controller.base';
 import { SuperAdminService } from './super-admin.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
@@ -10,8 +10,8 @@ export class SuperAdminController {
   constructor(private superAdmin: SuperAdminService) {}
 
   @Get('schools')
-  listSchools() {
-    return this.superAdmin.listSchools();
+  listSchools(@Query('includeDeleted') includeDeleted?: string) {
+    return this.superAdmin.listSchools(includeDeleted === 'true');
   }
 
   @Get('schools/:id')
@@ -42,5 +42,10 @@ export class SuperAdminController {
   @Delete('schools/:id')
   deleteSchool(@Param('id') id: string) {
     return this.superAdmin.deleteSchool(id);
+  }
+
+  @Patch('schools/:id/restore')
+  restoreSchool(@Param('id') id: string) {
+    return this.superAdmin.restoreSchool(id);
   }
 }

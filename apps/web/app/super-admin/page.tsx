@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Ban, CheckCircle2, Plus, School, Trash2 } from 'lucide-react';
+import { Ban, CheckCircle2, Plus, RotateCcw, School, Trash2 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/AdminShell';
 import { apiFetch } from '@/lib/api';
@@ -18,6 +18,7 @@ type SchoolRow = {
   id: string;
   name: string;
   isBlocked: boolean;
+  isDeleted: boolean;
 };
 
 type CreateSchoolResult = {
@@ -28,8 +29,8 @@ type CreateSchoolResult = {
 export default function SuperAdminPage() {
   const qc = useQueryClient();
   const { data: schools = [], isLoading, error } = useQuery({
-    queryKey: ['super-admin-schools'],
-    queryFn: () => apiFetch<SchoolRow[]>('/super-admin/schools'),
+    queryKey: ['super-admin-schools', showDeleted],
+    queryFn: () => apiFetch<SchoolRow[]>(`/super-admin/schools${showDeleted ? '?includeDeleted=true' : ''}`),
   });
 
   const [showForm, setShowForm] = useState(false);
@@ -39,6 +40,7 @@ export default function SuperAdminPage() {
   const [adminPassword, setAdminPassword] = useState('');
   const [lastCreated, setLastCreated] = useState<CreateSchoolResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   const create = useMutation({
     mutationFn: () =>
@@ -69,15 +71,26 @@ export default function SuperAdminPage() {
     },
   });
 
+  const restoreSchool = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/super-admin/schools/${id}/restore`, { method: 'PATCH' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['super-admin-schools'] }),
+  });
+
   return (
     <AdminShell>
       <PageHeader
         title={he.navSuperAdminSchools}
         actions={
-          <Button onClick={() => { setShowForm((v) => !v); setLastCreated(null); }}>
-            <Plus className="h-4 w-4" aria-hidden />
-            {he.superAdminCreateSchool}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setShowDeleted((v) => !v)}>
+              {showDeleted ? he.hideDeleted : he.showDeleted}
+            </Button>
+            <Button onClick={() => { setShowForm((v) => !v); setLastCreated(null); }}>
+              <Plus className="h-4 w-4" aria-hidden />
+              {he.superAdminCreateSchool}
+            </Button>
+          </div>
         }
       />
 
@@ -144,11 +157,15 @@ export default function SuperAdminPage() {
             </thead>
             <tbody>
               {schools.map((s) => (
-                <tr key={s.id} className={`border-b border-slate-50 last:border-b-0 ${s.isBlocked ? 'opacity-60' : ''}`}>
+                <tr key={s.id} className={`border-b border-slate-50 last:border-b-0 ${s.isDeleted ? 'opacity-50' : s.isBlocked ? 'opacity-70' : ''}`}>
                   <td className="py-3 font-medium text-text">{s.name}</td>
                   <td className="py-3 font-mono text-xs text-text-muted">{s.id}</td>
                   <td className="py-3">
-                    {s.isBlocked ? (
+                    {s.isDeleted ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                        <Trash2 className="h-3 w-3" aria-hidden /> {he.superAdminStatusDeleted}
+                      </span>
+                    ) : s.isBlocked ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
                         <Ban className="h-3 w-3" aria-hidden /> {he.superAdminStatusBlocked}
                       </span>
@@ -160,23 +177,36 @@ export default function SuperAdminPage() {
                   </td>
                   <td className="py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <a href={`/super-admin/schools/${s.id}`} className="text-xs text-primary hover:underline">עריכה</a>
-                      <button
-                        type="button"
-                        onClick={() => toggleBlock.mutate({ id: s.id, block: !s.isBlocked })}
-                        className="text-xs text-text-muted hover:text-text"
-                        title={s.isBlocked ? he.unblockSchool : he.blockSchool}
-                      >
-                        {s.isBlocked ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Ban className="h-4 w-4 text-amber-500" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(s.id)}
-                        className="text-xs text-red-400 hover:text-red-600"
-                        title={he.deleteSchool}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {s.isDeleted ? (
+                        <button
+                          type="button"
+                          onClick={() => restoreSchool.mutate(s.id)}
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                          title={he.restoreSchool}
+                        >
+                          <RotateCcw className="h-4 w-4" /> {he.restoreSchool}
+                        </button>
+                      ) : (
+                        <>
+                          <a href={`/super-admin/schools/${s.id}`} className="text-xs text-primary hover:underline">עריכה</a>
+                          <button
+                            type="button"
+                            onClick={() => toggleBlock.mutate({ id: s.id, block: !s.isBlocked })}
+                            className="text-xs text-text-muted hover:text-text"
+                            title={s.isBlocked ? he.unblockSchool : he.blockSchool}
+                          >
+                            {s.isBlocked ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Ban className="h-4 w-4 text-amber-500" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(s.id)}
+                            className="text-xs text-red-400 hover:text-red-600"
+                            title={he.deleteSchool}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

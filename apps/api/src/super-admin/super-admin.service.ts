@@ -9,27 +9,16 @@ import { EmailService } from './email.service';
 export class SuperAdminService {
   constructor(private prisma: PrismaService, private email: EmailService) {}
 
-  async listSchools() {
+  async listSchools(includeDeleted = false) {
     const schools = await this.prisma.school.findMany({
-      where: { deletedAt: null },
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: {
-            users: { where: { deletedAt: null } },
-            students: { where: { deletedAt: null } },
-            certificateSnapshots: true,
-          },
-        },
-      },
+      where: includeDeleted ? undefined : { deletedAt: null },
+      orderBy: [{ deletedAt: 'asc' }, { name: 'asc' }],
     });
     return schools.map((s) => ({
       id: s.id,
       name: s.name,
       isBlocked: s.isBlocked,
-      userCount: s._count.users,
-      studentCount: s._count.students,
-      certificateCount: s._count.certificateSnapshots,
+      isDeleted: s.deletedAt !== null,
     }));
   }
 
@@ -120,6 +109,14 @@ export class SuperAdminService {
     const school = await this.prisma.school.findUnique({ where: { id } });
     if (!school || school.deletedAt) throw new NotFoundException('School not found');
     await this.prisma.school.update({ where: { id }, data: { deletedAt: new Date() } });
+    return { success: true };
+  }
+
+  async restoreSchool(id: string) {
+    const school = await this.prisma.school.findUnique({ where: { id } });
+    if (!school) throw new NotFoundException('School not found');
+    if (!school.deletedAt) throw new NotFoundException('School is not deleted');
+    await this.prisma.school.update({ where: { id }, data: { deletedAt: null } });
     return { success: true };
   }
 
