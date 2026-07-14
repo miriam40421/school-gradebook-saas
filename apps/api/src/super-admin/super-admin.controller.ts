@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { SuperAdminOnly } from '../common/admin-controller.base';
 import { SuperAdminService } from './super-admin.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
@@ -27,5 +27,20 @@ export class SuperAdminController {
   @Patch('schools/:id')
   updateSchool(@Param('id') id: string, @Body() dto: UpdateSchoolDto) {
     return this.superAdmin.updateSchool(id, dto);
+  }
+
+  @Patch('schools/:id/block')
+  blockSchool(@Param('id') id: string) {
+    return this.superAdmin.blockSchool(id, true);
+  }
+
+  @Patch('schools/:id/unblock')
+  unblockSchool(@Param('id') id: string) {
+    return this.superAdmin.blockSchool(id, false);
+  }
+
+  @Delete('schools/:id')
+  deleteSchool(@Param('id') id: string) {
+    return this.superAdmin.deleteSchool(id);
   }
 }

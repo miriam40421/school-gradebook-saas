@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
@@ -11,13 +11,25 @@ export class SuperAdminService {
 
   async listSchools() {
     const schools = await this.prisma.school.findMany({
+      where: { deletedAt: null },
       orderBy: { name: 'asc' },
-      include: { _count: { select: { users: { where: { deletedAt: null } } } } },
+      include: {
+        _count: {
+          select: {
+            users: { where: { deletedAt: null } },
+            students: { where: { deletedAt: null } },
+            certificateSnapshots: true,
+          },
+        },
+      },
     });
     return schools.map((s) => ({
       id: s.id,
       name: s.name,
+      isBlocked: s.isBlocked,
       userCount: s._count.users,
+      studentCount: s._count.students,
+      certificateCount: s._count.certificateSnapshots,
     }));
   }
 
@@ -30,19 +42,28 @@ export class SuperAdminService {
           select: { id: true, name: true, email: true },
           orderBy: { name: 'asc' },
         },
+        _count: {
+          select: {
+            students: { where: { deletedAt: null } },
+            certificateSnapshots: true,
+          },
+        },
       },
     });
-    if (!school) throw new NotFoundException('School not found');
+    if (!school || school.deletedAt) throw new NotFoundException('School not found');
     return {
       id: school.id,
       name: school.name,
+      isBlocked: school.isBlocked,
+      studentCount: school._count.students,
+      certificateCount: school._count.certificateSnapshots,
       admin: school.users[0] ?? null,
     };
   }
 
   async updateSchool(id: string, dto: UpdateSchoolDto) {
     const school = await this.prisma.school.findUnique({ where: { id } });
-    if (!school) throw new NotFoundException('School not found');
+    if (!school || school.deletedAt) throw new NotFoundException('School not found');
 
     if (dto.schoolName) {
       await this.prisma.school.update({ where: { id }, data: { name: dto.schoolName.trim() } });
@@ -73,17 +94,33 @@ export class SuperAdminService {
     if (dto.schoolName || dto.adminEmail || dto.adminPassword) {
       const schoolNameAfter = dto.schoolName ? dto.schoolName.trim() : school.name;
       const emailAfter = dto.adminEmail ? dto.adminEmail.toLowerCase() : (admin?.email ?? '');
-      void this.email.sendSchoolUpdate({
-        to: emailAfter,
-        schoolName: schoolNameAfter,
-        schoolId: id,
-        adminEmail: emailAfter,
-        changedPassword: dto.adminPassword,
-        schoolNameChanged: !!dto.schoolName,
-      });
+      if (emailAfter) {
+        void this.email.sendSchoolUpdate({
+          to: emailAfter,
+          schoolName: schoolNameAfter,
+          schoolId: id,
+          adminEmail: emailAfter,
+          changedPassword: dto.adminPassword,
+          schoolNameChanged: !!dto.schoolName,
+        });
+      }
     }
 
     return this.getSchool(id);
+  }
+
+  async blockSchool(id: string, block: boolean) {
+    const school = await this.prisma.school.findUnique({ where: { id } });
+    if (!school || school.deletedAt) throw new NotFoundException('School not found');
+    await this.prisma.school.update({ where: { id }, data: { isBlocked: block } });
+    return { id, isBlocked: block };
+  }
+
+  async deleteSchool(id: string) {
+    const school = await this.prisma.school.findUnique({ where: { id } });
+    if (!school || school.deletedAt) throw new NotFoundException('School not found');
+    await this.prisma.school.update({ where: { id }, data: { deletedAt: new Date() } });
+    return { success: true };
   }
 
   async createSchool(dto: CreateSchoolDto) {

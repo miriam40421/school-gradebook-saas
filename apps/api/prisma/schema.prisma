@@ -26,6 +26,10 @@ model School {
 
   logoStorageKey  String?          @map("logo_storage_key")
 
+  isBlocked       Boolean          @default(false) @map("is_blocked")
+
+  deletedAt       DateTime?        @map("deleted_at")
+
   users           User[]
 
   classes         Class[]

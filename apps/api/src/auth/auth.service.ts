@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, randomUUID } from 'crypto';
@@ -22,10 +22,15 @@ export class AuthService {
     const email = dto.email.toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { schoolId_email: { schoolId: dto.schoolId, email } },
+      include: { school: { select: { isBlocked: true, deletedAt: true } } },
     });
     if (!user) {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'user_not_found' }));
       throw new UnauthorizedException('Invalid credentials');
+    }
+    if (user.school?.isBlocked || user.school?.deletedAt) {
+      this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'school_blocked' }));
+      throw new ForbiddenException('גישה לבית הספר חסומה');
     }
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
