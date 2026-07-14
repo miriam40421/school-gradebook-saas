@@ -18,9 +18,6 @@ type SchoolRow = {
   id: string;
   name: string;
   isBlocked: boolean;
-  userCount: number;
-  studentCount: number;
-  certificateCount: number;
 };
 
 type CreateSchoolResult = {
@@ -140,9 +137,7 @@ export default function SuperAdminPage() {
             <thead>
               <tr className="border-b border-slate-100 text-right text-xs font-semibold text-text-muted">
                 <th className="pb-2 font-semibold">{he.superAdminSchoolName}</th>
-                <th className="pb-2 font-semibold">משתמשים</th>
-                <th className="pb-2 font-semibold">{he.superAdminStudents}</th>
-                <th className="pb-2 font-semibold">{he.superAdminCertificates}</th>
+                <th className="pb-2 font-semibold">{he.schoolId}</th>
                 <th className="pb-2 font-semibold">סטטוס</th>
                 <th className="pb-2" />
               </tr>
@@ -151,9 +146,7 @@ export default function SuperAdminPage() {
               {schools.map((s) => (
                 <tr key={s.id} className={`border-b border-slate-50 last:border-b-0 ${s.isBlocked ? 'opacity-60' : ''}`}>
                   <td className="py-3 font-medium text-text">{s.name}</td>
-                  <td className="py-3 text-text-muted">{s.userCount}</td>
-                  <td className="py-3 text-text-muted">{s.studentCount}</td>
-                  <td className="py-3 text-text-muted">{s.certificateCount}</td>
+                  <td className="py-3 font-mono text-xs text-text-muted">{s.id}</td>
                   <td className="py-3">
                     {s.isBlocked ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
