@@ -233,47 +233,58 @@ export default function UsersPage() {
       <div className="card">
         <h2>{he.createUser}</h2>
         <form
+          className="max-w-sm space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
             create.mutate();
           }}
         >
-          <input
-            placeholder={he.name}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <input
-            type="email"
-            placeholder={he.email}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder={he.password}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <select
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value as Role);
-              setSubjectIds([]);
-            }}
-          >
-            <option value={Role.Admin}>{he.roleAdmin}</option>
-            <option value={Role.HomeroomTeacher}>{he.roleHomeroom}</option>
-            <option value={Role.SubjectTeacher}>{he.roleSubject}</option>
-          </select>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text">{he.name}</label>
+            <input
+              placeholder={he.name}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text">{he.email}</label>
+            <input
+              type="email"
+              placeholder={he.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text">{he.password}</label>
+            <input
+              type="password"
+              placeholder={he.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text">{he.role ?? 'תפקיד'}</label>
+            <select
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value as Role);
+                setSubjectIds([]);
+              }}
+            >
+              <option value={Role.Admin}>{he.roleAdmin}</option>
+              <option value={Role.HomeroomTeacher}>{he.roleHomeroom}</option>
+              <option value={Role.SubjectTeacher}>{he.roleSubject}</option>
+            </select>
+          </div>
           {role === Role.SubjectTeacher && (
             <div>
-              <p style={{ fontSize: '0.85rem', margin: '0.5rem 0' }}>
-                {he.subjectTeacherPickSubjects}
-              </p>
+              <p className="mb-2 text-xs text-text-muted">{he.subjectTeacherPickSubjects}</p>
               {subjectSections.length === 0 ? (
                 <p className="error">{he.subjectTeacherNeedSubjects}</p>
               ) : (

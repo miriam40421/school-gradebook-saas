@@ -169,7 +169,7 @@ function TeacherGradebookPage() {
       </nav>
 
       {/* Class / Term selectors — shared across tabs */}
-      <Card className="mb-4 space-y-4">
+      <Card className="mb-4 max-w-lg space-y-4">
         {!isSubjectTeacher && (
           <div>
             <Label>{he.selectClass}</Label>
@@ -231,7 +231,7 @@ function TeacherGradebookPage() {
       {isHomeroom && (
         <div
           dir="rtl"
-          className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+          className="mb-4 flex max-w-lg gap-1 rounded-md border border-border bg-surface-raised p-1"
           role="tablist"
         >
           <button
@@ -242,7 +242,7 @@ function TeacherGradebookPage() {
             className={cn(
               tabBase,
               activeTab === 'gradebook'
-                ? 'bg-white text-primary font-semibold shadow-elevation1'
+                ? 'bg-surface text-primary font-semibold shadow-elevation1'
                 : 'text-text-muted hover:text-text',
             )}
           >
@@ -256,7 +256,7 @@ function TeacherGradebookPage() {
             className={cn(
               tabBase,
               activeTab === 'certificates'
-                ? 'bg-white text-primary font-semibold shadow-elevation1'
+                ? 'bg-surface text-primary font-semibold shadow-elevation1'
                 : 'text-text-muted hover:text-text',
             )}
           >

@@ -108,7 +108,7 @@ export default function SubjectsPage() {
   return (
     <AppShell>
       <PageHeader title={he.subjectsTitle} description={he.subjectsHint} />
-      <Card className="mb-4">
+      <Card className="mb-4 max-w-lg">
         <form onSubmit={onSubmit} className="space-y-3">
           <div>
             <Label>{he.subjectName}</Label>
@@ -141,9 +141,9 @@ export default function SubjectsPage() {
       </Card>
 
       <p className="mb-4 text-sm text-text-muted">{he.subjectsGroupedHint}</p>
-      <div className="space-y-4">
+      <div className="max-w-lg space-y-4">
       {isLoading && (
-        <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-elevation1">
+        <div className="overflow-x-auto rounded-md border border-border bg-surface shadow-elevation1">
           <table className="w-full border-collapse text-sm">
             <tbody><SkeletonTableRows rows={5} cols={2} /></tbody>
           </table>
@@ -159,7 +159,7 @@ export default function SubjectsPage() {
               <thead>
                 <tr>
                   <th>{he.name}</th>
-                  <th />
+                  <th className="w-20" />
                 </tr>
               </thead>
               <tbody>

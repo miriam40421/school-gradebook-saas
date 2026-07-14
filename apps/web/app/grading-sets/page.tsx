@@ -1,11 +1,18 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FormEvent, useMemo, useState } from 'react';
-import { AdminShell } from '@/components/AdminShell';
+import { useMemo, useState } from 'react';
+import { AppShell } from '@/components/AppShell';
 import { RowActions } from '@/components/RowActions';
 import { apiFetch } from '@/lib/api';
 import { he, translateApiError } from '@/lib/he';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { DataTable } from '@/components/ui/DataTable';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Select } from '@/components/ui/Select';
 
 type Value = { id: string; label: string; order: number };
 type GradingSetType = { id: string; key: string; label: string; parentId?: string | null };
@@ -137,7 +144,7 @@ export default function GradingSetsPage() {
   const addLabelForCategory = useMutation({
     mutationFn: async ({
       typeId,
-      typeLabel,
+      typeLabel: tLabel,
       label,
       existingSetId,
     }: {
@@ -150,10 +157,7 @@ export default function GradingSetsPage() {
       if (!setId) {
         const created = await apiFetch<GradingSet>('/grading-sets', {
           method: 'POST',
-          body: JSON.stringify({
-            name: typeLabel,
-            gradingSetTypeId: typeId,
-          }),
+          body: JSON.stringify({ name: tLabel, gradingSetTypeId: typeId }),
         });
         setId = created.id;
       }
@@ -164,23 +168,12 @@ export default function GradingSetsPage() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['grading-sets'] });
-      setNewLabels((prev) => ({
-        ...prev,
-        [vars.typeId]: '',
-      }));
+      setNewLabels((prev) => ({ ...prev, [vars.typeId]: '' }));
     },
   });
 
   const updateValue = useMutation({
-    mutationFn: ({
-      setId,
-      valueId,
-      label: lbl,
-    }: {
-      setId: string;
-      valueId: string;
-      label: string;
-    }) =>
+    mutationFn: ({ setId, valueId, label: lbl }: { setId: string; valueId: string; label: string }) =>
       apiFetch(`/grading-sets/${setId}/values/${valueId}`, {
         method: 'PATCH',
         body: JSON.stringify({ label: lbl }),
@@ -198,32 +191,34 @@ export default function GradingSetsPage() {
   });
 
   return (
-    <AdminShell>
-      <h1>{he.gradingSetsTitle}</h1>
-      <p style={{ fontSize: '0.9rem', color: '#475569' }}>{he.gradingSetsClarify}</p>
+    <AppShell>
+      <PageHeader title={he.gradingSetsTitle} description={he.gradingSetsClarify} />
 
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <h2>{he.gradingTypesTitle}</h2>
-        <p style={{ fontSize: '0.9rem', color: '#475569' }}>{he.gradingTypesHint}</p>
-        {typesLoading && <p>{he.loading}</p>}
+      <Card className="mb-6 max-w-lg">
+        <h3 className="mb-1 mt-0 text-base font-semibold text-text">{he.gradingTypesTitle}</h3>
+        <p className="mb-4 text-sm text-text-muted">{he.gradingTypesHint}</p>
+        {typesLoading && <p className="text-sm text-text-muted">{he.loading}</p>}
         <form
+          className="space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
             createType.mutate();
           }}
         >
-          <input
-            placeholder={he.gradingTypeName}
-            value={typeLabel}
-            onChange={(e) => setTypeLabel(e.target.value)}
-            required
-          />
-          <label style={{ display: 'block', marginTop: '0.5rem' }}>
-            {he.gradingTypeParent}
-            <select
+          <div>
+            <Label>{he.gradingTypeName}</Label>
+            <Input
+              placeholder={he.gradingTypeName}
+              value={typeLabel}
+              onChange={(e) => setTypeLabel(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label>{he.gradingTypeParent}</Label>
+            <Select
               value={newTypeParentId}
               onChange={(e) => setNewTypeParentId(e.target.value)}
-              style={{ display: 'block', marginTop: '0.25rem' }}
             >
               <option value="">{he.gradingTypeParentNone}</option>
               {sortedTypes
@@ -233,206 +228,203 @@ export default function GradingSetsPage() {
                     {t.label}
                   </option>
                 ))}
-            </select>
-          </label>
-          <button type="submit">{he.addGradingType}</button>
+            </Select>
+          </div>
+          <Button type="submit" disabled={!typeLabel.trim()}>
+            {he.addGradingType}
+          </Button>
         </form>
         {createType.isError && (
-          <p className="error">{translateApiError((createType.error as Error).message)}</p>
+          <p className="mt-2 text-sm text-danger">
+            {translateApiError((createType.error as Error).message)}
+          </p>
         )}
-      </div>
+      </Card>
 
-      {isLoading && <p>{he.loading}</p>}
       {error && (
-        <p className="error">{translateApiError((error as Error).message)}</p>
+        <p className="mb-4 text-sm text-danger">
+          {translateApiError((error as Error).message)}
+        </p>
       )}
-
       {!typesLoading && sortedTypes.length === 0 && (
-        <p className="error">{he.gradingTypesEmpty}</p>
+        <p className="mb-4 text-sm text-danger">{he.gradingTypesEmpty}</p>
       )}
 
-      <h2>{he.setsByCategoryTitle}</h2>
-      {displayTypes.map((t) => {
-        const typeSets = setsByType.get(t.id) ?? [];
-        const primarySet = typeSets[0];
-        const extraSets = typeSets.slice(1);
-        const draft = newLabels[t.id] ?? '';
-        const values = primarySet?.values ?? [];
-        const linkedSubjects = subjectCountByType.get(t.id) ?? 0;
-        const allValuesCount = typeSets.reduce((n, s) => n + s.values.length, 0);
+      <p className="mb-4 text-sm text-text-muted">{he.setsByCategoryTitle}</p>
+      <div className="max-w-lg space-y-4">
+        {isLoading && (
+          <Card>
+            <p className="text-sm text-text-muted">{he.loading}</p>
+          </Card>
+        )}
+        {!isLoading &&
+          displayTypes.map((t) => {
+            const typeSets = setsByType.get(t.id) ?? [];
+            const primarySet = typeSets[0];
+            const extraSets = typeSets.slice(1);
+            const draft = newLabels[t.id] ?? '';
+            const values = primarySet?.values ?? [];
+            const linkedSubjects = subjectCountByType.get(t.id) ?? 0;
+            const allValuesCount = typeSets.reduce((n, s) => n + s.values.length, 0);
 
-        return (
-          <div key={t.id} className="card" style={{ marginTop: '0.75rem' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: '0.5rem',
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                {editingTypeId === t.id ? (
-                  <input
-                    value={editTypeLabel}
-                    onChange={(e) => setEditTypeLabel(e.target.value)}
-                  />
-                ) : (
-                  <>
-                    <h3 style={{ margin: 0, paddingRight: `${t.depth * 1.25}rem` }}>
-                      {t.depth > 0 ? `${he.gradingTypeSubCategory}: ` : ''}
-                      {t.label}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: '0.8rem',
-                        color: '#64748b',
-                        margin: '0.2rem 0 0',
-                      }}
-                    >
-                      {he.categorySubjectsLinked(linkedSubjects)}
-                    </p>
-                  </>
-                )}
-              </div>
-              <RowActions
-                isEditing={editingTypeId === t.id}
-                onEdit={() => {
-                  setEditingTypeId(t.id);
-                  setEditTypeLabel(t.label);
-                }}
-                onSave={() =>
-                  updateType.mutate({ id: t.id, label: editTypeLabel.trim() })
-                }
-                onCancel={() => setEditingTypeId(null)}
-                onDelete={() => deleteType.mutate(t.id)}
-                saveDisabled={!editTypeLabel.trim()}
-              />
-            </div>
-
-            {linkedSubjects > 0 && allValuesCount === 0 && (
-              <p className="error" style={{ marginTop: '0.5rem' }}>
-                {he.categoryEmptyGradesWarning(linkedSubjects)}
-              </p>
-            )}
-
-            {extraSets.length > 0 && (
-              <p className="error" style={{ marginTop: '0.5rem' }}>
-                {he.duplicateGradingSetsWarning}
-              </p>
-            )}
-
-            {extraSets.map((s) => (
-              <div
-                key={s.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '0.35rem',
-                  fontSize: '0.85rem',
-                }}
-              >
-                <span>
-                  רשימה כפולה: {s.values.map((v) => v.label).join(', ') || '—'}
-                </span>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => deleteSet.mutate(s.id)}
-                >
-                  {he.delete}
-                </button>
-              </div>
-            ))}
-
-            <h4 style={{ marginTop: '0.75rem', marginBottom: '0.35rem' }}>
-              {he.gradesInCategory}
-            </h4>
-
-            {values.length === 0 ? (
-              <p style={{ color: '#64748b' }}>{he.noGradesInCategory}</p>
-            ) : (
-              <ul style={{ margin: 0, paddingRight: '1.25rem' }}>
-                {values.map((v) => {
-                  const setId = primarySet!.id;
-                  const valueKey = `${setId}:${v.id}`;
-                  const isEditing = editingValueKey === valueKey;
-                  return (
-                    <li key={v.id} style={{ marginBottom: '0.35rem' }}>
-                      {isEditing ? (
-                        <input
-                          value={editValueLabel}
-                          onChange={(e) => setEditValueLabel(e.target.value)}
-                        />
-                      ) : (
-                        <span>{v.label}</span>
-                      )}{' '}
-                      <RowActions
-                        isEditing={isEditing}
-                        onEdit={() => {
-                          setEditingValueKey(valueKey);
-                          setEditValueLabel(v.label);
-                        }}
-                        onSave={() =>
-                          updateValue.mutate({
-                            setId,
-                            valueId: v.id,
-                            label: editValueLabel.trim(),
-                          })
-                        }
-                        onCancel={() => setEditingValueKey(null)}
-                        onDelete={() =>
-                          deleteValue.mutate({ setId, valueId: v.id })
-                        }
-                        saveDisabled={!editValueLabel.trim()}
+            return (
+              <Card key={t.id}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {editingTypeId === t.id ? (
+                      <Input
+                        value={editTypeLabel}
+                        onChange={(e) => setEditTypeLabel(e.target.value)}
                       />
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                    ) : (
+                      <>
+                        <h3
+                          className="mt-0 text-base font-semibold text-text"
+                          style={{ paddingRight: `${t.depth * 1.25}rem` }}
+                        >
+                          {t.depth > 0 ? `${he.gradingTypeSubCategory}: ` : ''}
+                          {t.label}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-text-muted">
+                          {he.categorySubjectsLinked(linkedSubjects)}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <RowActions
+                    isEditing={editingTypeId === t.id}
+                    onEdit={() => {
+                      setEditingTypeId(t.id);
+                      setEditTypeLabel(t.label);
+                    }}
+                    onSave={() => updateType.mutate({ id: t.id, label: editTypeLabel.trim() })}
+                    onCancel={() => setEditingTypeId(null)}
+                    onDelete={() => deleteType.mutate(t.id)}
+                    saveDisabled={!editTypeLabel.trim()}
+                  />
+                </div>
 
-            <form
-              style={{ marginTop: '0.75rem' }}
-              onSubmit={(e) => {
-                e.preventDefault();
-                const lbl = draft.trim();
-                if (!lbl) return;
-                addLabelForCategory.mutate({
-                  typeId: t.id,
-                  typeLabel: t.label,
-                  label: lbl,
-                  existingSetId: primarySet?.id,
-                });
-              }}
-            >
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.35rem' }}>
-                {he.createSetHint}
-              </p>
-              <input
-                placeholder={he.gradeNamePlaceholder}
-                value={draft}
-                onChange={(e) =>
-                  setNewLabels((prev) => ({
-                    ...prev,
-                    [t.id]: e.target.value,
-                  }))
-                }
-                required
-              />
-              <button type="submit" disabled={addLabelForCategory.isPending}>
-                {he.addGradeLabel}
-              </button>
-            </form>
-            {addLabelForCategory.isError && (
-              <p className="error">
-                {translateApiError((addLabelForCategory.error as Error).message)}
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </AdminShell>
+                {linkedSubjects > 0 && allValuesCount === 0 && (
+                  <p className="mt-2 text-sm text-warning">
+                    {he.categoryEmptyGradesWarning(linkedSubjects)}
+                  </p>
+                )}
+
+                {extraSets.length > 0 && (
+                  <p className="mt-2 text-sm text-danger">{he.duplicateGradingSetsWarning}</p>
+                )}
+
+                {extraSets.map((s) => (
+                  <div key={s.id} className="mt-1 flex items-center justify-between gap-2 text-sm">
+                    <span className="text-text-muted">
+                      רשימה כפולה: {s.values.map((v) => v.label).join(', ') || '—'}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => deleteSet.mutate(s.id)}
+                    >
+                      {he.delete}
+                    </Button>
+                  </div>
+                ))}
+
+                <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                  {he.gradesInCategory}
+                </h4>
+
+                {values.length === 0 ? (
+                  <p className="text-sm text-text-muted">{he.noGradesInCategory}</p>
+                ) : (
+                  <DataTable compact>
+                    <thead>
+                      <tr>
+                        <th>{he.name}</th>
+                        <th className="w-20" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {values.map((v) => {
+                        const setId = primarySet!.id;
+                        const valueKey = `${setId}:${v.id}`;
+                        const isEditing = editingValueKey === valueKey;
+                        return (
+                          <tr key={v.id}>
+                            <td>
+                              {isEditing ? (
+                                <Input
+                                  value={editValueLabel}
+                                  onChange={(e) => setEditValueLabel(e.target.value)}
+                                />
+                              ) : (
+                                v.label
+                              )}
+                            </td>
+                            <td>
+                              <RowActions
+                                isEditing={isEditing}
+                                onEdit={() => {
+                                  setEditingValueKey(valueKey);
+                                  setEditValueLabel(v.label);
+                                }}
+                                onSave={() =>
+                                  updateValue.mutate({
+                                    setId,
+                                    valueId: v.id,
+                                    label: editValueLabel.trim(),
+                                  })
+                                }
+                                onCancel={() => setEditingValueKey(null)}
+                                onDelete={() => deleteValue.mutate({ setId, valueId: v.id })}
+                                saveDisabled={!editValueLabel.trim()}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </DataTable>
+                )}
+
+                <form
+                  className="mt-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const lbl = draft.trim();
+                    if (!lbl) return;
+                    addLabelForCategory.mutate({
+                      typeId: t.id,
+                      typeLabel: t.label,
+                      label: lbl,
+                      existingSetId: primarySet?.id,
+                    });
+                  }}
+                >
+                  <p className="mb-1.5 text-xs text-text-muted">{he.createSetHint}</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={he.gradeNamePlaceholder}
+                      value={draft}
+                      onChange={(e) =>
+                        setNewLabels((prev) => ({ ...prev, [t.id]: e.target.value }))
+                      }
+                      required
+                      className="flex-1 !max-w-none !mb-0"
+                    />
+                    <Button type="submit" disabled={addLabelForCategory.isPending}>
+                      {he.addGradeLabel}
+                    </Button>
+                  </div>
+                </form>
+                {addLabelForCategory.isError && (
+                  <p className="mt-2 text-sm text-danger">
+                    {translateApiError((addLabelForCategory.error as Error).message)}
+                  </p>
+                )}
+              </Card>
+            );
+          })}
+      </div>
+    </AppShell>
   );
 }

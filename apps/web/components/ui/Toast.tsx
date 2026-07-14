@@ -59,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             role="status"
             className={cn(
-              'flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm text-text shadow-elevation3',
+              'flex items-center gap-2 rounded-md border bg-surface px-4 py-3 text-sm text-text shadow-elevation3',
               toastBg[t.variant],
             )}
           >

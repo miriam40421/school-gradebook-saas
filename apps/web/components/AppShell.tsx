@@ -72,10 +72,10 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-200',
+              'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-150',
               active
-                ? 'bg-primary/15 font-semibold text-primary'
-                : 'text-text-muted hover:bg-primary/8 hover:text-text',
+                ? 'bg-[#1E1E1E] font-semibold text-white border-e-2 border-blue-500'
+                : 'text-neutral-400 hover:bg-[#1A1A1A] hover:text-neutral-100',
             )}
           >
             <Icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="aurora-bg flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#111111]">
         <Spinner label={he.loading} />
       </div>
     );
@@ -122,10 +122,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <>
-      <div className="mb-6">
-        <h2 className="text-base font-semibold text-text">{title}</h2>
-        <p className="mt-1 text-sm text-text-muted">{user.name}</p>
-        <p className="mt-1 text-xs text-text-muted/80">{he.switchUserHint}</p>
+      <div className="mb-6 border-b border-neutral-800 pb-5">
+        <h2 className="text-base font-semibold text-white">{title}</h2>
+        <p className="mt-1 text-sm text-neutral-400">{user.name}</p>
+        <p className="mt-1 text-xs text-neutral-600">{he.switchUserHint}</p>
       </div>
       <NavLinks
         items={nav}
@@ -136,7 +136,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         type="button"
         variant="ghost"
         size="sm"
-        className="mt-6 w-full justify-start gap-2 text-text-muted hover:text-text"
+        className="mt-6 w-full justify-start gap-2 text-neutral-500 hover:bg-[#1A1A1A] hover:text-neutral-200"
         onClick={logout}
       >
         <LogOut className="h-5 w-5" aria-hidden />
@@ -146,7 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="aurora-bg flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="glass-sidebar hidden w-64 shrink-0 flex-col p-4 lg:flex">
         {sidebar}
@@ -161,11 +161,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label="סגור תפריט"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="glass-sidebar absolute inset-y-4 start-4 z-10 flex w-[min(280px,calc(100%-2rem))] flex-col rounded-2xl p-4 shadow-elevation4">
+          <aside className="glass-sidebar absolute inset-y-0 start-0 z-10 flex w-[min(280px,calc(100%-2rem))] flex-col p-4 shadow-elevation2">
             <div className="mb-4 flex justify-end">
               <button
                 type="button"
-                className="cursor-pointer rounded-lg p-2 text-text-muted hover:bg-primary/10"
+                className="cursor-pointer rounded-md p-2 text-neutral-400 hover:bg-[#1A1A1A] hover:text-white"
                 onClick={() => setMobileOpen(false)}
                 aria-label="סגור"
               >
@@ -179,16 +179,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
-        <header className="glass-panel sticky top-4 z-40 mx-4 mt-4 flex items-center justify-between rounded-xl px-4 py-3 lg:hidden">
+        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-800 bg-[#111111] px-4 py-3 lg:hidden">
           <button
             type="button"
-            className="cursor-pointer rounded-lg p-2 text-text hover:bg-primary/10"
+            className="cursor-pointer rounded-md p-2 text-neutral-300 hover:bg-[#1A1A1A]"
             onClick={() => setMobileOpen(true)}
             aria-label="פתח תפריט"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <span className="text-sm font-semibold text-text">{title}</span>
+          <span className="text-sm font-semibold text-white">{title}</span>
           <span className="w-10" aria-hidden />
         </header>
 

@@ -118,15 +118,15 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
         <>
           {/* Stats + status */}
           <div className="mb-4 flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm">
               <span className="text-text-muted">{he.superAdminStudents}:</span>
               <span className="font-semibold text-text">{data.studentCount}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm">
               <span className="text-text-muted">{he.superAdminCertificates}:</span>
               <span className="font-semibold text-text">{data.certificateCount}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-4 py-2 text-sm">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm">
               {data.isBlocked ? (
                 <span className="inline-flex items-center gap-1 text-red-600">
                   <Ban className="h-4 w-4" aria-hidden /> {he.superAdminStatusBlocked}
@@ -225,7 +225,7 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
 
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-sm shadow-elevation4">
+          <Card className="w-full max-w-sm shadow-elevation2">
             <h3 className="mb-2 text-base font-semibold text-text">{he.deleteSchool}</h3>
             <p className="mb-4 text-sm text-text-muted">{he.deleteSchoolConfirm}</p>
             {deleteSchool.isError && (

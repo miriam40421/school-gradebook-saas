@@ -1,19 +1,19 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_Hebrew, Noto_Serif_Hebrew } from 'next/font/google';
+import { Rubik, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
 
-const notoSansHebrew = Noto_Sans_Hebrew({
+const rubik = Rubik({
   subsets: ['hebrew', 'latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-noto-sans-hebrew',
+  variable: '--font-rubik',
   display: 'swap',
 });
 
-const notoSerifHebrew = Noto_Serif_Hebrew({
-  subsets: ['hebrew', 'latin'],
-  weight: ['400', '700'],
-  variable: '--font-noto-serif-hebrew',
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-mono',
   display: 'swap',
 });
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={`${notoSansHebrew.variable} ${notoSerifHebrew.variable}`}>
+    <html lang="he" dir="rtl" className={`${rubik.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
       </body>

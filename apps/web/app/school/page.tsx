@@ -126,10 +126,10 @@ export default function SchoolPage() {
                 <img
                   src={logoPreview}
                   alt="לוגו בית הספר"
-                  className="h-20 w-20 rounded-lg border border-slate-200 object-contain p-1"
+                  className="h-20 w-20 rounded-md border border-border object-contain p-1"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border-strong bg-surface-raised">
                   <ImagePlus className="h-8 w-8 text-slate-400" aria-hidden />
                 </div>
               )}

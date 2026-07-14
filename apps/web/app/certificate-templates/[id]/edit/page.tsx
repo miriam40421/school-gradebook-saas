@@ -941,7 +941,7 @@ export default function CertificateTemplateEditPage() {
                     id="preview-profile"
                     value={previewProfileId ?? ''}
                     onChange={(e) => setPreviewProfileId(e.target.value || null)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
                   >
                     {certProfiles.map((p: CertificateProfileDto) => (
                       <option key={p.id} value={p.id}>
@@ -957,13 +957,13 @@ export default function CertificateTemplateEditPage() {
                 </Alert>
               )}
               {save.isSuccess && (
-                <p className="mt-2 text-sm text-emerald-700">{he.saved}</p>
+                <p className="mt-2 text-sm text-success">{he.saved}</p>
               )}
             </Card>
 
-            <Card className="!p-2 border border-sky-100 bg-sky-50/60">
-              <h3 className="mb-1 text-xs font-semibold text-sky-900">{he.certTemplatesSectionWizard}</h3>
-              <p className="mb-2 text-[11px] leading-snug text-sky-800">{he.certTemplatesWizardHint}</p>
+            <Card className="!p-2 border border-primary/20 bg-primary-light">
+              <h3 className="mb-1 text-xs font-semibold text-primary">{he.certTemplatesSectionWizard}</h3>
+              <p className="mb-2 text-[11px] leading-snug text-text-muted">{he.certTemplatesWizardHint}</p>
               {!confirmWizard ? (
                 <Button type="button" size="sm" onClick={applyReadyCertificateWizard}>
                   {he.certTemplatesWizard}
@@ -998,13 +998,13 @@ export default function CertificateTemplateEditPage() {
                       onChange={(e) =>
                         updatePage({ backgroundColor: e.target.value }, { immediate: true })
                       }
-                      className="h-9 w-12 cursor-pointer rounded border border-slate-200"
+                      className="h-9 w-12 cursor-pointer rounded border border-border"
                     />
                     <input
                       type="text"
                       value={pageSettings?.backgroundColor ?? '#ffffff'}
                       onChange={(e) => updatePage({ backgroundColor: e.target.value })}
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5"
+                      className="min-w-0 flex-1 rounded-md border border-border px-2 py-1.5"
                     />
                   </div>
                 </div>
@@ -1023,7 +1023,7 @@ export default function CertificateTemplateEditPage() {
                   />
                 </div>
                 {pageSettings?.backgroundImageStorageKey && (
-                  <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-2">
+                  <div className="space-y-2 rounded-md border border-border bg-surface-raised p-2">
                     <div>
                       <Label>{he.certTemplatesBackgroundMode}</Label>
                       <select
@@ -1033,7 +1033,7 @@ export default function CertificateTemplateEditPage() {
                             backgroundImageMode: e.target.value as CertificatePageBackgroundImageMode,
                           })
                         }
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-md border border-border px-2 py-1.5"
                       >
                         <option value="none">{he.certTemplatesBackgroundModeNone}</option>
                         <option value="full">{he.certTemplatesBackgroundModeFull}</option>
@@ -1049,7 +1049,7 @@ export default function CertificateTemplateEditPage() {
                             backgroundImageFit: e.target.value as CertificatePageBackgroundImageFit,
                           })
                         }
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-md border border-border px-2 py-1.5"
                       >
                         <option value="cover">{he.certTemplatesBackgroundFitCover}</option>
                         <option value="contain">{he.certTemplatesBackgroundFitContain}</option>
@@ -1500,7 +1500,7 @@ export default function CertificateTemplateEditPage() {
 
           <aside className="order-2 w-full shrink-0 space-y-1.5 md:order-3 md:sticky md:top-4 md:w-[200px] md:max-w-[200px] md:self-start">
           {(selected || selectedGroup) && propertiesStyleBlock ? (
-            <Card className="designer-properties-panel !p-2 max-h-[calc(100vh-6rem)] overflow-y-auto text-xs [&_input]:w-full [&_input]:rounded-md [&_input]:border [&_input]:border-slate-200 [&_input]:px-2 [&_input]:py-1 [&_input]:text-xs [&_label]:block [&_label]:text-xs [&_select]:w-full [&_select]:rounded-md [&_select]:border [&_select]:border-slate-200 [&_select]:px-2 [&_select]:py-1 [&_select]:text-xs [&_textarea]:w-full [&_textarea]:rounded-md [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:px-2 [&_textarea]:py-1 [&_textarea]:text-xs">
+            <Card className="designer-properties-panel !p-2 max-h-[calc(100vh-6rem)] overflow-y-auto text-xs [&_input]:w-full [&_input]:rounded-md [&_input]:border [&_input]:border-border [&_input]:px-2 [&_input]:py-1 [&_input]:text-xs [&_label]:block [&_label]:text-xs [&_select]:w-full [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:px-2 [&_select]:py-1 [&_select]:text-xs [&_textarea]:w-full [&_textarea]:rounded-md [&_textarea]:border [&_textarea]:border-border [&_textarea]:px-2 [&_textarea]:py-1 [&_textarea]:text-xs">
               <div className="mb-2 flex items-start justify-between gap-1.5">
                 <div className="min-w-0">
                   <h3 className="text-xs font-semibold text-text">{he.certTemplatesSectionProperties}</h3>
@@ -1509,7 +1509,7 @@ export default function CertificateTemplateEditPage() {
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  className="shrink-0 rounded-md p-1 text-text-subtle hover:bg-surface-raised hover:text-text"
                   aria-label={he.certTemplatesCloseProperties}
                   title={he.certTemplatesCloseProperties}
                 >
@@ -2096,12 +2096,10 @@ export default function CertificateTemplateEditPage() {
                     />
                   </label>
                   {selected.props.storageKey && (
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem' }}>
-                      {selected.props.storageKey}
-                    </p>
+                    <p className="mt-1 text-xs text-text-muted">{selected.props.storageKey}</p>
                   )}
                   {logoMessage && (
-                    <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>{logoMessage}</p>
+                    <p className="mt-1 text-xs text-text-muted">{logoMessage}</p>
                   )}
                 </div>
               )}

@@ -6,14 +6,14 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#6366F1',
-          hover:   '#4F46E5',
-          light:   '#EEF2FF',
+          DEFAULT: '#2563EB',
+          hover:   '#1D4ED8',
+          light:   '#EFF6FF',
         },
-        secondary: '#818CF8',
+        secondary: '#3B82F6',
         cta: {
-          DEFAULT: '#10B981',
-          hover:   '#059669',
+          DEFAULT: '#2563EB',
+          hover:   '#1D4ED8',
         },
         warning: {
           DEFAULT: '#F59E0B',
@@ -31,23 +31,24 @@ const config: Config = {
           DEFAULT: '#3B82F6',
           light:   '#EFF6FF',
         },
-        background: '#F5F3FF',
+        background: '#F5F7F9',
         surface: {
           DEFAULT: '#FFFFFF',
-          raised:  '#FAFAFA',
+          raised:  '#F9FAFB',
         },
         text: {
-          DEFAULT: '#1E1B4B',
-          muted:   '#475569',
-          subtle:  '#94A3B8',
+          DEFAULT: '#111827',
+          muted:   '#6B7280',
+          subtle:  '#9CA3AF',
         },
         border: {
-          DEFAULT: 'rgba(99,102,241,0.15)',
-          strong:  'rgba(99,102,241,0.30)',
+          DEFAULT: '#E5E7EB',
+          strong:  '#D1D5DB',
         },
       },
       fontFamily: {
-        sans: ['var(--font-noto-sans-hebrew)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-rubik)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         elevation1: 'var(--elevation-1)',

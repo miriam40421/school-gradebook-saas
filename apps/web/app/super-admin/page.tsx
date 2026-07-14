@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Ban, CheckCircle2, Plus, RotateCcw, School, Trash2 } from 'lucide-react';
+import { Ban, CheckCircle2, Pencil, Plus, RotateCcw, School, Trash2 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/AdminShell';
 import { apiFetch } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { he, translateApiError } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -148,7 +149,7 @@ export default function SuperAdminPage() {
         <Card>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-right text-xs font-semibold text-text-muted">
+              <tr className="border-b border-border text-right text-xs font-semibold text-text-muted">
                 <th className="pb-2 font-semibold">{he.superAdminSchoolName}</th>
                 <th className="pb-2 font-semibold">{he.schoolId}</th>
                 <th className="pb-2 font-semibold">סטטוס</th>
@@ -157,12 +158,12 @@ export default function SuperAdminPage() {
             </thead>
             <tbody>
               {schools.map((s) => (
-                <tr key={s.id} className={`border-b border-slate-50 last:border-b-0 ${s.isDeleted ? 'opacity-50' : s.isBlocked ? 'opacity-70' : ''}`}>
+                <tr key={s.id} className={`border-b border-border last:border-b-0 ${s.isDeleted ? 'opacity-50' : s.isBlocked ? 'opacity-70' : ''}`}>
                   <td className="py-3 font-medium text-text">{s.name}</td>
                   <td className="py-3 font-mono text-xs text-text-muted">{s.id}</td>
                   <td className="py-3">
                     {s.isDeleted ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-2 py-0.5 text-xs font-medium text-text-subtle">
                         <Trash2 className="h-3 w-3" aria-hidden /> {he.superAdminStatusDeleted}
                       </span>
                     ) : s.isBlocked ? (
@@ -170,7 +171,7 @@ export default function SuperAdminPage() {
                         <Ban className="h-3 w-3" aria-hidden /> {he.superAdminStatusBlocked}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-success">
                         <CheckCircle2 className="h-3 w-3" aria-hidden /> {he.superAdminStatusActive}
                       </span>
                     )}
@@ -188,23 +189,54 @@ export default function SuperAdminPage() {
                         </button>
                       ) : (
                         <>
-                          <a href={`/super-admin/schools/${s.id}`} className="text-xs text-primary hover:underline">עריכה</a>
-                          <button
-                            type="button"
-                            onClick={() => toggleBlock.mutate({ id: s.id, block: !s.isBlocked })}
-                            className="text-xs text-text-muted hover:text-text"
-                            title={s.isBlocked ? he.unblockSchool : he.blockSchool}
-                          >
-                            {s.isBlocked ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Ban className="h-4 w-4 text-amber-500" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDelete(s.id)}
-                            className="text-xs text-red-400 hover:text-red-600"
-                            title={he.deleteSchool}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <span className="relative inline-flex group/edit">
+                            <a
+                              href={`/super-admin/schools/${s.id}`}
+                              aria-label="עריכה"
+                              className="ui-icon-action flex h-7 w-7 items-center justify-center rounded-md border border-primary/30 bg-transparent text-primary transition-colors duration-150 hover:border-primary hover:bg-primary/10"
+                            >
+                              <Pencil className="h-3.5 w-3.5" aria-hidden />
+                            </a>
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/edit:opacity-100"
+                            >
+                              עריכה
+                            </span>
+                          </span>
+                          <span className="relative inline-flex group/block">
+                            <button
+                              type="button"
+                              onClick={() => toggleBlock.mutate({ id: s.id, block: !s.isBlocked })}
+                              aria-label={s.isBlocked ? he.unblockSchool : he.blockSchool}
+                              className={cn(
+                                'ui-icon-action flex h-7 w-7 items-center justify-center rounded-md border bg-transparent transition-colors duration-150',
+                                s.isBlocked
+                                  ? 'border-green-200 text-green-600 hover:border-green-400 hover:bg-green-50'
+                                  : 'border-amber-200 text-amber-500 hover:border-amber-400 hover:bg-amber-50',
+                              )}
+                            >
+                              {s.isBlocked
+                                ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                                : <Ban className="h-3.5 w-3.5" aria-hidden />}
+                            </button>
+                            <span aria-hidden className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/block:opacity-100">
+                              {s.isBlocked ? he.unblockSchool : he.blockSchool}
+                            </span>
+                          </span>
+                          <span className="relative inline-flex group/del">
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDelete(s.id)}
+                              aria-label={he.deleteSchool}
+                              className="ui-icon-action flex h-7 w-7 items-center justify-center rounded-md border border-danger/20 bg-transparent text-danger/70 transition-colors duration-150 hover:border-danger/60 hover:bg-danger-light hover:text-danger"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            </button>
+                            <span aria-hidden className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/del:opacity-100">
+                              {he.deleteSchool}
+                            </span>
+                          </span>
                         </>
                       )}
                     </div>
@@ -219,7 +251,7 @@ export default function SuperAdminPage() {
       {/* Delete confirmation dialog */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-sm shadow-elevation4">
+          <Card className="w-full max-w-sm shadow-elevation2">
             <h3 className="mb-2 text-base font-semibold text-text">{he.deleteSchool}</h3>
             <p className="mb-4 text-sm text-text-muted">{he.deleteSchoolConfirm}</p>
             {deleteSchool.isError && (

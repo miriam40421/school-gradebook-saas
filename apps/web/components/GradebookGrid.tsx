@@ -923,10 +923,10 @@ export function GradebookGrid({
       )}
       <div
         ref={parentRef}
-        className="max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-white/80 shadow-elevation1"
+        className="max-h-[70vh] overflow-auto rounded-md border border-border bg-surface shadow-elevation1"
       >
         <table className="w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-[2] bg-slate-50/95 backdrop-blur-sm">
+          <thead className="sticky top-0 z-[2] bg-surface-raised border-b border-border">
             <CategoryTableHeaderRows
               parentSpans={nestedHeaders.parentSpans}
               subSpans={nestedHeaders.subSpans}
@@ -983,7 +983,7 @@ export function GradebookGrid({
                 return (
                   <th
                     key={`${col.kind}-${colIdx}`}
-                    className="whitespace-nowrap bg-sky-50/80 px-2 py-1.5 text-xs"
+                    className="whitespace-nowrap bg-primary-light px-2 py-1.5 text-xs text-primary"
                   >
                     {columnHeaderLabel(col)}
                   </th>

@@ -39,11 +39,11 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <main className="aurora-bg flex min-h-screen items-center justify-center p-4">
-      <Card className="relative z-10 w-full max-w-md shadow-elevation4">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm" variant="flat">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-            <KeyRound className="h-6 w-6 text-primary" aria-hidden />
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+            <KeyRound className="h-5 w-5 text-primary" aria-hidden />
           </div>
           <div>
             <h1 className="text-xl font-semibold text-text">{he.forgotPasswordTitle}</h1>
@@ -86,7 +86,7 @@ function ForgotPasswordForm() {
           </form>
         )}
 
-        <div className="mt-4 border-t border-slate-100 pt-3 text-center">
+        <div className="mt-4 border-t border-border pt-3 text-center">
           <Link href="/login" className="text-xs text-text-muted hover:text-text">
             {he.backToLogin}
           </Link>

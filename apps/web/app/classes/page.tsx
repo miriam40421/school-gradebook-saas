@@ -260,20 +260,24 @@ export default function ClassesPage() {
             <p className="error">{he.noHomeroomUsersHint}</p>
           )}
           <form
+            className="max-w-sm space-y-3"
             onSubmit={(e) => {
               e.preventDefault();
               if (!homeroomTeacherId) return;
               createClass.mutate();
             }}
           >
-            <input
-              value={className}
-              onChange={(e) => setClassName(e.target.value)}
-              placeholder={he.className}
-              required
-            />
-            <label>
-              {he.yearGregorian}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">{he.className}</label>
+              <input
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder={he.className}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">{he.yearGregorian}</label>
               <input
                 type="number"
                 value={year}
@@ -281,17 +285,17 @@ export default function ClassesPage() {
                 min={2000}
                 required
               />
-            </label>
-            <label>
-              {he.yearHebrew}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">{he.yearHebrew}</label>
               <input
                 value={yearHebrew}
                 onChange={(e) => setYearHebrew(e.target.value)}
                 placeholder="תשפ״ה"
               />
-            </label>
-            <label>
-              {he.homeroomTeacher}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">{he.homeroomTeacher}</label>
               <select
                 value={homeroomTeacherId}
                 onChange={(e) => setHomeroomTeacherId(e.target.value)}
@@ -304,9 +308,9 @@ export default function ClassesPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              {he.classCertProfile}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">{he.classCertProfile}</label>
               <select
                 value={newCertProfileId}
                 onChange={(e) => setNewCertProfileId(e.target.value)}
@@ -318,10 +322,8 @@ export default function ClassesPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
-              {he.homeroomRequiredHint}
-            </p>
+            </div>
+            <p className="text-xs text-text-muted">{he.homeroomRequiredHint}</p>
             <button
               type="submit"
               disabled={
@@ -340,7 +342,7 @@ export default function ClassesPage() {
             </p>
           )}
           {createClass.isSuccess && (
-            <p style={{ color: '#059669' }}>{he.classCreatedOk}</p>
+            <p style={{ color: '#2563EB' }}>{he.classCreatedOk}</p>
           )}
         </div>
       )}

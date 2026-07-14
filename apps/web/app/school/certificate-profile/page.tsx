@@ -118,7 +118,7 @@ function FillModeToggle({
     { mode: 'handwritten', label: he.certFillHandwritten },
   ];
   return (
-    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 p-0.5">
+    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-border bg-surface-raised p-0.5">
       {options.map((opt) => (
         <button
           key={opt.mode}
@@ -140,7 +140,7 @@ function FillModeToggle({
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h3 className="border-b border-slate-100 pb-2 pt-5 text-sm font-semibold text-text first:pt-0">
+    <h3 className="border-b border-border pb-2 pt-5 text-sm font-semibold text-text first:pt-0">
       {children}
     </h3>
   );
@@ -171,7 +171,7 @@ function FieldRow({
 }) {
   const isOn = toggleable ? !!enabled : true;
   return (
-    <div className={cn('border-b border-slate-50 py-3 last:border-b-0', !isOn && 'opacity-45')}>
+    <div className={cn('border-b border-border py-3 last:border-b-0', !isOn && 'opacity-45')}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 items-center gap-2.5">
           {toggleable && onToggle && (
@@ -472,14 +472,6 @@ export default function CertificateProfilePage() {
       <PageHeader
         title={he.certificatePrefsTitle}
         description={he.certificatePrefsHint}
-        actions={
-          data ? (
-            <Button type="submit" form="cert-profile-form" disabled={save.isPending}>
-              <Save className="h-4 w-4" aria-hidden />
-              {he.save}
-            </Button>
-          ) : undefined
-        }
       />
 
       {isLoading && <Skeleton className="h-64 w-full" />}
@@ -490,7 +482,7 @@ export default function CertificateProfilePage() {
       )}
 
       {data && (
-        <form id="cert-profile-form" onSubmit={onSubmit} className="space-y-4">
+        <form id="cert-profile-form" onSubmit={onSubmit} className="max-w-2xl space-y-4">
           {(save.isSuccess || save.isError) && (
             <div className="mb-2">
               {save.isSuccess && <Alert variant="success">{he.saved}</Alert>}
@@ -515,8 +507,10 @@ export default function CertificateProfilePage() {
             </div>
             <p className="mb-4 text-sm text-text-muted">{he.certProfilesHint}</p>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-sm font-semibold text-text">{he.certProfileAdd}</p>
+            <div className="rounded-md border border-dashed border-border bg-transparent p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                + פרופיל חדש
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={newProfileName}
@@ -543,8 +537,17 @@ export default function CertificateProfilePage() {
             </div>
 
             {profiles.length > 0 && (
-              <div className="mt-4 rounded-lg border border-slate-200 p-4">
-                <p className="mb-3 text-sm font-semibold text-text">{he.certProfileSelectEdit}</p>
+              <div className="mt-4 rounded-md border border-border p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    הפרופיל הנבחר
+                  </p>
+                  {activeProfile && (
+                    <span className="inline-flex items-center rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {activeProfile.name}
+                    </span>
+                  )}
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{he.certProfileSelectEdit}</Label>
@@ -599,7 +602,7 @@ export default function CertificateProfilePage() {
                   )}
                 </div>
                 {profiles.length > 1 && (
-                  <div className="mt-4 border-t border-slate-100 pt-3">
+                  <div className="mt-4 border-t border-border pt-3">
                     <Button
                       type="button"
                       variant="danger"
@@ -616,6 +619,18 @@ export default function CertificateProfilePage() {
               </div>
             )}
           </Card>
+
+          {activeProfile && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary-light px-4 py-2.5">
+              <span className="text-xs text-text-muted">עורכים כעת:</span>
+              <span className="text-sm font-semibold text-primary">{activeProfile.name}</span>
+              {defaultProfileId === activeProfile.id && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                  ברירת מחדל
+                </span>
+              )}
+            </div>
+          )}
 
           {activeProfile && schoolSubjects.length > 0 && (
             <Card>
@@ -699,7 +714,7 @@ export default function CertificateProfilePage() {
             <h2 className="mb-1 text-lg font-semibold text-text">{he.schoolStepFields}</h2>
             <p className="mb-4 text-sm text-text-muted">{he.certFillModeHint}</p>
 
-            <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-4 rounded-md border border-border bg-surface-raised p-3">
               <Checkbox checked={!!cert.nikud} onChange={() => toggle('nikud')}>
                 {he.certPrefNikud}
               </Checkbox>
@@ -858,6 +873,15 @@ export default function CertificateProfilePage() {
             <SectionTitle>{he.certAttendanceSection}</SectionTitle>
             <FieldRow
               label={he.certAttendanceSection}
+              toggleable
+              enabled={!!hasAttendance}
+              onToggle={() => {
+                if (hasAttendance) {
+                  syncCertToProfile({ ...cert, absences: false, lateness: false, hourAbsences: false, hourLateness: false });
+                } else {
+                  syncCertToProfile({ ...cert, absences: true, lateness: true, hourAbsences: true, hourLateness: true });
+                }
+              }}
               showFillMode={!!hasAttendance}
               fillGroupName="attendanceFill"
               fillMode={cert.attendanceFillMode ?? 'handwritten'}

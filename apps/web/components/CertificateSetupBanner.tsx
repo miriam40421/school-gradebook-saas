@@ -58,7 +58,7 @@ export function CertificateSetupBanner() {
   ];
 
   return (
-    <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+    <div className="mb-6 rounded-md border border-primary/20 bg-primary/5 p-4">
       <p className="mb-3 text-sm font-semibold text-primary">{he.certSetupBannerTitle}</p>
       <ol className="space-y-2">
         {steps.map((step, i) => (

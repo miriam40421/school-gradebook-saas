@@ -10,9 +10,9 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 const variantStyles: Record<CardVariant, string> = {
-  glass:  'bg-white/82 backdrop-blur-glass border border-white/35 shadow-elevation2',
-  flat:   'bg-surface border border-slate-100 shadow-elevation1',
-  raised: 'bg-surface border border-slate-100 shadow-elevation3 hover:shadow-elevation4',
+  glass:  'bg-surface border border-border shadow-elevation1',
+  flat:   'bg-surface border border-border',
+  raised: 'bg-surface border border-border shadow-elevation2 hover:shadow-elevation3',
 };
 
 export function Card({ className, variant, glass, ...props }: CardProps) {
@@ -20,7 +20,7 @@ export function Card({ className, variant, glass, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl p-5 transition-shadow duration-200',
+        'rounded-md p-5 transition-shadow duration-200',
         variantStyles[resolved],
         className,
       )}
