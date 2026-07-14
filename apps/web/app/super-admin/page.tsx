@@ -28,11 +28,7 @@ type CreateSchoolResult = {
 
 export default function SuperAdminPage() {
   const qc = useQueryClient();
-  const { data: schools = [], isLoading, error } = useQuery({
-    queryKey: ['super-admin-schools', showDeleted],
-    queryFn: () => apiFetch<SchoolRow[]>(`/super-admin/schools${showDeleted ? '?includeDeleted=true' : ''}`),
-  });
-
+  const [showDeleted, setShowDeleted] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [adminName, setAdminName] = useState('');
@@ -40,7 +36,11 @@ export default function SuperAdminPage() {
   const [adminPassword, setAdminPassword] = useState('');
   const [lastCreated, setLastCreated] = useState<CreateSchoolResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [showDeleted, setShowDeleted] = useState(false);
+
+  const { data: schools = [], isLoading, error } = useQuery({
+    queryKey: ['super-admin-schools', showDeleted],
+    queryFn: () => apiFetch<SchoolRow[]>(`/super-admin/schools${showDeleted ? '?includeDeleted=true' : ''}`),
+  });
 
   const create = useMutation({
     mutationFn: () =>
