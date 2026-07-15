@@ -391,3 +391,17 @@ TASKS: agent-harden-audit — /home/runner/my_project
 FILES:
   security/AGENT-HARDENING-FINDINGS.md — דוח 8 שכבות hardening
 STATUS: 0/4 enforcing layers. עיקרי: GitHub PAT plaintext בsettings.json (🔴), אין hook לblocking secrets, security-reviewer כולל Bash. אין CI.
+
+--- 2026-07-15 12:00 ---
+TASKS: JWT refresh token pair (P1 מ-FOLLOWUPS)
+FILES:
+  apps/api/prisma/schema.prisma — RefreshToken model
+  apps/api/prisma/migrations/20260715084252_add_refresh_tokens/
+  apps/api/src/auth/auth.service.ts — issueTokens(), refresh(), revokeRefreshToken()
+  apps/api/src/auth/auth.controller.ts — POST /auth/refresh, logout קבל refreshToken
+  apps/api/src/auth/auth.module.ts — TTL 4h → 15m
+  apps/web/lib/api.ts — getRefreshToken/setRefreshToken/clearRefreshToken + interceptor
+  apps/web/lib/auth.tsx — login/logout עם refreshToken
+  apps/web/app/login/page.tsx — platform login שומר refreshToken
+COMMITS: 860a413
+STATUS: COMPLETE. משתמש נשאר מחובר כל עוד פעיל (refresh 7d). P1 FOLLOWUPS — סגור.
