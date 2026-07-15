@@ -13,6 +13,16 @@
 - **school_id**: כל entity שייך לבית ספר חייב לכלול `schoolId` + FK constraint
 - **Immutability**: אסור לשנות CertificateSnapshot לאחר יצירה
 
+## אבטחה — כללים מחייבים
+
+- **אסור לגעת** ב-`apps/api/.env`, `~/.aws/**`, `~/.ssh/**`, `**/secrets/**`, קבצי `*.pem` / `*.key`
+- **אסור לרשום** סודות, tokens, או passwords לשום log / console / comment
+- **SQL**: Prisma בלבד — אין `$queryRaw` עם string concatenation
+- **אין** plaintext credentials בקוד, DTOs, או תגובות API
+- **סיסמאות**: bcrypt בלבד, לא MD5/SHA בלי salt
+
+---
+
 ## Business Rules — לא לשבור
 
 1. GradingTerm נעול (`isLocked=true`) → אסור לשנות grades. API מחזיר 403.
