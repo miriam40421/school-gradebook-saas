@@ -22,7 +22,7 @@ import { EmailService } from '../super-admin/email.service';
         }
         return {
           secret,
-          signOptions: { expiresIn: '4h' },
+          signOptions: { expiresIn: '15m' },
         };
       },
     }),

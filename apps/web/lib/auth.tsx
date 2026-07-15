@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 import type { AuthUserDto } from '@school/shared';
 import { Role } from '@school/shared';
-import { apiFetch, clearToken, getToken, setToken } from './api';
+import { apiFetch, clearRefreshToken, clearToken, getRefreshToken, getToken, setRefreshToken, setToken } from './api';
 
 type AuthContextValue = {
   user: AuthUserDto | null;
@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadMe = useCallback(async () => {
     const token = getToken();
-    if (!token) {
+    const refresh = getRefreshToken();
+    if (!token && !refresh) {
       setUser(null);
       setLoading(false);
       return;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
     } catch {
       clearToken();
+      clearRefreshToken();
       setUser(null);
     } finally {
       setLoading(false);
@@ -66,11 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, loading, pathname, router]);
 
   const login = async (schoolId: string, email: string, password: string) => {
-    const data = await apiFetch<{ accessToken: string; user: AuthUserDto }>(
+    const data = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUserDto }>(
       '/auth/login',
       { method: 'POST', body: JSON.stringify({ schoolId, email, password }) },
     );
     setToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
     setUser(data.user);
     if (data.user.role === Role.SuperAdmin) {
       router.replace('/super-admin');
@@ -84,8 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
+    const refreshToken = getRefreshToken();
+    await apiFetch('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }).catch(() => undefined);
     clearToken();
+    clearRefreshToken();
     window.location.replace('/login');
   };
 

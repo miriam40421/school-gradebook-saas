@@ -38,6 +38,12 @@ class ResetPasswordDto {
   password!: string;
 }
 
+class RefreshDto {
+  @IsString()
+  @MinLength(1)
+  refreshToken!: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -74,18 +80,30 @@ export class AuthController {
     return this.auth.resetPassword(dto.token, dto.password);
   }
 
+  @Public()
+  @Post('refresh')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  refresh(@Body() dto: RefreshDto) {
+    return this.auth.refresh(dto.refreshToken);
+  }
+
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@CurrentUser() user: JwtPayload & { jti?: string; exp?: number }, @Req() req: Request) {
+  async logout(
+    @CurrentUser() user: JwtPayload & { jti?: string; exp?: number },
+    @Req() req: Request,
+    @Body() body: { refreshToken?: string },
+  ) {
     if (!user.jti) throw new BadRequestException('Token missing jti claim — re-authenticate');
     await Promise.all([
       this.revocation.revoke(
         user.jti,
         user.exp
           ? new Date(user.exp * 1000)
-          : new Date(Date.now() + 4 * 60 * 60 * 1000),
+          : new Date(Date.now() + 15 * 60 * 1000),
       ),
       this.prisma.editLock.deleteMany({ where: { lockedBy: user.sub } }),
+      body.refreshToken ? this.auth.revokeRefreshToken(body.refreshToken) : Promise.resolve(),
     ]);
     return { success: true };
   }

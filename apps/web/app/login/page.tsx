@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import { Eye, EyeOff, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { apiFetch, setToken } from '@/lib/api';
+import { apiFetch, setRefreshToken, setToken } from '@/lib/api';
 import type { AuthUserDto } from '@school/shared';
 import { he, translateApiError } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
@@ -31,11 +31,12 @@ export default function LoginPage() {
     try {
       if (!schoolId.trim()) {
         try {
-          const data = await apiFetch<{ accessToken: string; user: AuthUserDto }>(
+          const data = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUserDto }>(
             '/auth/platform/login',
             { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) },
           );
           setToken(data.accessToken);
+          setRefreshToken(data.refreshToken);
           window.location.replace('/super-admin');
         } catch (err) {
           const msg = err instanceof Error ? err.message : he.loginFailed;

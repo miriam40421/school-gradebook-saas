@@ -15,11 +15,53 @@ export function clearToken() {
   sessionStorage.removeItem('accessToken');
 }
 
-export async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = getToken();
+export function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refreshToken');
+}
+
+export function setRefreshToken(token: string) {
+  localStorage.setItem('refreshToken', token);
+}
+
+export function clearRefreshToken() {
+  localStorage.removeItem('refreshToken');
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefresh(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) {
+        clearToken();
+        clearRefreshToken();
+        return false;
+      }
+      const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      setToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      return true;
+    } catch {
+      clearToken();
+      clearRefreshToken();
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
+async function doFetch(path: string, options: RequestInit, token: string | null): Promise<Response> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(options.headers ?? {}),
@@ -27,33 +69,59 @@ export async function apiFetch<T>(
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
+  return fetch(`${API_URL}${path}`, { ...options, headers });
+}
+
+function parseErrorResponse(res: Response, body: { message?: string | string[]; lockedBy?: { id: string; name: string }; expiresAt?: string }) {
+  const raw =
+    typeof body.message === 'string'
+      ? body.message
+      : Array.isArray(body.message)
+        ? body.message.join(', ')
+        : res.statusText;
+  const err = new Error(translateApiError(raw)) as Error & {
+    statusCode?: number;
+    lockedBy?: { id: string; name: string };
+    expiresAt?: string;
+  };
+  err.statusCode = res.status;
+  if (body.lockedBy) err.lockedBy = body.lockedBy;
+  if (body.expiresAt) err.expiresAt = body.expiresAt;
+  return err;
+}
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    res = await doFetch(path, options, getToken());
   } catch {
     throw new Error(translateApiError('Failed to fetch'));
   }
+
+  if (res.status === 401 && path !== '/auth/refresh') {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      try {
+        res = await doFetch(path, options, getToken());
+      } catch {
+        throw new Error(translateApiError('Failed to fetch'));
+      }
+    } else {
+      if (typeof window !== 'undefined') window.location.replace('/login');
+      throw new Error(translateApiError('Unauthorized'));
+    }
+  }
+
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as {
       message?: string | string[];
       lockedBy?: { id: string; name: string };
       expiresAt?: string;
     };
-    const raw =
-      typeof body.message === 'string'
-        ? body.message
-        : Array.isArray(body.message)
-          ? body.message.join(', ')
-          : res.statusText;
-    const err = new Error(translateApiError(raw)) as Error & {
-      statusCode?: number;
-      lockedBy?: { id: string; name: string };
-      expiresAt?: string;
-    };
-    err.statusCode = res.status;
-    if (body.lockedBy) err.lockedBy = body.lockedBy;
-    if (body.expiresAt) err.expiresAt = body.expiresAt;
-    throw err;
+    throw parseErrorResponse(res, body);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

@@ -18,6 +18,30 @@ export class AuthService {
     private email: EmailService,
   ) {}
 
+  private async issueTokens(user: { id: string; email: string; schoolId: string | null; role: string; name: string }) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      school_id: user.schoolId ?? null,
+      role: user.role as Role,
+    };
+    const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
+    const rawRefresh = randomBytes(40).toString('hex');
+    const refreshHash = createHash('sha256').update(rawRefresh).digest('hex');
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: refreshHash,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+    return {
+      accessToken,
+      refreshToken: rawRefresh,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, schoolId: user.schoolId },
+    };
+  }
+
   async login(dto: LoginDto, ip?: string) {
     const email = dto.email.toLowerCase();
     const user = await this.prisma.user.findUnique({
@@ -45,24 +69,8 @@ export class AuthService {
       this.logger.warn(JSON.stringify({ event: 'login_failure', email, schoolId: dto.schoolId, ip, reason: 'wrong_password' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      school_id: user.schoolId ?? null,
-      role: user.role as Role,
-    };
-    const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
     this.logger.log(JSON.stringify({ event: 'login_success', userId: user.id, email, schoolId: user.schoolId, ip }));
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        schoolId: user.schoolId,
-      },
-    };
+    return this.issueTokens(user);
   }
 
   async platformLogin(email: string, password: string, ip?: string) {
@@ -79,24 +87,32 @@ export class AuthService {
       this.logger.warn(JSON.stringify({ event: 'platform_login_failure', email: normalizedEmail, ip, reason: 'wrong_password' }));
       throw new UnauthorizedException('Invalid credentials');
     }
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      school_id: null,
-      role: user.role as Role,
-    };
-    const accessToken = this.jwt.sign(payload, { jwtid: randomUUID() });
     this.logger.log(JSON.stringify({ event: 'platform_login_success', userId: user.id, email: normalizedEmail, ip }));
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        schoolId: null,
+    return this.issueTokens({ ...user, schoolId: null });
+  }
+
+  async refresh(rawRefreshToken: string) {
+    const tokenHash = createHash('sha256').update(rawRefreshToken).digest('hex');
+    const record = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: {
+        user: { select: { id: true, email: true, schoolId: true, role: true, name: true, deletedAt: true } },
       },
-    };
+    });
+    if (!record || record.revokedAt || record.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token invalid or expired');
+    }
+    if (record.user.deletedAt) throw new UnauthorizedException();
+    await this.prisma.refreshToken.update({ where: { id: record.id }, data: { revokedAt: new Date() } });
+    return this.issueTokens(record.user);
+  }
+
+  async revokeRefreshToken(rawRefreshToken: string) {
+    const tokenHash = createHash('sha256').update(rawRefreshToken).digest('hex');
+    await this.prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   async forgotPassword(schoolId: string, email: string) {
