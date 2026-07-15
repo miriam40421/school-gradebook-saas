@@ -1,5 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { SuperAdminOnly } from '../common/admin-controller.base';
+import { AuditService } from '../common/audit.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/jwt-payload.interface';
 import { SuperAdminService } from './super-admin.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
@@ -7,7 +10,10 @@ import { UpdateSchoolDto } from './dto/update-school.dto';
 @Controller('super-admin')
 @SuperAdminOnly()
 export class SuperAdminController {
-  constructor(private superAdmin: SuperAdminService) {}
+  constructor(
+    private superAdmin: SuperAdminService,
+    private audit: AuditService,
+  ) {}
 
   @Get('schools')
   listSchools(@Query('includeDeleted') includeDeleted?: string) {
@@ -20,32 +26,44 @@ export class SuperAdminController {
   }
 
   @Post('schools')
-  createSchool(@Body() dto: CreateSchoolDto) {
-    return this.superAdmin.createSchool(dto);
+  async createSchool(@CurrentUser() actor: JwtPayload, @Body() dto: CreateSchoolDto) {
+    const result = await this.superAdmin.createSchool(dto);
+    this.audit.emit({ action: 'school.create', actorId: actor.sub, targetType: 'School', targetId: result.school.id });
+    return result;
   }
 
   @Patch('schools/:id')
-  updateSchool(@Param('id') id: string, @Body() dto: UpdateSchoolDto) {
-    return this.superAdmin.updateSchool(id, dto);
+  async updateSchool(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() dto: UpdateSchoolDto) {
+    const result = await this.superAdmin.updateSchool(id, dto);
+    this.audit.emit({ action: 'school.update', actorId: actor.sub, targetType: 'School', targetId: id });
+    return result;
   }
 
   @Patch('schools/:id/block')
-  blockSchool(@Param('id') id: string) {
-    return this.superAdmin.blockSchool(id, true);
+  async blockSchool(@CurrentUser() actor: JwtPayload, @Param('id') id: string) {
+    const result = await this.superAdmin.blockSchool(id, true);
+    this.audit.emit({ action: 'school.block', actorId: actor.sub, targetType: 'School', targetId: id });
+    return result;
   }
 
   @Patch('schools/:id/unblock')
-  unblockSchool(@Param('id') id: string) {
-    return this.superAdmin.blockSchool(id, false);
+  async unblockSchool(@CurrentUser() actor: JwtPayload, @Param('id') id: string) {
+    const result = await this.superAdmin.blockSchool(id, false);
+    this.audit.emit({ action: 'school.unblock', actorId: actor.sub, targetType: 'School', targetId: id });
+    return result;
   }
 
   @Delete('schools/:id')
-  deleteSchool(@Param('id') id: string) {
-    return this.superAdmin.deleteSchool(id);
+  async deleteSchool(@CurrentUser() actor: JwtPayload, @Param('id') id: string) {
+    const result = await this.superAdmin.deleteSchool(id);
+    this.audit.emit({ action: 'school.delete', actorId: actor.sub, targetType: 'School', targetId: id });
+    return result;
   }
 
   @Patch('schools/:id/restore')
-  restoreSchool(@Param('id') id: string) {
-    return this.superAdmin.restoreSchool(id);
+  async restoreSchool(@CurrentUser() actor: JwtPayload, @Param('id') id: string) {
+    const result = await this.superAdmin.restoreSchool(id);
+    this.audit.emit({ action: 'school.restore', actorId: actor.sub, targetType: 'School', targetId: id });
+    return result;
   }
 }

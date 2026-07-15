@@ -22,12 +22,14 @@ import { StorageModule } from './storage/storage.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { CertificateTemplatesModule } from './certificate-templates/certificate-templates.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot({ throttlers: [{ name: 'default', limit: 300, ttl: 60000 }] }),
     PrismaModule,
+    CommonModule,
     StorageModule,
     HealthModule,
     AuthModule,

@@ -14,9 +14,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Authenticated, HomeroomOrAdmin } from '../common/auth-decorators';
+import { Authenticated, HomeroomOnly, HomeroomOrAdmin } from '../common/auth-decorators';
 import { SchoolUserPayload } from '../auth/jwt-payload.interface';
-import { assertHomeroomWrite } from './student-access';
 import {
   CreateStudentDto,
   ImportStudentsDto,
@@ -40,18 +39,19 @@ export class StudentsController {
   }
 
   @Post()
+  @HomeroomOnly()
   create(@CurrentUser() user: SchoolUserPayload, @Body() dto: CreateStudentDto) {
-    assertHomeroomWrite(user);
     return this.students.create(user, dto);
   }
 
   @Post('import')
+  @HomeroomOnly()
   importJson(@CurrentUser() user: SchoolUserPayload, @Body() dto: ImportStudentsDto) {
-    assertHomeroomWrite(user);
     return this.students.importMany(user, dto);
   }
 
   @Post('import-file')
+  @HomeroomOnly()
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -63,7 +63,6 @@ export class StudentsController {
     @Query('classId') classId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    assertHomeroomWrite(user);
     if (!classId) {
       throw new BadRequestException('classId required');
     }
@@ -74,28 +73,28 @@ export class StudentsController {
   }
 
   @Patch(':id')
+  @HomeroomOnly()
   update(
     @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateStudentDto,
   ) {
-    assertHomeroomWrite(user);
     return this.students.update(user, id, dto);
   }
 
   @Patch(':id/group-memberships')
+  @HomeroomOnly()
   updateGroupMemberships(
     @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
     @Body() dto: UpdateStudentGroupMembershipsDto,
   ) {
-    assertHomeroomWrite(user);
     return this.students.updateGroupMemberships(user, id, dto.classGroupIds);
   }
 
   @Delete(':id')
+  @HomeroomOnly()
   remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
-    assertHomeroomWrite(user);
     return this.students.remove(user, id);
   }
 }

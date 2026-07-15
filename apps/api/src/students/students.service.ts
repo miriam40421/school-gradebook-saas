@@ -21,6 +21,7 @@ import { parseNamesFromBuffer } from './import-names.util';
 import { normalizeStudentFullName } from '@school/shared';
 import { sortStudentsByFamilyName } from './student-sort.util';
 import { assertValidGroupMemberships } from './student-groups.util';
+import { AuditService } from '../common/audit.service';
 
 const studentIncludeFull = {
   class: true,
@@ -41,7 +42,10 @@ const studentIncludeBasic = {
 
 @Injectable()
 export class StudentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private audit: AuditService,
+  ) {}
 
   private async assertClassInSchool(schoolId: string, classId: string) {
     const cls = await this.prisma.class.findFirst({
@@ -108,7 +112,7 @@ export class StudentsService {
     assertHomeroomWrite(user);
     await assertHomeroomClassAccess(this.prisma, user, dto.classId);
     await this.assertClassInSchool(user.school_id, dto.classId);
-    return this.prisma.student.create({
+    const student = await this.prisma.student.create({
       data: {
         schoolId: user.school_id,
         classId: dto.classId,
@@ -116,6 +120,8 @@ export class StudentsService {
       },
       include: studentIncludeBasic,
     });
+    this.audit.emit({ action: 'student.create', actorId: user.sub, targetType: 'Student', targetId: student.id, schoolId: user.school_id });
+    return student;
   }
 
   async updateGroupMemberships(
@@ -212,7 +218,7 @@ export class StudentsService {
         dto.classGroupId ? [dto.classGroupId] : [],
       );
     }
-    return this.prisma.student.update({
+    const updated = await this.prisma.student.update({
       where: { id },
       data: {
         fullName: dto.fullName
@@ -222,6 +228,8 @@ export class StudentsService {
       },
       include: studentIncludeBasic,
     });
+    this.audit.emit({ action: 'student.update', actorId: user.sub, targetType: 'Student', targetId: id, schoolId: user.school_id });
+    return updated;
   }
 
   async remove(user: SchoolUserPayload, id: string) {
@@ -234,6 +242,7 @@ export class StudentsService {
     }
     await assertHomeroomStudentAccess(this.prisma, user, id);
     await this.prisma.student.update({ where: { id }, data: { deletedAt: new Date() } });
+    this.audit.emit({ action: 'student.delete', actorId: user.sub, targetType: 'Student', targetId: id, schoolId: user.school_id });
     return { success: true };
   }
 }

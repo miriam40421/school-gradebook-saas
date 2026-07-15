@@ -31,12 +31,14 @@ import {
   resolveAllowedLabelsForTypeHierarchy,
   type GradingSetWithValues,
 } from './label-resolution.util';
+import { AuditService } from '../common/audit.service';
 
 @Injectable()
 export class GradebookService {
   constructor(
     private prisma: PrismaService,
     private locks: LocksService,
+    private audit: AuditService,
   ) {}
 
   private async loadAssignments(
@@ -494,6 +496,15 @@ export class GradebookService {
         out.push(this.entryToDto(row));
       }
       return out;
+    });
+
+    this.audit.emit({
+      action: 'grade.bulk_update',
+      actorId: user.sub,
+      targetType: 'GradeEntry',
+      targetId: dto.classId,
+      schoolId: user.school_id,
+      meta: { termId: dto.termId, count: dto.updates.length },
     });
 
     return { entries: results };

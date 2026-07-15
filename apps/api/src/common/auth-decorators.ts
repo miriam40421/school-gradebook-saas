@@ -17,3 +17,7 @@ export function HomeroomOrAdmin() {
     Roles(Role.Admin, Role.HomeroomTeacher),
   );
 }
+
+export function HomeroomOnly() {
+  return Roles(Role.HomeroomTeacher);
+}
