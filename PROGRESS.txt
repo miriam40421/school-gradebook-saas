@@ -366,3 +366,22 @@ Files changed:
 - 8 critical findings + 2 supply-chain HIGH + 14 risk + 9 nit
 - Top crits: plaintext passwords in emails (email.service.ts:49), no global JwtAuthGuard (app.module.ts:49), reset token plaintext in DB (auth.service.ts:115), JWT TTL 24h, syncSubjects non-transactional
 - Report: security/SOFTWARE-SECURITY-FINDINGS.md
+
+--- 2026-07-15 10:15 ---
+TASKS: Security fixes loop — batch 2 (code audit remaining items)
+FILES:
+  apps/api/src/common/guards/roles.guard.ts — deny-by-default (false not true)
+  apps/api/src/common/auth-decorators.ts — added HomeroomOnly()
+  apps/api/src/students/students.controller.ts — @HomeroomOnly() on write routes
+  apps/api/src/common/audit.service.ts — NEW: AuditService (fire-and-forget emit)
+  apps/api/src/common/common.module.ts — NEW: @Global CommonModule
+  apps/api/src/common/data-retention.service.ts — NEW: @Cron daily purge (7yr)
+  apps/api/prisma/schema.prisma — AuditEvent model
+  apps/api/prisma/migrations/20260715065620_add_audit_events/ — migration
+  apps/api/src/gradebook/gradebook.service.ts — audit emit after bulkUpdate
+  apps/api/src/students/students.service.ts — audit emit after create/update/remove
+  apps/api/src/super-admin/super-admin.controller.ts — audit emit after each action
+  pnpm-workspace.yaml — overrides: postcss>=8.5.10, uuid>=11.1.1
+  apps/api/.env — NODE_ENV=development (fixes CORS startup check)
+COMMITS: f643b55
+STATUS: Code audit dוח — COMPLETE. Moving to /infra-audit.
