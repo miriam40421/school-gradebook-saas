@@ -27,7 +27,8 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
   const port = process.env.API_PORT ?? 3001;
-  await app.listen(port);
+  const host = isDev ? '0.0.0.0' : '127.0.0.1';
+  await app.listen(port, host);
 }
 
 bootstrap();
