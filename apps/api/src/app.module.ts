@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ClassGroupsModule } from './class-groups/class-groups.module';
 import { ClassesModule } from './classes/classes.module';
 import { GradingSetTypesModule } from './grading-set-types/grading-set-types.module';
@@ -46,6 +47,9 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     CertificateTemplatesModule,
     SuperAdminModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

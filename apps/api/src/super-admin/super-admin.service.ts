@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
@@ -10,6 +11,16 @@ export class SuperAdminService {
   private readonly logger = new Logger(SuperAdminService.name);
 
   constructor(private prisma: PrismaService, private email: EmailService) {}
+
+  private async createSetPasswordUrl(userId: string): Promise<string> {
+    await this.prisma.passwordResetToken.deleteMany({ where: { userId, usedAt: null } });
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await this.prisma.passwordResetToken.create({ data: { userId, token: tokenHash, expiresAt } });
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+    return `${appUrl}/reset-password?token=${token}`;
+  }
 
   async listSchools(includeDeleted = false) {
     const schools = await this.prisma.school.findMany({
@@ -88,17 +99,23 @@ export class SuperAdminService {
       return {
         schoolNameAfter: dto.schoolName ? dto.schoolName.trim() : school.name,
         adminEmail: dto.adminEmail ? dto.adminEmail.toLowerCase() : (admin?.email ?? ''),
+        adminId: admin?.id,
+        passwordChanged: !!dto.adminPassword,
       };
     });
 
     if (dto.schoolName || dto.adminEmail || dto.adminPassword) {
       if (result.adminEmail) {
+        let resetUrl: string | undefined;
+        if (result.passwordChanged && result.adminId) {
+          resetUrl = await this.createSetPasswordUrl(result.adminId);
+        }
         this.email.sendSchoolUpdate({
           to: result.adminEmail,
           schoolName: result.schoolNameAfter,
           schoolId: id,
           adminEmail: result.adminEmail,
-          changedPassword: dto.adminPassword,
+          resetUrl,
           schoolNameChanged: !!dto.schoolName,
         }).catch((err: unknown) => this.logger.error('sendSchoolUpdate failed', err));
       }
@@ -151,12 +168,13 @@ export class SuperAdminService {
     });
 
     // Send email only after transaction commits successfully
+    const resetUrl = await this.createSetPasswordUrl(result.admin.id);
     this.email.sendSchoolWelcome({
       to: result.admin.email,
       schoolName: result.school.name,
       schoolId: result.school.id,
       adminEmail: result.admin.email,
-      adminPassword: dto.adminPassword,
+      resetUrl,
     }).catch((err: unknown) => this.logger.error('sendSchoolWelcome failed', err));
 
     return result;

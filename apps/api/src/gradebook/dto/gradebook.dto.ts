@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -16,6 +17,7 @@ export class BulkGradeUpdateItemDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(64)
   value!: string | null;
 }
 

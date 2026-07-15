@@ -9,9 +9,13 @@ async function bootstrap() {
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-  const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
-  if (process.env.NODE_ENV === 'production' && !corsOrigin.startsWith('https://')) {
-    throw new Error('CORS_ORIGIN must be a valid HTTPS URL in production');
+  const isDev = process.env.NODE_ENV === 'development';
+  const corsOrigin = process.env.CORS_ORIGIN ?? (isDev ? 'http://localhost:3000' : null);
+  if (!corsOrigin) {
+    throw new Error('CORS_ORIGIN must be set in non-development environments');
+  }
+  if (!isDev && !corsOrigin.startsWith('https://')) {
+    throw new Error('CORS_ORIGIN must be a valid HTTPS URL in non-development environments');
   }
   app.enableCors({ origin: corsOrigin });
   app.useGlobalPipes(

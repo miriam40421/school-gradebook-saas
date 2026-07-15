@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { randomBytes, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { Role } from '@school/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -113,9 +113,10 @@ export class AuthService {
     });
 
     const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
     await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, token, expiresAt },
+      data: { userId: user.id, token: tokenHash, expiresAt },
     });
 
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
@@ -127,9 +128,10 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     const passwordHash = await bcrypt.hash(newPassword, 12);
+    const tokenHash = createHash('sha256').update(token).digest('hex');
     await this.prisma.$transaction(async (tx) => {
       const record = await tx.passwordResetToken.findUnique({
-        where: { token },
+        where: { token: tokenHash },
         include: { user: { select: { deletedAt: true, schoolId: true } } },
       });
       if (!record || record.usedAt || record.expiresAt < new Date()) {
@@ -147,8 +149,9 @@ export class AuthService {
           throw new BadRequestException('הקישור אינו תקף או שפג תוקפו');
         }
       }
-      await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
-      await tx.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+      const now = new Date();
+      await tx.user.update({ where: { id: record.userId }, data: { passwordHash, tokensValidAfter: now } });
+      await tx.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: now } });
     });
     return { success: true };
   }

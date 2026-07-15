@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class TokenRevocationService {
     return token !== null;
   }
 
+  @Cron(CronExpression.EVERY_HOUR)
   async purgeExpired(): Promise<void> {
     await this.prisma.revokedToken.deleteMany({
       where: { expiresAt: { lt: new Date() } },

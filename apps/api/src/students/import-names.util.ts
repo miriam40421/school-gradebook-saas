@@ -40,14 +40,31 @@ type ColumnMap = {
   last?: number;
 };
 
+// Magic-byte signatures for supported binary formats
+const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // DOCX, XLSX (ZIP-based)
+const OLE2_MAGIC = Buffer.from([0xd0, 0xcf, 0x11, 0xe0]); // XLS legacy (OLE2)
+
+function detectBinaryFormat(buf: Buffer): 'zip' | 'ole2' | 'text' | 'unknown' {
+  if (buf.length >= 4 && buf.subarray(0, 4).equals(ZIP_MAGIC)) return 'zip';
+  if (buf.length >= 4 && buf.subarray(0, 4).equals(OLE2_MAGIC)) return 'ole2';
+  // Heuristic: if the buffer is valid UTF-8 text, treat as text
+  try {
+    Buffer.from(buf).toString('utf8');
+    return 'text';
+  } catch {
+    return 'unknown';
+  }
+}
+
 export async function parseNamesFromBuffer(
   buffer: Buffer,
   filename: string,
 ): Promise<string[]> {
-  // eslint-disable-next-line no-console
-  console.log('[import-debug] filename:', filename, 'size:', buffer.length);
   const lower = filename.toLowerCase();
+  const detected = detectBinaryFormat(buffer);
+
   if (lower.endsWith('.docx')) {
+    if (detected !== 'zip') throw new Error('הקובץ אינו קובץ Word תקין (.docx)');
     return parseWord(buffer);
   }
   if (lower.endsWith('.doc')) {
@@ -55,12 +72,21 @@ export async function parseNamesFromBuffer(
       'Unsupported file type: save the document as .docx (Word 2007+) and try again',
     );
   }
-  if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+  if (lower.endsWith('.xlsx')) {
+    if (detected !== 'zip') throw new Error('הקובץ אינו קובץ Excel תקין (.xlsx)');
+    return parseExcel(buffer);
+  }
+  if (lower.endsWith('.xls')) {
+    if (detected !== 'ole2' && detected !== 'zip') throw new Error('הקובץ אינו קובץ Excel תקין (.xls)');
     return parseExcel(buffer);
   }
   if (lower.endsWith('.csv') || lower.endsWith('.txt')) {
+    if (detected !== 'text') throw new Error('הקובץ אינו קובץ טקסט תקין');
     return parseText(buffer.toString('utf8'));
   }
+  // Fallback: detect by content
+  if (detected === 'zip') return parseExcel(buffer);
+  if (detected === 'ole2') return parseExcel(buffer);
   const asText = buffer.toString('utf8');
   if (asText.includes('\t') || asText.includes(',')) {
     return parseText(asText);
@@ -345,8 +371,6 @@ async function parseExcel(buffer: Buffer): Promise<string[]> {
   await workbook.xlsx.load(buffer as any);
   const worksheet = workbook.worksheets[0];
   if (!worksheet) {
-    // eslint-disable-next-line no-console
-    console.log('[import-debug] no worksheet found');
     return [];
   }
   const rows: string[][] = [];
@@ -361,8 +385,6 @@ async function parseExcel(buffer: Buffer): Promise<string[]> {
     while (lastNonEmpty > firstNonEmpty && !cells[lastNonEmpty].trim()) lastNonEmpty--;
     rows.push(cells.slice(firstNonEmpty, lastNonEmpty + 1));
   });
-  // eslint-disable-next-line no-console
-  console.log('[import-debug] excel rows:', JSON.stringify(rows.slice(0, 5)));
   return parseRows(rows);
 }
 

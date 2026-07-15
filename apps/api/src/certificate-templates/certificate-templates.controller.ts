@@ -64,7 +64,7 @@ export class CertificateTemplatesController {
   }
 
   @Post(':id/logo')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
   uploadLogo(
     @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,
@@ -77,7 +77,7 @@ export class CertificateTemplatesController {
   }
 
   @Post(':id/background')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
   uploadBackground(
     @CurrentUser() user: SchoolUserPayload,
     @Param('id') id: string,

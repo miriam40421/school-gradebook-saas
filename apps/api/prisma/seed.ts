@@ -6,6 +6,9 @@ const BCRYPT_ROUNDS = 12;
 const DEMO_PASSWORD = 'DemoAdmin1!';
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Seed must not run in production');
+  }
   if (process.env.SEED_DEMO !== '1') {
     console.log(
       'Seed skipped. Set SEED_DEMO=1 to load demo data (wipes all schools first).',

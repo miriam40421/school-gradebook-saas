@@ -703,7 +703,7 @@ export class CertificatesService {
       }
       try {
         const pdfBuffer = pdfBuffers[pdfIdx++];
-        await this.storage.putObject(item.storageKey, pdfBuffer, 'application/pdf');
+        // Write DB record first so a storage failure leaves no orphaned object
         await this.prisma.certificateSnapshot.create({
           data: {
             id: item.snapshotId,
@@ -716,6 +716,7 @@ export class CertificatesService {
             generatedBy: user.sub,
           },
         });
+        await this.storage.putObject(item.storageKey, pdfBuffer, 'application/pdf');
         results.push({ studentId: item.student.id, snapshotId: item.snapshotId, ok: true });
       } catch (err) {
         results.push({
@@ -955,6 +956,7 @@ export class CertificatesService {
     overrides: Record<string, string>,
   ): Promise<void> {
     const classRow = await this.assertClassViewAccess(user, classId);
+    this.assertCanGenerate(user, classRow);
     const school = await this.prisma.school.findFirst({ where: { id: user.school_id } });
     if (!school) throw new NotFoundException();
 
@@ -973,6 +975,7 @@ export class CertificatesService {
     overrides: Record<string, string>,
   ): Promise<void> {
     const classRow = await this.assertClassViewAccess(user, classId);
+    this.assertCanGenerate(user, classRow);
     const school = await this.prisma.school.findFirst({ where: { id: user.school_id } });
     if (!school) throw new NotFoundException();
 

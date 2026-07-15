@@ -100,6 +100,8 @@ model User {
 
 
 
+  tokensValidAfter DateTime? @map("tokens_valid_after")
+
   createdAt    DateTime  @default(now()) @map("created_at")
 
   deletedAt    DateTime? @map("deleted_at")

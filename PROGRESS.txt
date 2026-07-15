@@ -360,3 +360,9 @@ Files changed:
   apps/web/app/login/page.tsx
   apps/web/lib/auth.tsx
   apps/web/lib/he.ts
+
+## 2026-07-15 — Secure-code-review audit
+- Ran full 5-domain security audit (authn/authz, input/files, data/secrets/sessions, errors/defaults, supply-chain)
+- 8 critical findings + 2 supply-chain HIGH + 14 risk + 9 nit
+- Top crits: plaintext passwords in emails (email.service.ts:49), no global JwtAuthGuard (app.module.ts:49), reset token plaintext in DB (auth.service.ts:115), JWT TTL 24h, syncSubjects non-transactional
+- Report: security/SOFTWARE-SECURITY-FINDINGS.md

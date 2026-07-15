@@ -10,7 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsString, IsUUID } from 'class-validator';
 import { Authenticated } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SchoolUserPayload } from '../auth/jwt-payload.interface';
@@ -22,6 +22,14 @@ class NikudTextBodyDto {
   @IsString()
   @IsNotEmpty()
   text!: string;
+}
+
+class ClassOverridesDto {
+  @IsUUID()
+  classId!: string;
+
+  @IsObject()
+  overrides!: Record<string, string>;
 }
 
 @Controller('certificates')
@@ -77,7 +85,7 @@ export class CertificatesController {
   @HttpCode(204)
   async upsertLabelOverrides(
     @CurrentUser() user: SchoolUserPayload,
-    @Body() body: { classId: string; overrides: Record<string, string> },
+    @Body() body: ClassOverridesDto,
   ) {
     await this.certificates.upsertLabelOverrides(user, body.classId, body.overrides);
   }
@@ -87,7 +95,7 @@ export class CertificatesController {
   @HttpCode(204)
   async upsertNikudClassOverrides(
     @CurrentUser() user: SchoolUserPayload,
-    @Body() body: { classId: string; overrides: Record<string, string> },
+    @Body() body: ClassOverridesDto,
   ) {
     await this.certificates.upsertNikudClassOverrides(user, body.classId, body.overrides);
   }

@@ -97,18 +97,10 @@ export class StudentsService {
       deletedAt: null,
       classId: classId ? classId : { in: classIds },
     };
-    let rows;
-    try {
-      rows = await this.prisma.student.findMany({
-        where,
-        include: studentIncludeFull,
-      });
-    } catch {
-      rows = await this.prisma.student.findMany({
-        where,
-        include: studentIncludeBasic,
-      });
-    }
+    const rows = await this.prisma.student.findMany({
+      where,
+      include: studentIncludeFull,
+    });
     return sortStudentsByFamilyName(rows);
   }
 

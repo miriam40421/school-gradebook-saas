@@ -35,7 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return;
     }
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV === 'development') {
       console.error(exception);
     }
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

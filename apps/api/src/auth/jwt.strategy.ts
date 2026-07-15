@@ -26,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload & { jti?: string }): Promise<JwtPayload> {
+  async validate(payload: JwtPayload & { jti?: string; iat?: number }): Promise<JwtPayload> {
     if (!payload.sub || !payload.role) {
       throw new UnauthorizedException();
     }
@@ -39,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const [user, school] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { deletedAt: true },
+        select: { deletedAt: true, tokensValidAfter: true },
       }),
       payload.school_id
         ? this.prisma.school.findUnique({
@@ -50,6 +50,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ]);
     if (!user || user.deletedAt) {
       throw new UnauthorizedException('User is deleted');
+    }
+    if (user.tokensValidAfter && payload.iat) {
+      if (payload.iat * 1000 < user.tokensValidAfter.getTime()) {
+        throw new UnauthorizedException('Token issued before password change');
+      }
     }
     if (payload.school_id) {
       if (!school || school.isBlocked || school.deletedAt) {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -10,6 +11,7 @@ import { EmailService } from '../super-admin/email.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -20,7 +22,7 @@ import { EmailService } from '../super-admin/email.service';
         }
         return {
           secret,
-          signOptions: { expiresIn: '24h' },
+          signOptions: { expiresIn: '4h' },
         };
       },
     }),

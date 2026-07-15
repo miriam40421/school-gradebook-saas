@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Ip, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Ip, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
-import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsUUID, MinLength } from 'class-validator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtPayload } from './jwt-payload.interface';
 import { AuthService } from './auth.service';
@@ -45,24 +46,28 @@ export class AuthController {
     private prisma: PrismaService,
   ) {}
 
+  @Public()
   @Post('login')
   @Throttle({ default: { limit: 30, ttl: 900000 } })
   login(@Body() dto: LoginDto, @Ip() ip: string) {
     return this.auth.login(dto, ip);
   }
 
+  @Public()
   @Post('platform/login')
   @Throttle({ default: { limit: 10, ttl: 900000 } })
   platformLogin(@Body() dto: PlatformLoginDto, @Ip() ip: string) {
     return this.auth.platformLogin(dto.email, dto.password, ip);
   }
 
+  @Public()
   @Post('forgot-password')
   @Throttle({ default: { limit: 5, ttl: 900000 } })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.auth.forgotPassword(dto.schoolId, dto.email);
   }
 
+  @Public()
   @Post('reset-password')
   @Throttle({ default: { limit: 5, ttl: 900000 } })
   resetPassword(@Body() dto: ResetPasswordDto) {
@@ -71,16 +76,15 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@CurrentUser() user: JwtPayload & { jti?: string }, @Req() req: Request) {
+  async logout(@CurrentUser() user: JwtPayload & { jti?: string; exp?: number }, @Req() req: Request) {
+    if (!user.jti) throw new BadRequestException('Token missing jti claim — re-authenticate');
     await Promise.all([
-      user.jti
-        ? this.revocation.revoke(
-            user.jti,
-            user.exp
-              ? new Date((user as JwtPayload & { exp: number }).exp * 1000)
-              : new Date(Date.now() + 24 * 60 * 60 * 1000),
-          )
-        : Promise.resolve(),
+      this.revocation.revoke(
+        user.jti,
+        user.exp
+          ? new Date(user.exp * 1000)
+          : new Date(Date.now() + 4 * 60 * 60 * 1000),
+      ),
       this.prisma.editLock.deleteMany({ where: { lockedBy: user.sub } }),
     ]);
     return { success: true };

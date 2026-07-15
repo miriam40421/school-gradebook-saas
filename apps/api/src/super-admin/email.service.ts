@@ -20,7 +20,7 @@ export class EmailService {
     schoolName: string;
     schoolId: string;
     adminEmail: string;
-    adminPassword: string;
+    resetUrl: string;
   }) {
     const recipient = process.env.EMAIL_OVERRIDE ?? params.to;
     const from = process.env.RESEND_FROM ?? 'onboarding@resend.dev';
@@ -44,18 +44,22 @@ export class EmailService {
             <td style="padding: 12px 16px; font-weight: bold; color: #374151; border: 1px solid #e2e8f0;">אימייל</td>
             <td style="padding: 12px 16px; color: #1e293b; border: 1px solid #e2e8f0;">${params.adminEmail}</td>
           </tr>
-          <tr>
-            <td style="padding: 12px 16px; font-weight: bold; color: #374151; border: 1px solid #e2e8f0;">סיסמה זמנית</td>
-            <td style="padding: 12px 16px; font-family: monospace; color: #1e293b; border: 1px solid #e2e8f0;">${params.adminPassword}</td>
-          </tr>
         </table>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${params.resetUrl}"
+             style="background: #6366f1; color: white; padding: 14px 28px; border-radius: 8px;
+                    text-decoration: none; font-weight: bold; font-size: 16px;">
+            הגדרת סיסמה לחשבון
+          </a>
+        </div>
 
         <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
           <p style="margin: 0; color: #92400e; font-weight: bold;">⚠️ חשוב — שמרי את מזהה בית הספר!</p>
           <p style="margin: 8px 0 0; color: #92400e;">תצטרכי אותו בכל כניסה למערכת. ללא המזהה לא תוכלי להתחבר.</p>
         </div>
 
-        <p style="color: #64748b; font-size: 14px;">מומלץ לשנות את הסיסמה לאחר הכניסה הראשונה.</p>
+        <p style="color: #64748b; font-size: 14px;">הקישור להגדרת הסיסמה בתוקף ל-24 שעות.</p>
       </div>
     `;
 
@@ -78,7 +82,7 @@ export class EmailService {
     schoolName: string;
     schoolId: string;
     adminEmail: string;
-    changedPassword?: string;
+    resetUrl?: string;
     schoolNameChanged: boolean;
   }) {
     const recipient = process.env.EMAIL_OVERRIDE ?? params.to;
@@ -89,14 +93,17 @@ export class EmailService {
       params.schoolNameChanged && `<tr style="background:#f8fafc"><td style="padding:12px 16px;font-weight:bold;color:#374151;border:1px solid #e2e8f0;">שם בית הספר</td><td style="padding:12px 16px;color:#1e293b;border:1px solid #e2e8f0;">${params.schoolName}</td></tr>`,
       `<tr><td style="padding:12px 16px;font-weight:bold;color:#374151;border:1px solid #e2e8f0;">מזהה בית הספר</td><td style="padding:12px 16px;font-family:monospace;color:#1e293b;border:1px solid #e2e8f0;">${params.schoolId}</td></tr>`,
       `<tr style="background:#f8fafc"><td style="padding:12px 16px;font-weight:bold;color:#374151;border:1px solid #e2e8f0;">אימייל</td><td style="padding:12px 16px;color:#1e293b;border:1px solid #e2e8f0;">${params.adminEmail}</td></tr>`,
-      params.changedPassword && `<tr><td style="padding:12px 16px;font-weight:bold;color:#374151;border:1px solid #e2e8f0;">סיסמה חדשה</td><td style="padding:12px 16px;font-family:monospace;color:#1e293b;border:1px solid #e2e8f0;">${params.changedPassword}</td></tr>`,
     ].filter(Boolean).join('');
 
+    const resetSection = params.resetUrl
+      ? `<div style="text-align:center;margin:32px 0;"><a href="${params.resetUrl}" style="background:#6366f1;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">הגדרת סיסמה חדשה</a></div><p style="color:#64748b;font-size:14px;text-align:center;">הסיסמה שלך אופסה. הקישור בתוקף ל-24 שעות.</p>`
+      : '';
     const html = `
       <div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
         <h1 style="color:#1e293b;font-size:22px;">עדכון פרטי בית הספר</h1>
         <p style="color:#475569;">הפרטים הבאים עודכנו במערכת:</p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">${rows}</table>
+        ${resetSection}
         <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:16px;margin:24px 0;">
           <p style="margin:0;color:#92400e;font-weight:bold;">⚠️ שמרי את מזהה בית הספר — תצטרכי אותו בכל כניסה למערכת.</p>
         </div>
@@ -145,7 +152,7 @@ export class EmailService {
     `;
 
     if (!this.resend) {
-      this.logger.log(`[EMAIL DEV] Password reset for ${recipient}: ${params.resetUrl}`);
+      this.logger.log(`[EMAIL DEV] Password reset email sent to ${recipient}`);
       return;
     }
 

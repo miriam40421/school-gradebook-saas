@@ -104,12 +104,12 @@ export class UsersService {
     if (subjectIds === undefined) {
       return;
     }
-    await this.prisma.userSubject.deleteMany({ where: { userId } });
-    if (subjectIds.length > 0) {
-      await this.prisma.userSubject.createMany({
-        data: subjectIds.map((subjectId) => ({ userId, subjectId })),
-      });
-    }
+    await this.prisma.$transaction([
+      this.prisma.userSubject.deleteMany({ where: { userId } }),
+      ...(subjectIds.length > 0
+        ? [this.prisma.userSubject.createMany({ data: subjectIds.map((subjectId) => ({ userId, subjectId })) })]
+        : []),
+    ]);
   }
 
   list(schoolId: string) {

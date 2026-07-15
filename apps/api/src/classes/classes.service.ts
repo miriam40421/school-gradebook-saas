@@ -73,22 +73,11 @@ export class ClassesService {
       where = { schoolId, id: { in: classIds } };
     }
     const orderBy = [{ year: 'desc' as const }, { name: 'asc' as const }];
-    try {
-      return await this.prisma.class.findMany({
-        where: { ...where, deletedAt: null },
-        include: this.listInclude,
-        orderBy,
-      });
-    } catch {
-      return this.prisma.class.findMany({
-        where: { ...where, deletedAt: null },
-        include: {
-          ...this.classInclude,
-          groups: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
-        },
-        orderBy,
-      });
-    }
+    return this.prisma.class.findMany({
+      where: { ...where, deletedAt: null },
+      include: this.listInclude,
+      orderBy,
+    });
   }
 
 
