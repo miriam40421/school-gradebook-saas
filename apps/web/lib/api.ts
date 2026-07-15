@@ -101,7 +101,8 @@ export async function apiFetch<T>(
     throw new Error(translateApiError('Failed to fetch'));
   }
 
-  if (res.status === 401 && path !== '/auth/refresh') {
+  const isAuthEndpoint = path === '/auth/refresh' || path === '/auth/login' || path === '/auth/platform/login';
+  if (res.status === 401 && !isAuthEndpoint) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       try {

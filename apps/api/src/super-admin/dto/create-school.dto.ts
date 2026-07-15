@@ -12,7 +12,4 @@ export class CreateSchoolDto {
   @IsEmail()
   adminEmail!: string;
 
-  @IsString()
-  @MinLength(6)
-  adminPassword!: string;
 }

@@ -34,7 +34,6 @@ export default function SuperAdminPage() {
   const [schoolName, setSchoolName] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
   const [lastCreated, setLastCreated] = useState<CreateSchoolResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -47,12 +46,12 @@ export default function SuperAdminPage() {
     mutationFn: () =>
       apiFetch<CreateSchoolResult>('/super-admin/schools', {
         method: 'POST',
-        body: JSON.stringify({ schoolName, adminName, adminEmail, adminPassword }),
+        body: JSON.stringify({ schoolName, adminName, adminEmail }),
       }),
     onSuccess: (result) => {
       setLastCreated(result);
       setShowForm(false);
-      setSchoolName(''); setAdminName(''); setAdminEmail(''); setAdminPassword('');
+      setSchoolName(''); setAdminName(''); setAdminEmail('');
       qc.invalidateQueries({ queryKey: ['super-admin-schools'] });
     },
   });
@@ -98,7 +97,7 @@ export default function SuperAdminPage() {
       {lastCreated && (
         <Alert variant="success" className="mb-4">
           בית הספר <strong>{lastCreated.school.name}</strong> נוצר.
-          מנהלת: <strong>{lastCreated.admin.email}</strong> — שדה הסיסמה שהוגדר.
+          מנהלת: <strong>{lastCreated.admin.email}</strong> — נשלח מייל להגדרת סיסמה.
         </Alert>
       )}
 
@@ -118,16 +117,12 @@ export default function SuperAdminPage() {
               <Label htmlFor="admin-email">{he.superAdminAdminEmail}</Label>
               <Input id="admin-email" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="principal@school.edu" />
             </div>
-            <div>
-              <Label htmlFor="admin-password">{he.superAdminAdminPassword}</Label>
-              <Input id="admin-password" type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="לפחות 6 תווים" />
-            </div>
           </div>
           {create.isError && (
             <Alert variant="error" className="mt-3">{translateApiError((create.error as Error).message)}</Alert>
           )}
           <div className="mt-4 flex gap-2">
-            <Button onClick={() => create.mutate()} disabled={create.isPending || !schoolName || !adminName || !adminEmail || !adminPassword}>
+            <Button onClick={() => create.mutate()} disabled={create.isPending || !schoolName || !adminName || !adminEmail}>
               {he.superAdminCreateSchool}
             </Button>
             <Button variant="secondary" onClick={() => setShowForm(false)}>{he.cancel}</Button>

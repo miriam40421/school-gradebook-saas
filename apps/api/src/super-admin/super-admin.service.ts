@@ -147,7 +147,7 @@ export class SuperAdminService {
   }
 
   async createSchool(dto: CreateSchoolDto) {
-    const hash = await bcrypt.hash(dto.adminPassword, 12);
+    const hash = await bcrypt.hash(randomBytes(32).toString('hex'), 12);
     const result = await this.prisma.$transaction(async (tx) => {
       const school = await tx.school.create({
         data: { name: dto.schoolName.trim() },
