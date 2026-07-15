@@ -385,3 +385,9 @@ FILES:
   apps/api/.env — NODE_ENV=development (fixes CORS startup check)
 COMMITS: f643b55
 STATUS: Code audit dוח — COMPLETE. Moving to /infra-audit.
+
+--- 2026-07-15 10:45 ---
+TASKS: agent-harden-audit — /home/runner/my_project
+FILES:
+  security/AGENT-HARDENING-FINDINGS.md — דוח 8 שכבות hardening
+STATUS: 0/4 enforcing layers. עיקרי: GitHub PAT plaintext בsettings.json (🔴), אין hook לblocking secrets, security-reviewer כולל Bash. אין CI.
