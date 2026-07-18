@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>חצוף — Neo-Brutalism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAF0;--surface:#FFFFFF;
+  --yellow:#FFE500;--black:#0A0A0A;
+  --coral:#FF4D4D;--coral-lt:rgba(255,77,77,0.12);
+  --mint:#00C48C;--mint-lt:rgba(0,196,140,0.12);
+  --blue:#2D5BFF;--blue-lt:rgba(45,91,255,0.10);
+  --amber:#F59E0B;--amber-lt:rgba(245,158,11,0.12);
+  --border:3px solid #0A0A0A;--border-2:2px solid #0A0A0A;
+  --shadow:4px 4px 0px #0A0A0A;--shadow-hover:6px 6px 0px #0A0A0A;--shadow-press:2px 2px 0px #0A0A0A;
+  --font-mono:'Space Mono',monospace;--font-body:'Plus Jakarta Sans',sans-serif;
+  --radius:4px;
+}
+
+body{background:var(--bg);color:var(--black);font-family:var(--font-body);font-size:14px;min-height:100vh;line-height:1.5}
+
+/* NB CARD */
+.nb{background:var(--surface);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);transition:transform 120ms ease,box-shadow 120ms ease;cursor:pointer}
+.nb:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-hover)}
+.nb:active{transform:translate(2px,2px);box-shadow:var(--shadow-press)}
+.nb-yellow{background:var(--yellow)}
+.nb-black{background:var(--black);color:#fff}
+.nb-coral{background:var(--coral);color:#fff}
+.nb-mint{background:var(--mint);color:#fff}
+.nb-blue{background:var(--blue);color:#fff}
+
+/* BUTTON */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:var(--border);background:var(--yellow);color:var(--black);font-family:var(--font-body);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow);transition:transform 100ms,box-shadow 100ms}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-hover)}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn-white{background:var(--surface)}
+.btn-black{background:var(--black);color:#fff}
+.btn-coral{background:var(--coral);color:#fff}
+.btn-mint{background:var(--mint);color:#fff}
+.btn-sm{padding:7px 14px;font-size:12px}
+
+/* TOPBAR */
+.topbar{background:var(--yellow);border-bottom:var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-box{width:40px;height:40px;background:var(--black);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:16px;border:var(--border);box-shadow:var(--shadow)}
+.logo-text{font-family:var(--font-mono);font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.05em}
+.nav-links{display:flex;gap:0;border:var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.nl{padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--black);cursor:pointer;background:transparent;border:none;border-left:2px solid var(--black);font-family:var(--font-body);transition:background 100ms;text-decoration:none;display:block}
+.nl:first-child{border-left:none}
+.nl:hover{background:rgba(0,0,0,0.08)}
+.nl.active{background:var(--black);color:var(--yellow)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.tb-pill{background:var(--black);color:var(--yellow);font-family:var(--font-mono);font-size:12px;font-weight:700;padding:8px 14px;border:var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:6px}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 64px)}
+
+/* SIDEBAR */
+.sidebar{border-left:var(--border);padding:24px 16px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.side-section-title{font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#666;padding:8px 4px 4px;border-bottom:2px solid var(--black);margin-bottom:4px}
+.side-link{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;font-size:13px;font-weight:700;color:var(--black);cursor:pointer;border:2px solid transparent;border-radius:var(--radius);transition:all 100ms;text-decoration:none}
+.side-link:hover{border-color:var(--black);background:var(--yellow);transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--black)}
+.side-link.active{background:var(--yellow);border:var(--border);box-shadow:var(--shadow)}
+.side-badge{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 8px;border:2px solid var(--black);border-radius:var(--radius)}
+.side-badge-red{background:var(--coral);color:#fff}
+.sidebar-bottom{margin-top:auto;padding-top:16px;border-top:var(--border-2)}
+.sb-name{font-family:var(--font-mono);font-weight:700;font-size:14px}
+.sb-role{font-size:12px;font-weight:500;color:#666;margin-top:2px}
+
+/* MAIN */
+.main{padding:28px;display:flex;flex-direction:column;gap:20px}
+
+/* PAGE HEADER */
+.page-header{padding-bottom:20px;border-bottom:var(--border)}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.ph-title{font-family:var(--font-mono);font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
+.ph-sub{font-size:13px;font-weight:700;color:#555;margin-top:4px;font-family:var(--font-mono)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{padding:20px;position:relative;overflow:hidden}
+.kpi-badge{position:absolute;top:12px;left:12px;font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:var(--black);color:var(--yellow);padding:2px 7px;border-radius:2px}
+.kpi-l{font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:10px}
+.kpi-v{font-family:var(--font-mono);font-size:40px;font-weight:700;line-height:1;margin-bottom:6px}
+.kpi-delta{font-size:12px;font-weight:700;font-family:var(--font-mono)}
+.d-up{color:var(--mint)}
+.d-down{color:var(--coral)}
+.d-neutral{color:#666}
+
+/* CHART + LIST */
+.two-col{display:grid;grid-template-columns:3fr 2fr;gap:16px}
+
+.chart-card{padding:24px}
+.card-title{font-family:var(--font-mono);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:130px;border-bottom:var(--border)}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bv{font-family:var(--font-mono);font-size:11px;font-weight:700}
+.bb{width:100%;border-radius:2px 2px 0 0;border-right:2px solid var(--black);border-left:2px solid var(--black);border-top:2px solid var(--black);transition:opacity 150ms}
+.bb:hover{opacity:.75}
+.bl{font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;margin-top:8px;text-align:center;color:#666}
+
+/* STUDENT ROWS */
+.list-card{padding:24px}
+.s-row{display:flex;align-items:center;gap:10px;padding:10px;border:2px solid transparent;border-radius:var(--radius);cursor:pointer;transition:all 100ms;margin-bottom:4px}
+.s-row:hover{border:var(--border);background:var(--yellow);transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--black)}
+.s-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--black);flex-shrink:0}
+.s-nm{flex:1;font-weight:700;font-size:13px}
+.s-cl{font-size:11px;font-weight:500;color:#666;margin-top:1px}
+.s-gr{font-family:var(--font-mono);font-weight:700;font-size:16px;min-width:40px;text-align:center}
+.nb-tag{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:3px 10px;border:2px solid var(--black);border-radius:var(--radius);box-shadow:2px 2px 0 var(--black)}
+.t-red{background:var(--coral);color:#fff}
+.t-amber{background:var(--amber)}
+.t-green{background:var(--mint);color:#fff}
+
+/* TABLE */
+.table-section{border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.table-header{padding:16px 20px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--yellow)}
+.table-h-title{font-family:var(--font-mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:10px 16px;text-align:right;border-bottom:var(--border);background:var(--surface)}
+td{padding:12px 16px;font-size:13px;border-bottom:2px solid var(--black);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--yellow)}
+.td-w{font-weight:700}
+.td-good{color:var(--mint);font-weight:800;font-family:var(--font-mono)}
+.td-bad{color:var(--coral);font-weight:800;font-family:var(--font-mono)}
+.td-mid{color:var(--amber);font-weight:800;font-family:var(--font-mono)}
+.td-mono{font-family:var(--font-mono)}
+.status-tag{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:3px 8px;border:2px solid var(--black);border-radius:2px;box-shadow:2px 2px 0 var(--black)}
+.st-ok{background:var(--mint);color:#fff}
+.st-bad{background:var(--coral);color:#fff}
+.st-warn{background:var(--amber)}
+
+/* MARQUEE STRIPE */
+.stripe{background:var(--black);color:var(--yellow);padding:8px 0;overflow:hidden;white-space:nowrap;font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-top:var(--border);border-bottom:var(--border)}
+.stripe-inner{display:inline-block;animation:marquee 20s linear infinite}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+
+<!-- STRIPE -->
+<div class="stripe">
+  <span class="stripe-inner">
+    ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה ★ מערכת ניהול ציונים · בית ספר אורות · תשפ״ה &nbsp;
+  </span>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-box">GS</div>
+    <div class="logo-text">ציון.יש</div>
+  </div>
+  <nav class="nav-links">
+    <a class="nl active" href="#">ראשי</a>
+    <a class="nl" href="#">ציונים</a>
+    <a class="nl" href="#">תעודות</a>
+    <a class="nl" href="#">כיתות</a>
+    <a class="nl" href="#">הגדרות</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="tb-pill">מ · מיכל כהן</div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="side-section-title">כיתות שלי</div>
+    <a class="side-link active" href="#">ד׳1 <span class="side-badge side-badge-red">7</span></a>
+    <a class="side-link" href="#">ה׳2</a>
+
+    <div class="side-section-title" style="margin-top:8px">ניהול</div>
+    <a class="side-link" href="#">הזן ציונים</a>
+    <a class="side-link" href="#">הפק תעודה</a>
+    <a class="side-link" href="#">תלמידים</a>
+
+    <div class="side-section-title" style="margin-top:8px">כלים</div>
+    <a class="side-link" href="#">דוחות</a>
+    <a class="side-link" href="#">הגדרות</a>
+
+    <div class="sidebar-bottom">
+      <div class="sb-name">מיכל כהן</div>
+      <div class="sb-role">מחנכת · כיתה ד׳1</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="ph-top">
+        <div>
+          <div class="ph-title">Dashboard — ד׳1</div>
+          <div class="ph-sub">סמסטר א׳ · ספטמבר 2025 · 32 תלמידים</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-white btn-sm">ייצא CSV</button>
+          <button class="btn btn-coral btn-sm">הפק תעודה</button>
+          <button class="btn btn-sm">הזן ציונים +</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI GRID -->
+    <div class="kpi-grid">
+      <div class="nb nb-yellow">
+        <div class="kpi-l">ממוצע כיתה</div>
+        <div class="kpi-v">84.3</div>
+        <div class="kpi-delta d-up">↑ +3.2 מסמסטר קודם</div>
+      </div>
+      <div class="nb nb-coral">
+        <div class="kpi-badge">דחוף</div>
+        <div class="kpi-l" style="color:rgba(255,255,255,0.7)">תלמידים בסיכון</div>
+        <div class="kpi-v" style="color:#fff">7</div>
+        <div class="kpi-delta" style="color:rgba(255,255,255,0.8)">↑ +2 מהשבוע</div>
+      </div>
+      <div class="nb">
+        <div class="kpi-l">תעודות הושלמו</div>
+        <div class="kpi-v" style="color:var(--blue)">71%</div>
+        <div class="kpi-delta d-neutral">23 / 32 תלמידים</div>
+      </div>
+      <div class="nb nb-black">
+        <div class="kpi-badge" style="background:var(--yellow);color:var(--black)">נעילה</div>
+        <div class="kpi-l" style="color:rgba(255,255,255,0.6)">ימים שנותרו</div>
+        <div class="kpi-v" style="color:var(--yellow);font-size:32px;margin-top:6px">6 ימים</div>
+        <div class="kpi-delta" style="color:rgba(255,255,255,0.6)">12 ספטמבר 2025</div>
+      </div>
+    </div>
+
+    <!-- TWO COL -->
+    <div class="two-col">
+      <div class="nb chart-card">
+        <div class="card-title">
+          ממוצע לפי מקצוע
+          <button class="btn btn-white btn-sm">סמסטר א׳ ▾</button>
+        </div>
+        <div class="chart-bars">
+          <div class="bc">
+            <div class="bv">84</div>
+            <div class="bb" style="height:84px;background:var(--yellow)"></div>
+            <div class="bl">מתמטיקה</div>
+          </div>
+          <div class="bc">
+            <div class="bv">91</div>
+            <div class="bb" style="height:91px;background:var(--mint)"></div>
+            <div class="bl">עברית</div>
+          </div>
+          <div class="bc">
+            <div class="bv">77</div>
+            <div class="bb" style="height:77px;background:var(--yellow)"></div>
+            <div class="bl">אנגלית</div>
+          </div>
+          <div class="bc">
+            <div class="bv">88</div>
+            <div class="bb" style="height:88px;background:var(--blue)"></div>
+            <div class="bl">מדעים</div>
+          </div>
+          <div class="bc">
+            <div class="bv">82</div>
+            <div class="bb" style="height:82px;background:var(--yellow)"></div>
+            <div class="bl">היסטוריה</div>
+          </div>
+          <div class="bc">
+            <div class="bv">95</div>
+            <div class="bb" style="height:95px;background:var(--mint)"></div>
+            <div class="bl">אמנות</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nb list-card">
+        <div class="card-title">תלמידים בסיכון</div>
+        <div class="s-row">
+          <div class="s-dot" style="background:var(--coral)"></div>
+          <div style="flex:1"><div class="s-nm">גיא מזרחי</div><div class="s-cl">ד׳1 · מתמטיקה</div></div>
+          <div class="s-gr" style="color:var(--coral)">48.2</div>
+          <div class="nb-tag t-red">חריג</div>
+        </div>
+        <div class="s-row">
+          <div class="s-dot" style="background:var(--amber)"></div>
+          <div style="flex:1"><div class="s-nm">שיר לוי</div><div class="s-cl">ד׳2 · אנגלית</div></div>
+          <div class="s-gr" style="color:var(--amber)">55.1</div>
+          <div class="nb-tag t-amber">גבול</div>
+        </div>
+        <div class="s-row">
+          <div class="s-dot" style="background:var(--coral)"></div>
+          <div style="flex:1"><div class="s-nm">נועם בן דוד</div><div class="s-cl">ד׳1 · עברית</div></div>
+          <div class="s-gr" style="color:var(--coral)">51.7</div>
+          <div class="nb-tag t-red">חריג</div>
+        </div>
+        <div class="s-row">
+          <div class="s-dot" style="background:var(--amber)"></div>
+          <div style="flex:1"><div class="s-nm">רוני שמש</div><div class="s-cl">ד׳1 · מדעים</div></div>
+          <div class="s-gr" style="color:var(--amber)">58.9</div>
+          <div class="nb-tag t-amber">גבול</div>
+        </div>
+        <div style="padding-top:12px;border-top:2px solid var(--black);margin-top:4px;text-align:center">
+          <a href="#" style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--black);text-decoration:none;text-transform:uppercase;letter-spacing:.08em">הצג 3 נוספים →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-section">
+      <div class="table-header">
+        <div class="table-h-title">ציוני מתמטיקה / ד׳1</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-white btn-sm">סמסטר א׳ ▾</button>
+          <button class="btn btn-sm">הזן ציונים +</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>שם תלמיד</th>
+            <th>מבחן 1 /100</th>
+            <th>מבחן 2 /100</th>
+            <th>עבודה /30</th>
+            <th>ממוצע</th>
+            <th>סטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-w">אביב כהן</td>
+            <td class="td-mono">92</td><td class="td-mono">88</td><td class="td-mono">28</td>
+            <td class="td-good">91.4</td>
+            <td><span class="status-tag st-ok">✓ תקין</span></td>
+          </tr>
+          <tr>
+            <td class="td-w">בת-אל שמש</td>
+            <td class="td-mono">78</td><td class="td-mono">81</td><td class="td-mono">22</td>
+            <td class="td-mono" style="font-weight:700">73.8</td>
+            <td><span class="status-tag st-ok">✓ תקין</span></td>
+          </tr>
+          <tr style="background:var(--coral-lt)">
+            <td class="td-w">גיא מזרחי</td>
+            <td class="td-bad">51</td><td class="td-bad">49</td><td class="td-bad">14</td>
+            <td class="td-bad">48.2</td>
+            <td><span class="status-tag st-bad">⚠ בסיכון</span></td>
+          </tr>
+          <tr>
+            <td class="td-w">דנה פרץ</td>
+            <td class="td-mono">85</td><td class="td-mono" style="color:#aaa">—</td><td class="td-mono">26</td>
+            <td class="td-mid">—</td>
+            <td><span class="status-tag st-warn">⏳ חסר ציון</span></td>
+          </tr>
+          <tr>
+            <td class="td-w">הדס רוזן</td>
+            <td class="td-mono">94</td><td class="td-mono">97</td><td class="td-mono">29</td>
+            <td class="td-good">96.1</td>
+            <td><span class="status-tag st-ok">✓ תקין</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

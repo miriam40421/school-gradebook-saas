@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>קונספט 6 — Signal</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:       #FAFAFA;
+  --white:    #FFFFFF;
+  --ink:      #111111;
+  --ink-s:    #222222;
+  --blue:     #1A56DB;
+  --blue-p:   #EFF6FF;
+  --blue-m:   #BFDBFE;
+  --blue-l:   #60A5FA;
+  --red:      #E02424;
+  --red-p:    #FFF5F5;
+  --red-m:    #FED7D7;
+  --green:    #057A55;
+  --green-p:  #F3FAF7;
+  --green-m:  #C6F6D5;
+  --orange:   #C05621;
+  --orange-p: #FFFAF0;
+  --orange-m: #FEEBC8;
+  --t1:       #111111;
+  --t2:       #555555;
+  --t3:       #999999;
+  --t4:       #BBBBBB;
+  --border:   #E5E5E5;
+  --border2:  #CCCCCC;
+  --font:     'Heebo', 'Noto Sans Hebrew', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--t1);
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: fixed;
+  top: 0; right: 0; left: 0;
+  height: 56px;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 100;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.brand-mark {
+  font-size: 1rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.brand-mark::before {
+  content: '';
+  display: inline-block;
+  width: 10px; height: 10px;
+  background: var(--blue-l);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--blue-l);
+}
+.topbar-sep {
+  width: 1px; height: 20px;
+  background: rgba(255,255,255,0.15);
+}
+.topbar-sub {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 120ms;
+}
+.topbar-btn:hover { border-color: rgba(255,255,255,0.3); color: white; background: rgba(255,255,255,0.08); }
+.topbar-btn.primary { background: var(--blue); border-color: var(--blue); color: white; font-weight: 700; }
+.topbar-btn.primary:hover { background: #1648C6; border-color: #1648C6; }
+
+/* ── SHELL ── */
+.shell {
+  display: flex;
+  padding-top: 56px;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed;
+  top: 56px; right: 0; bottom: 0;
+  width: 200px;
+  background: var(--ink-s);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  z-index: 90;
+}
+.school-header {
+  padding: 1.125rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.school-header-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+}
+.school-header-role {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  display: flex; align-items: center; gap: 0.375rem;
+}
+.school-header-role::before { content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:#22C55E; }
+.nav-group { padding: 0.625rem 0; flex: 1; }
+.nav-group-lbl {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.375rem 1rem 0.25rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 120ms;
+  text-decoration: none;
+  border-right: 3px solid transparent;
+}
+.nav-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.04); }
+.nav-item.active {
+  color: white;
+  font-weight: 600;
+  background: rgba(26,86,219,0.2);
+  border-right-color: var(--blue-l);
+}
+.nav-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 0.375rem 0; }
+.sidebar-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 0.875rem 1rem;
+}
+.sb-version { font-family:var(--mono); font-size:0.5625rem; color:rgba(255,255,255,0.2); letter-spacing:0.08em; margin-bottom:0.375rem; }
+.sb-logout {
+  font-size:0.8125rem;
+  color:rgba(255,255,255,0.35);
+  cursor:pointer;
+  transition:color 120ms;
+}
+.sb-logout:hover { color:rgba(255,255,255,0.7); }
+
+/* ── MAIN ── */
+.main {
+  margin-right: 200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.breadcrumb {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--t3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.bc-sep { color: var(--t4); }
+.bc-active { color: var(--blue); }
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+.page-meta {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--t4);
+  letter-spacing: 0.04em;
+  margin-top: 0.25rem;
+}
+.head-actions { display: flex; gap: 0.5rem; align-items: center; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms;
+  border: 1px solid;
+  text-decoration: none;
+}
+.btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+.btn-primary:hover { background: #1648C6; border-color: #1648C6; }
+.btn-default { background: var(--white); color: var(--t2); border-color: var(--border2); }
+.btn-default:hover { border-color: var(--ink); color: var(--t1); }
+.btn-danger { background: var(--red); color: white; border-color: var(--red); }
+
+/* ── CONTENT ── */
+.content { padding: 1.5rem 1.75rem; flex: 1; }
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.kpi-cell {
+  background: var(--white);
+  padding: 1.125rem 1.375rem;
+  position: relative;
+}
+.kpi-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; left: 0;
+  height: 3px;
+}
+.kpi-cell.blue::before { background: var(--blue); }
+.kpi-cell.red::before { background: var(--red); }
+.kpi-cell.green::before { background: var(--green); }
+.kpi-cell.orange::before { background: var(--orange); }
+.kpi-lbl {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  color: var(--t3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.kpi-val {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--t1);
+  line-height: 1;
+}
+.kpi-cell.blue .kpi-val { color: var(--blue); }
+.kpi-cell.red .kpi-val { color: var(--red); }
+.kpi-cell.green .kpi-val { color: var(--green); }
+.kpi-cell.orange .kpi-val { color: var(--orange); }
+.kpi-sub {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--t3);
+  margin-top: 0.375rem;
+}
+.kpi-sub .up { color: var(--green); }
+.kpi-sub .dn { color: var(--red); }
+
+/* ── TWO COL ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── PANEL ── */
+.panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--t1);
+  display: flex; align-items: center; gap: 0.375rem;
+}
+.panel-title-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+.panel-link {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 120ms;
+}
+.panel-link:hover { color: #1648C6; }
+.panel-body { padding: 0; }
+
+/* ── CLASS TABLE ── */
+.ctable { width: 100%; border-collapse: collapse; }
+.ctable td {
+  padding: 0.625rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+.ctable tr:last-child td { border-bottom: none; }
+.ctable tr:hover td { background: var(--blue-p); }
+.c-name { font-weight: 700; color: var(--t1); font-size: 0.875rem; }
+.c-prog-wrap { display: flex; align-items: center; gap: 0.625rem; }
+.c-prog-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.c-prog-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.pf-hi { background: var(--blue); }
+.pf-md { background: var(--orange); }
+.pf-lo { background: var(--red); }
+.c-pct { font-family:var(--mono); font-size:0.75rem; color:var(--t2); width:2.5rem; flex-shrink:0; text-align:left; }
+.c-count { font-family:var(--mono); font-size:0.6875rem; color:var(--t3); white-space:nowrap; }
+.c-arrow { color:var(--blue); font-size:0.875rem; font-weight:700; }
+
+/* ── ACTIVITY ── */
+.atable { width: 100%; border-collapse: collapse; }
+.atable td {
+  padding: 0.6875rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  vertical-align: top;
+}
+.atable tr:last-child td { border-bottom: none; }
+.atable tr:hover td { background: var(--bg); }
+.a-dot-cell { width: 1.25rem; padding-left: 0; }
+.a-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+.a-dot.b { background:var(--blue); }
+.a-dot.g { background:var(--green); }
+.a-dot.o { background:var(--orange); }
+.a-dot.r { background:var(--red); }
+.a-text { color:var(--t1); line-height:1.4; font-size:0.8125rem; }
+.a-meta { font-family:var(--mono); font-size:0.625rem; color:var(--t4); margin-top:2px; letter-spacing:0.03em; }
+
+/* ── GRADEBOOK ── */
+.gb-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.gb-header-left { display: flex; flex-direction: column; gap: 2px; }
+.gb-header-title { font-size: 0.875rem; font-weight: 700; color: var(--t1); }
+.gb-header-meta { font-family: var(--mono); font-size: 0.625rem; color: var(--t4); letter-spacing: 0.05em; }
+.gb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.gb-sel {
+  padding: 0.3rem 0.625rem;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  background: var(--white);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--t2);
+  cursor: pointer;
+  transition: 100ms;
+}
+.gb-sel:hover { border-color: var(--blue); color: var(--blue); }
+.gb-spacer { flex: 1; }
+.gb-info { font-family:var(--mono); font-size:0.6875rem; color:var(--t3); }
+.gb-info.hi { color:var(--blue); font-weight:600; }
+.gb-table { width:100%; border-collapse:collapse; }
+.gb-table th {
+  padding: 0.5rem 0.875rem;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--t3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: right;
+  border-bottom: 2px solid var(--border2);
+}
+.gb-table td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+.gb-table tr:last-child td { border-bottom: none; }
+.gb-table tr:hover td { background: var(--blue-p); }
+.gb-table .sum-row td { background: var(--bg); border-top: 1px solid var(--border2); border-bottom: none; }
+.sname { font-weight: 600; color: var(--t1); }
+.sname.at-risk { color: var(--red); }
+.sname.top { color: var(--green); }
+.grade {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  display: block;
+}
+.grade.a { color:var(--green); }
+.grade.b { color:var(--blue); }
+.grade.c { color:var(--orange); }
+.grade.f { color:var(--red); font-weight:700; }
+.grade.m { color:var(--t4); font-style:italic; }
+.row-risk { border-right: 3px solid var(--red); }
+.row-risk td:first-child { padding-right: calc(0.875rem - 3px); }
+.avg { font-family:var(--mono); font-weight:600; font-size:0.875rem; }
+.sum-val { font-family:var(--mono); font-size:0.75rem; font-weight:600; color:var(--t2); text-align:center; }
+.sum-val.total { color:var(--blue); }
+
+/* ── STAT STRIP ── */
+.stat-strip {
+  display: flex;
+  gap: 0;
+  background: var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.stat-strip-item {
+  flex: 1;
+  padding: 1rem 1.25rem;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.stat-strip-item:first-child { border-left: none; }
+.stat-num { font-family:var(--mono); font-size:1.5rem; font-weight:600; }
+.stat-strip-item:nth-child(1) .stat-num { color:#60A5FA; }
+.stat-strip-item:nth-child(2) .stat-num { color:#34D399; }
+.stat-strip-item:nth-child(3) .stat-num { color:#FBBF24; }
+.stat-strip-item:nth-child(4) .stat-num { color:#F87171; }
+.stat-lbl { font-size:0.75rem; color:rgba(255,255,255,0.45); margin-top:2px; }
+.stat-sub { font-family:var(--mono); font-size:0.625rem; color:rgba(255,255,255,0.25); margin-top:2px; }
+
+/* ── CONCEPT BADGE ── */
+.clabel {
+  position: fixed;
+  bottom: 1rem; left: 1rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--ink);
+  color: rgba(255,255,255,0.8);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  border-radius: 6px;
+  border-right: 3px solid var(--blue-l);
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">GradeBook</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-sub">לוח בקרה</div>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn">🔔 <span style="background:rgba(248,113,113,0.3);color:#F87171;padding:0 4px;border-radius:4px;font-family:var(--mono);font-size:0.625rem">3</span></button>
+    <button class="topbar-btn">⚙ הגדרות</button>
+    <button class="topbar-btn">admin@school.co.il ▾</button>
+    <button class="topbar-btn primary">+ פעולה חדשה</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="school-header">
+      <div class="school-header-name">בית ספר אורט</div>
+      <div class="school-header-role">מנהל מערכת · מחובר</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-lbl">כללי</div>
+      <a class="nav-item active">◈ לוח בקרה</a>
+      <a class="nav-item">▦ כיתות</a>
+      <a class="nav-item">👥 תלמידים</a>
+      <a class="nav-item">📚 מקצועות</a>
+      <div class="nav-sep"></div>
+      <div class="nav-group-lbl">נתונים</div>
+      <a class="nav-item">◑ ספרי ציונות</a>
+      <a class="nav-item">🔒 תקופות</a>
+      <a class="nav-item">📜 תעודות</a>
+      <div class="nav-sep"></div>
+      <div class="nav-group-lbl">מערכת</div>
+      <a class="nav-item">👤 משתמשים</a>
+      <a class="nav-item">⚙ הגדרות</a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="sb-version">V2.4.1 // 2026</div>
+      <div class="sb-logout">← יציאה מהמערכת</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span>בית ספר אורט</span>
+          <span class="bc-sep">/</span>
+          <span class="bc-active">לוח בקרה</span>
+        </div>
+        <div class="page-title">לוח בקרה — שנה"ל תשפ"ו</div>
+        <div class="page-meta">עודכן: 14.07.2026 09:31 · סנכרון אוטומטי כל 30 שניות</div>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-default">↓ ייצא דוח</button>
+        <button class="btn btn-primary">הפק תעודות →</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- STAT STRIP (dark) -->
+      <div class="stat-strip">
+        <div class="stat-strip-item">
+          <div>
+            <div class="stat-num">483</div>
+            <div class="stat-lbl">תלמידים</div>
+            <div class="stat-sub">↑ +12 החודש</div>
+          </div>
+        </div>
+        <div class="stat-strip-item">
+          <div>
+            <div class="stat-num">18</div>
+            <div class="stat-lbl">כיתות פעילות</div>
+            <div class="stat-sub">שנה"ל תשפ"ו</div>
+          </div>
+        </div>
+        <div class="stat-strip-item">
+          <div>
+            <div class="stat-num">78.4</div>
+            <div class="stat-lbl">ממוצע כללי</div>
+            <div class="stat-sub">↑ +1.8 מהתקופה</div>
+          </div>
+        </div>
+        <div class="stat-strip-item">
+          <div>
+            <div class="stat-num">14</div>
+            <div class="stat-lbl">ציונים חסרים</div>
+            <div class="stat-sub">⚠ דרוש טיפול</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI ROW -->
+      <div class="kpi-row">
+        <div class="kpi-cell blue">
+          <div class="kpi-lbl">TEACHERS</div>
+          <div class="kpi-val">31</div>
+          <div class="kpi-sub">פעילים היום</div>
+        </div>
+        <div class="kpi-cell green">
+          <div class="kpi-lbl">CERTIFICATES</div>
+          <div class="kpi-val">127</div>
+          <div class="kpi-sub"><span class="up">↑ +23</span> השבוע</div>
+        </div>
+        <div class="kpi-cell orange">
+          <div class="kpi-lbl">COMPLETION</div>
+          <div class="kpi-val">74%</div>
+          <div class="kpi-sub">השלמת ציונות</div>
+        </div>
+        <div class="kpi-cell red">
+          <div class="kpi-lbl">AT RISK</div>
+          <div class="kpi-val">7</div>
+          <div class="kpi-sub">תלמידים בסיכון</div>
+        </div>
+      </div>
+
+      <!-- TWO COL -->
+      <div class="grid-2">
+
+        <!-- CLASS TABLE -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <div class="panel-title-dot"></div>
+              כיתות — השלמת ציונות
+            </div>
+            <a class="panel-link">כל הכיתות →</a>
+          </div>
+          <div class="panel-body">
+            <table class="ctable">
+              <tbody>
+                <tr>
+                  <td class="c-name">ז׳1</td>
+                  <td style="width:100%">
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-hi" style="width:92%"></div></div>
+                      <div class="c-pct">92%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">26 תל׳</td>
+                  <td class="c-arrow">→</td>
+                </tr>
+                <tr>
+                  <td class="c-name">ז׳2</td>
+                  <td>
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-hi" style="width:78%"></div></div>
+                      <div class="c-pct">78%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">24 תל׳</td>
+                  <td class="c-arrow">→</td>
+                </tr>
+                <tr>
+                  <td class="c-name">ח׳1</td>
+                  <td>
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-md" style="width:61%"></div></div>
+                      <div class="c-pct">61%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">22 תל׳</td>
+                  <td class="c-arrow" style="color:var(--orange)">!</td>
+                </tr>
+                <tr>
+                  <td class="c-name">ח׳2</td>
+                  <td>
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-hi" style="width:85%"></div></div>
+                      <div class="c-pct">85%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">23 תל׳</td>
+                  <td class="c-arrow">→</td>
+                </tr>
+                <tr>
+                  <td class="c-name" style="color:var(--red)">ט׳1 ⚠</td>
+                  <td>
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-lo" style="width:43%"></div></div>
+                      <div class="c-pct" style="color:var(--red)">43%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">25 תל׳</td>
+                  <td class="c-arrow" style="color:var(--red)">!</td>
+                </tr>
+                <tr>
+                  <td class="c-name">י׳1</td>
+                  <td>
+                    <div class="c-prog-wrap">
+                      <div class="c-prog-track"><div class="c-prog-fill pf-hi" style="width:97%"></div></div>
+                      <div class="c-pct">97%</div>
+                    </div>
+                  </td>
+                  <td class="c-count">28 תל׳</td>
+                  <td class="c-arrow">→</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ACTIVITY -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <div class="panel-title-dot" style="background:var(--green)"></div>
+              פעילות אחרונה
+            </div>
+            <a class="panel-link">לוג מלא →</a>
+          </div>
+          <div class="panel-body">
+            <table class="atable">
+              <tbody>
+                <tr>
+                  <td class="a-dot-cell"><div class="a-dot b"></div></td>
+                  <td>
+                    <div class="a-text">ציוני מתמטיקה ז׳1 עודכנו</div>
+                    <div class="a-meta">08:53 · שרה לוי</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="a-dot-cell"><div class="a-dot g"></div></td>
+                  <td>
+                    <div class="a-text">תעודות ח׳2 הופקו — 22 תעודות</div>
+                    <div class="a-meta">08:19 · מנהל מערכת</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="a-dot-cell"><div class="a-dot o"></div></td>
+                  <td>
+                    <div class="a-text">תקופה ב׳ נעולה — כיתה ז׳1</div>
+                    <div class="a-meta">07:44 · מנהל מערכת</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="a-dot-cell"><div class="a-dot b"></div></td>
+                  <td>
+                    <div class="a-text">תלמיד חדש נוסף — יוסף כהן</div>
+                    <div class="a-meta">06:30 · admin</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="a-dot-cell"><div class="a-dot g"></div></td>
+                  <td>
+                    <div class="a-text">גיבוי מערכת הושלם בהצלחה</div>
+                    <div class="a-meta">05:00 · SYSTEM</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRADEBOOK -->
+      <div class="gb-panel">
+        <div class="gb-header">
+          <div class="gb-header-left">
+            <div class="gb-header-title">ספר ציונות — כיתה ז׳1 / תקופה ב׳</div>
+            <div class="gb-header-meta">24 תלמידים · נעול · ממוצע כיתה 78.4</div>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-default" style="padding:0.375rem 0.75rem;font-size:0.75rem">↓ CSV</button>
+            <button class="btn btn-primary" style="padding:0.375rem 0.75rem;font-size:0.75rem">📜 הפק תעודות</button>
+          </div>
+        </div>
+        <div class="gb-toolbar">
+          <div class="gb-sel">🔍 חפש תלמיד...</div>
+          <div class="gb-sel">מקצוע ▾</div>
+          <div class="gb-sel">מיין ▾</div>
+          <div class="gb-spacer"></div>
+          <div class="gb-info">∑ 24</div>
+          <div class="gb-info hi">⌀ 78.4</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>שם תלמיד</th>
+                <th style="text-align:center">מתמטיקה</th>
+                <th style="text-align:center">אנגלית</th>
+                <th style="text-align:center">עברית</th>
+                <th style="text-align:center">מדעים</th>
+                <th style="text-align:center">ממוצע</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">01</td>
+                <td class="sname">אברהם כהן</td>
+                <td><span class="grade a">91</span></td>
+                <td><span class="grade b">84</span></td>
+                <td><span class="grade a">88</span></td>
+                <td><span class="grade a">95</span></td>
+                <td class="avg" style="color:var(--green)">89.5 ★</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">02</td>
+                <td class="sname">שרה לוי</td>
+                <td><span class="grade b">78</span></td>
+                <td><span class="grade a">92</span></td>
+                <td><span class="grade c">71</span></td>
+                <td><span class="grade b">85</span></td>
+                <td class="avg" style="color:var(--blue)">81.5</td>
+              </tr>
+              <tr class="row-risk">
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">03</td>
+                <td class="sname at-risk">דוד גולד ⚠</td>
+                <td><span class="grade f">45</span></td>
+                <td><span class="grade f">61</span></td>
+                <td><span class="grade f">52</span></td>
+                <td><span class="grade f">58</span></td>
+                <td class="avg" style="color:var(--red)">54.0</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">04</td>
+                <td class="sname">מרים בן-דוד</td>
+                <td><span class="grade a">88</span></td>
+                <td><span class="grade b">79</span></td>
+                <td><span class="grade a">90</span></td>
+                <td><span class="grade b">82</span></td>
+                <td class="avg" style="color:var(--blue)">84.8</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">05</td>
+                <td class="sname">יוסף אברמוביץ</td>
+                <td><span class="grade c">72</span></td>
+                <td><span class="grade m">—</span></td>
+                <td><span class="grade c">68</span></td>
+                <td><span class="grade b">75</span></td>
+                <td class="avg" style="color:var(--orange)">71.7*</td>
+              </tr>
+              <tr style="background:rgba(5,122,85,0.03)">
+                <td style="font-family:var(--mono);font-size:0.625rem;color:var(--t4)">06</td>
+                <td class="sname top">רחל פרידמן ★</td>
+                <td><span class="grade a">99</span></td>
+                <td><span class="grade a">97</span></td>
+                <td><span class="grade a">95</span></td>
+                <td><span class="grade a">98</span></td>
+                <td class="avg" style="color:var(--green)">97.3</td>
+              </tr>
+              <tr class="sum-row">
+                <td></td>
+                <td style="font-family:var(--mono);font-size:0.6875rem;font-weight:600;color:var(--t3);letter-spacing:0.06em;text-transform:uppercase">⌀ AVG</td>
+                <td class="sum-val">78.6</td>
+                <td class="sum-val">82.3</td>
+                <td class="sum-val">76.9</td>
+                <td class="sum-val">81.4</td>
+                <td class="sum-val total">79.8</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="clabel">◼ CONCEPT 6 — SIGNAL</div>
+</body>
+</html>

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>קונספט 9 — NEO-BRUTAL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:     #FAFAF6;
+      --white:  #FFFFFF;
+      --ink:    #0D0D0D;
+      --ink-l:  #3D3D3D;
+      --gray:   #F0F0EC;
+      --gray2:  #E2E2DE;
+      --border: 2px solid var(--ink);
+
+      --blue:   #2B4EFF;
+      --blue-l: #E8ECFF;
+      --red:    #FF2D1A;
+      --red-l:  #FFE8E6;
+      --yellow: #FFD600;
+      --yel-l:  #FFFBD6;
+      --green:  #00C853;
+      --grn-l:  #E0F9E8;
+      --orange: #FF6B00;
+      --ora-l:  #FFF0E0;
+
+      --shadow: 4px 4px 0px var(--ink);
+      --shadow-sm: 3px 3px 0px var(--ink);
+      --radius: 0px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Heebo', 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ─── SIDEBAR ─────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--yellow);
+      border-left: var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .logo-block {
+      padding: 24px 20px;
+      border-bottom: var(--border);
+      background: var(--ink);
+    }
+
+    .logo-icon-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-box {
+      width: 36px; height: 36px;
+      background: var(--yellow);
+      border: 2px solid var(--yellow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+
+    .logo-text { font-size: 18px; font-weight: 900; color: var(--yellow); letter-spacing: -0.02em; }
+    .logo-sub  { font-size: 10px; color: rgba(255,214,0,0.6); letter-spacing: 0.08em; margin-top: 2px; }
+
+    nav { flex: 1; padding: 16px 0; }
+
+    .nav-section {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-l);
+      padding: 12px 20px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      border-bottom: 1px solid rgba(13,13,13,0.12);
+      transition: all 0.1s;
+      position: relative;
+    }
+
+    .nav-item:hover { background: rgba(13,13,13,0.1); }
+
+    .nav-item.active {
+      background: var(--ink);
+      color: var(--yellow);
+      border-bottom-color: transparent;
+    }
+
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--blue);
+    }
+
+    .nav-num {
+      margin-right: auto;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--ink);
+    }
+
+    .user-block {
+      padding: 16px 20px;
+      border-top: var(--border);
+      background: rgba(13,13,13,0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-sq {
+      width: 36px; height: 36px;
+      background: var(--ink);
+      color: var(--yellow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      border: 2px solid var(--ink);
+      flex-shrink: 0;
+    }
+
+    .user-name { font-size: 13px; font-weight: 800; }
+    .user-role { font-size: 10px; color: var(--ink-l); }
+
+    /* ─── MAIN ─────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: var(--white);
+      border-bottom: var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .page-breadcrumb {
+      font-size: 11px;
+      color: var(--ink-l);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+
+    .top-actions { display: flex; gap: 10px; }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: 'Heebo', sans-serif;
+      cursor: pointer;
+      border: var(--border);
+      transition: all 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:active { transform: translate(2px, 2px); box-shadow: none !important; }
+
+    .btn-outline {
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-outline:hover { background: var(--gray); }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-primary:hover { background: #1A3EFF; }
+
+    .btn-danger {
+      background: var(--red);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* KPI STRIP */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: var(--white);
+      border-bottom: var(--border);
+    }
+
+    .kpi-item {
+      padding: 20px 28px;
+      border-left: var(--border);
+      position: relative;
+    }
+
+    .kpi-item:last-child { border-left: none; }
+
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-l);
+      margin-bottom: 8px;
+    }
+
+    .kpi-num {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .kn-blue   { color: var(--blue); }
+    .kn-red    { color: var(--red); }
+    .kn-green  { color: var(--green); }
+    .kn-yellow { color: #B8930A; }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--ink-l);
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .kpi-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 8px;
+      border: 1.5px solid var(--ink);
+      margin-top: 8px;
+    }
+
+    .kt-up   { background: var(--grn-l); }
+    .kt-down { background: var(--red-l); }
+    .kt-warn { background: var(--yel-l); }
+
+    .kpi-accent {
+      position: absolute;
+      top: 0; right: 0; left: 0;
+      height: 4px;
+    }
+
+    .ka-blue   { background: var(--blue); }
+    .ka-red    { background: var(--red); }
+    .ka-green  { background: var(--green); }
+    .ka-yellow { background: var(--yellow); }
+
+    /* ─── CONTENT ──────────────────────────────── */
+    .content {
+      flex: 1;
+      display: flex;
+      gap: 0;
+    }
+
+    .main-col {
+      flex: 1;
+      padding: 28px 32px;
+      border-left: var(--border);
+    }
+
+    .side-col {
+      width: 280px;
+      padding: 28px 24px;
+    }
+
+    /* Section header */
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: var(--border);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .section-link {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--blue);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* ─── TABLE ──────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    thead {
+      background: var(--ink);
+    }
+
+    thead th {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      padding: 12px 16px;
+      text-align: right;
+      border-left: 1px solid rgba(255,214,0,0.2);
+    }
+
+    thead th:last-child { border-left: none; }
+
+    tbody tr {
+      border-bottom: var(--border);
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--blue-l); }
+
+    .row-risk { border-right: 5px solid var(--red) !important; }
+    .row-warn { border-right: 5px solid var(--yellow) !important; }
+
+    td {
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-left: 1px solid var(--gray2);
+      background: var(--white);
+    }
+
+    .row-risk td { background: #FFFAF9; }
+    .row-warn td { background: #FFFDF0; }
+
+    tbody tr:hover td { background: var(--blue-l) !important; }
+
+    .s-name { font-size: 14px; font-weight: 900; }
+    .s-id   { font-size: 10px; color: var(--ink-l); font-weight: 700; letter-spacing: 0.04em; margin-top: 1px; }
+
+    /* Grade badges */
+    .g {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px; height: 32px;
+      font-size: 14px;
+      font-weight: 900;
+      border: 2px solid var(--ink);
+    }
+
+    .g-a  { background: var(--green);  color: var(--ink); }
+    .g-b  { background: var(--blue-l); color: var(--blue); }
+    .g-c  { background: var(--yel-l);  color: #7A6200; }
+    .g-f  { background: var(--red);    color: #fff; }
+    .g-na { background: var(--gray);   color: var(--ink-l); font-size: 11px; width: 44px; }
+
+    /* AVG */
+    .avg-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .avg-track {
+      flex: 1;
+      height: 8px;
+      background: var(--gray2);
+      border: 1.5px solid var(--ink);
+      overflow: hidden;
+    }
+
+    .avg-fill { height: 100%; }
+    .fill-ok   { background: var(--green); }
+    .fill-warn { background: var(--yellow); }
+    .fill-bad  { background: var(--red); }
+
+    .avg-val { font-size: 14px; font-weight: 900; min-width: 36px; text-align: left; }
+
+    /* Status tag */
+    .stag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border: 2px solid var(--ink);
+      letter-spacing: 0.04em;
+    }
+
+    .stag-ok   { background: var(--green);  color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+    .stag-risk { background: var(--red);    color: #fff;       box-shadow: 2px 2px 0 var(--ink); }
+    .stag-warn { background: var(--yellow); color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+
+    /* trend */
+    .trend { font-size: 12px; font-weight: 900; }
+    .t-up { color: var(--green); }
+    .t-dn { color: var(--red); }
+
+    /* ─── SIDE COL ─────────────────────────────── */
+    .side-box {
+      border: var(--border);
+      box-shadow: var(--shadow);
+      background: var(--white);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .side-box-head {
+      background: var(--ink);
+      color: var(--yellow);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+    }
+
+    .class-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--gray2);
+      cursor: pointer;
+    }
+
+    .class-row:last-child { border-bottom: none; }
+    .class-row:hover { background: var(--gray); }
+    .class-row.active { background: var(--blue-l); border-right: 4px solid var(--blue); }
+
+    .cr-name { font-size: 13px; font-weight: 800; }
+    .cr-sub  { font-size: 10px; color: var(--ink-l); font-weight: 700; margin-top: 1px; }
+    .cr-avg  { font-size: 18px; font-weight: 900; }
+    .cr-avg.ok   { color: var(--blue); }
+    .cr-avg.warn { color: var(--orange); }
+    .cr-avg.bad  { color: var(--red); }
+
+    .alert-row {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--gray2);
+      align-items: flex-start;
+    }
+
+    .alert-row:last-child { border-bottom: none; }
+
+    .al-sq {
+      width: 28px; height: 28px;
+      border: 2px solid var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      font-weight: 900;
+    }
+
+    .al-sq-red    { background: var(--red);    color: #fff; }
+    .al-sq-yellow { background: var(--yellow); color: var(--ink); }
+    .al-sq-green  { background: var(--green);  color: var(--ink); }
+
+    .al-title { font-size: 12px; font-weight: 800; line-height: 1.3; }
+    .al-sub   { font-size: 10px; color: var(--ink-l); font-weight: 700; margin-top: 2px; }
+
+    /* Footer label */
+    .footer-label {
+      padding: 14px 32px;
+      background: var(--ink);
+      color: var(--yellow);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-top: var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-block">
+    <div class="logo-icon-row">
+      <div class="logo-box">צ</div>
+      <div>
+        <div class="logo-text">ציוני</div>
+        <div class="logo-sub">מערכת ניהול</div>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">ראשי</div>
+    <div class="nav-item active">📊 לוח בקרה</div>
+    <div class="nav-item">🏫 כיתות</div>
+    <div class="nav-item">👥 תלמידים</div>
+    <div class="nav-item">📝 ציונים <span class="nav-num">7</span></div>
+
+    <div class="nav-section">ניהול</div>
+    <div class="nav-item">📋 דוחות</div>
+    <div class="nav-item">🏆 תעודות</div>
+    <div class="nav-item">👩‍🏫 מורים</div>
+    <div class="nav-item">⚙️ הגדרות</div>
+  </nav>
+
+  <div class="user-block">
+    <div class="user-sq">ד</div>
+    <div>
+      <div class="user-name">דינה כהן</div>
+      <div class="user-role">מנהל מערכת</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="page-title">לוח בקרה</div>
+      <div class="page-breadcrumb">בית ← שנה"ל תשפ"ה ← סמסטר ב׳</div>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-outline">ייצוא דוח</button>
+      <button class="btn btn-primary">+ הוסף ציון</button>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip">
+    <div class="kpi-item">
+      <div class="kpi-accent ka-blue"></div>
+      <div class="kpi-label">תלמידים פעילים</div>
+      <div class="kpi-num kn-blue">342</div>
+      <div class="kpi-sub">בית הספר כולו</div>
+      <div class="kpi-tag kt-up">▲ +12 חודש זה</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-accent ka-green"></div>
+      <div class="kpi-label">ממוצע בית ספרי</div>
+      <div class="kpi-num kn-green">82.4</div>
+      <div class="kpi-sub">מתוך 100 נקודות</div>
+      <div class="kpi-tag kt-up">▲ +1.8 נק׳</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-accent ka-red"></div>
+      <div class="kpi-label">תלמידים בסיכון</div>
+      <div class="kpi-num kn-red">7</div>
+      <div class="kpi-sub">מתחת ל-60</div>
+      <div class="kpi-tag kt-down">▼ דורש טיפול</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-accent ka-yellow"></div>
+      <div class="kpi-label">תעודות לאישור</div>
+      <div class="kpi-num kn-yellow">12</div>
+      <div class="kpi-sub">ממתינות לחתימה</div>
+      <div class="kpi-tag kt-warn">⚠ דחוף</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- MAIN COL -->
+    <div class="main-col">
+      <div class="section-head">
+        <div class="section-title">ציוני כיתה י׳ א׳ — מתמטיקה</div>
+        <span class="section-link">→ כל הציונים</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>תלמיד</th>
+            <th>מבחן 1</th>
+            <th>מבחן 2</th>
+            <th>מבחן 3</th>
+            <th>עבודה</th>
+            <th>ממוצע</th>
+            <th>מגמה</th>
+            <th>סטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="s-name">אלון לוי</div>
+              <div class="s-id">מס׳ 1042</div>
+            </td>
+            <td><span class="g g-a">94</span></td>
+            <td><span class="g g-a">91</span></td>
+            <td><span class="g g-a">96</span></td>
+            <td><span class="g g-a">98</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-ok" style="width:94.7%"></div></div>
+                <div class="avg-val">94.7</div>
+              </div>
+            </td>
+            <td><span class="trend t-up">▲ 3.1</span></td>
+            <td><span class="stag stag-ok">מצטיין</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="s-name">מיכל כהן</div>
+              <div class="s-id">מס׳ 1058</div>
+            </td>
+            <td><span class="g g-b">83</span></td>
+            <td><span class="g g-a">87</span></td>
+            <td><span class="g g-b">85</span></td>
+            <td><span class="g g-b">82</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-ok" style="width:84.2%"></div></div>
+                <div class="avg-val">84.2</div>
+              </div>
+            </td>
+            <td><span class="trend t-up">▲ 1.8</span></td>
+            <td><span class="stag stag-ok">תקין</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td>
+              <div class="s-name">יוסי דוד</div>
+              <div class="s-id">מס׳ 1031</div>
+            </td>
+            <td><span class="g g-c">71</span></td>
+            <td><span class="g g-c">68</span></td>
+            <td><span class="g g-c">74</span></td>
+            <td><span class="g g-c">70</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-warn" style="width:70.7%"></div></div>
+                <div class="avg-val">70.7</div>
+              </div>
+            </td>
+            <td><span class="trend t-dn">▼ 2.3</span></td>
+            <td><span class="stag stag-warn">מעקב</span></td>
+          </tr>
+          <tr class="row-risk">
+            <td>
+              <div class="s-name">שרה ראובן</div>
+              <div class="s-id">מס׳ 1019</div>
+            </td>
+            <td><span class="g g-f">54</span></td>
+            <td><span class="g g-f">49</span></td>
+            <td><span class="g g-c">61</span></td>
+            <td><span class="g g-f">58</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-bad" style="width:55.5%"></div></div>
+                <div class="avg-val">55.5</div>
+              </div>
+            </td>
+            <td><span class="trend t-up">▲ 0.4</span></td>
+            <td><span class="stag stag-risk">בסיכון!</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td>
+              <div class="s-name">נועם בן דוד</div>
+              <div class="s-id">מס׳ 1077</div>
+            </td>
+            <td><span class="g g-a">90</span></td>
+            <td><span class="g g-na">—</span></td>
+            <td><span class="g g-a">93</span></td>
+            <td><span class="g g-a">95</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-ok" style="width:92.6%"></div></div>
+                <div class="avg-val">92.6</div>
+              </div>
+            </td>
+            <td><span class="trend t-up">▲ 4.2</span></td>
+            <td><span class="stag stag-warn">חסר</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="s-name">רחל מוסרי</div>
+              <div class="s-id">מס׳ 1065</div>
+            </td>
+            <td><span class="g g-a">96</span></td>
+            <td><span class="g g-a">98</span></td>
+            <td><span class="g g-a">97</span></td>
+            <td><span class="g g-a">100</span></td>
+            <td>
+              <div class="avg-cell">
+                <div class="avg-track"><div class="avg-fill fill-ok" style="width:97.7%"></div></div>
+                <div class="avg-val">97.7</div>
+              </div>
+            </td>
+            <td><span class="trend t-up">▲ 5.6</span></td>
+            <td><span class="stag stag-ok">מצטיינת</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SIDE COL -->
+    <div class="side-col">
+
+      <div class="side-box">
+        <div class="side-box-head">כיתות</div>
+        <div class="class-row active">
+          <div>
+            <div class="cr-name">י׳ א׳</div>
+            <div class="cr-sub">מתמטיקה · 32 תלמידים</div>
+          </div>
+          <div class="cr-avg ok">88.3</div>
+        </div>
+        <div class="class-row">
+          <div>
+            <div class="cr-name">י׳ ב׳</div>
+            <div class="cr-sub">אנגלית · 30 תלמידים</div>
+          </div>
+          <div class="cr-avg warn">74.1</div>
+        </div>
+        <div class="class-row">
+          <div>
+            <div class="cr-name">י״א ג׳</div>
+            <div class="cr-sub">ספרות · 28 תלמידים</div>
+          </div>
+          <div class="cr-avg ok">91.7</div>
+        </div>
+        <div class="class-row">
+          <div>
+            <div class="cr-name">י״ב א׳</div>
+            <div class="cr-sub">היסטוריה · 25 תלמידים</div>
+          </div>
+          <div class="cr-avg bad">65.2</div>
+        </div>
+      </div>
+
+      <div class="side-box">
+        <div class="side-box-head">התראות</div>
+        <div class="alert-row">
+          <div class="al-sq al-sq-red">!</div>
+          <div>
+            <div class="al-title">4 תלמידים מתחת ל-60</div>
+            <div class="al-sub">כיתה י״ב א׳ · דורש טיפול מיידי</div>
+          </div>
+        </div>
+        <div class="alert-row">
+          <div class="al-sq al-sq-yellow">⚠</div>
+          <div>
+            <div class="al-title">8 ציונים חסרים</div>
+            <div class="al-sub">כיתה י׳ ב׳ · מבחן 15.1.25</div>
+          </div>
+        </div>
+        <div class="alert-row">
+          <div class="al-sq al-sq-yellow">📋</div>
+          <div>
+            <div class="al-title">12 תעודות לאישור</div>
+            <div class="al-sub">דדליין: 01.02.25</div>
+          </div>
+        </div>
+        <div class="alert-row">
+          <div class="al-sq al-sq-green">✓</div>
+          <div>
+            <div class="al-title">ממוצע י״א ג׳ עלה ל-91.7</div>
+            <div class="al-sub">עלייה של 4.2 נק׳ מסמסטר א׳</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-label">◼ CONCEPT 9 — NEO-BRUTAL</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>קונספט 4 — Aurora</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:       #080B14;
+  --s1:       rgba(255,255,255,0.04);
+  --s2:       rgba(255,255,255,0.08);
+  --s3:       rgba(255,255,255,0.13);
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.14);
+  --violet:   #7C3AED;
+  --violet-l: #A78BFA;
+  --violet-g: rgba(124,58,237,0.18);
+  --cyan:     #22D3EE;
+  --cyan-g:   rgba(34,211,238,0.14);
+  --pink:     #F472B6;
+  --pink-g:   rgba(244,114,182,0.14);
+  --green:    #34D399;
+  --green-g:  rgba(52,211,153,0.14);
+  --amber:    #FBBF24;
+  --t1:       #F8FAFC;
+  --t2:       rgba(248,250,252,0.65);
+  --t3:       rgba(248,250,252,0.35);
+  --font:     'Heebo', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--t1);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── AURORA BACKGROUND ── */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+.aurora-blob:nth-child(1) {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, #5B21B6, transparent 70%);
+  top: -200px; right: -200px;
+  animation-duration: 15s;
+}
+.aurora-blob:nth-child(2) {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #0E7490, transparent 70%);
+  bottom: -150px; left: -150px;
+  animation-duration: 18s;
+  animation-delay: -5s;
+}
+.aurora-blob:nth-child(3) {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, #BE185D, transparent 70%);
+  top: 40%; right: 40%;
+  animation-duration: 20s;
+  animation-delay: -8s;
+  opacity: 0.3;
+}
+@keyframes drift {
+  0%   { transform: translate(0,0) scale(1); }
+  33%  { transform: translate(30px,-20px) scale(1.05); }
+  66%  { transform: translate(-20px,30px) scale(0.97); }
+  100% { transform: translate(15px,10px) scale(1.02); }
+}
+
+/* ── GLASS UTIL ── */
+.glass {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border);
+}
+.glass-strong {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border2);
+}
+
+/* ── LAYOUT ── */
+.shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100vh;
+  padding-top: 60px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: fixed;
+  top: 0; right: 0; left: 0;
+  height: 60px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+.topbar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(8,11,20,0.6);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: -1;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.brand-gem {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--violet), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 0 20px rgba(124,58,237,0.4);
+}
+.brand-name {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  background: linear-gradient(90deg, var(--violet-l), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.01em;
+}
+.topbar-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.topbar-pill {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--t2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.topbar-pill:hover { color: var(--t1); background: var(--s1); }
+.topbar-pill.active {
+  color: var(--t1);
+  background: var(--s2);
+  border-color: var(--border2);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.notif-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 150ms;
+  font-size: 1rem;
+  position: relative;
+}
+.notif-btn:hover { background: var(--s2); }
+.notif-pip {
+  position: absolute;
+  top: 7px; left: 7px;
+  width: 7px; height: 7px;
+  background: var(--pink);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg);
+  box-shadow: 0 0 6px var(--pink);
+}
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--s1);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--t1);
+  transition: all 150ms;
+}
+.user-btn:hover { background: var(--s2); border-color: var(--border2); }
+.user-avatar {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--violet), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed;
+  top: 60px; right: 0; bottom: 0;
+  width: 220px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+}
+.sidebar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(8,11,20,0.5);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid var(--border);
+  z-index: -1;
+}
+.nav-group { padding: 0 0.75rem; }
+.nav-label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  color: var(--t3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.625rem 0.5rem 0.375rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--t2);
+  cursor: pointer;
+  transition: all 150ms;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover { color: var(--t1); background: var(--s1); }
+.nav-item.active {
+  color: var(--t1);
+  background: var(--violet-g);
+  border-color: rgba(124,58,237,0.25);
+}
+.nav-item.active .nav-icon-wrap { background: linear-gradient(135deg, var(--violet), #A78BFA); box-shadow: 0 0 12px rgba(124,58,237,0.4); }
+.nav-icon-wrap {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: var(--s2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+.nav-hr { height: 1px; background: var(--border); margin: 0.625rem 0.75rem; }
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.school-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 10px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+}
+.school-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); flex-shrink: 0; }
+.school-name { font-size: 0.8125rem; font-weight: 500; color: var(--t1); }
+.school-role { font-family: var(--mono); font-size: 0.625rem; color: var(--t3); margin-top: 1px; }
+
+/* ── MAIN ── */
+.main {
+  margin-right: 220px;
+  flex: 1;
+  padding: 1.75rem 2rem;
+}
+
+/* ── PAGE TITLE ── */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+.page-title {
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.page-title span {
+  background: linear-gradient(90deg, var(--violet-l), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.page-sub {
+  font-size: 0.875rem;
+  color: var(--t3);
+  margin-top: 0.25rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1.25rem;
+  border-radius: 10px;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms;
+  border: 1px solid transparent;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet), #9B5CF6);
+  color: white;
+  box-shadow: 0 0 20px rgba(124,58,237,0.35);
+}
+.btn-primary:hover { box-shadow: 0 0 28px rgba(124,58,237,0.5); transform: translateY(-1px); }
+.btn-ghost {
+  background: var(--s1);
+  color: var(--t2);
+  border-color: var(--border);
+}
+.btn-ghost:hover { background: var(--s2); color: var(--t1); border-color: var(--border2); }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi-card {
+  border-radius: 16px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 200ms, box-shadow 200ms;
+  cursor: default;
+}
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card.violet {
+  background: var(--violet-g);
+  border: 1px solid rgba(124,58,237,0.25);
+  box-shadow: 0 4px 24px rgba(124,58,237,0.12);
+}
+.kpi-card.cyan {
+  background: var(--cyan-g);
+  border: 1px solid rgba(34,211,238,0.2);
+  box-shadow: 0 4px 24px rgba(34,211,238,0.08);
+}
+.kpi-card.pink {
+  background: var(--pink-g);
+  border: 1px solid rgba(244,114,182,0.2);
+  box-shadow: 0 4px 24px rgba(244,114,182,0.08);
+}
+.kpi-card.green {
+  background: var(--green-g);
+  border: 1px solid rgba(52,211,153,0.2);
+  box-shadow: 0 4px 24px rgba(52,211,153,0.08);
+}
+.kpi-glow {
+  position: absolute;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  filter: blur(24px);
+  top: -20px; left: -20px;
+  opacity: 0.6;
+}
+.kpi-card.violet .kpi-glow { background: var(--violet); }
+.kpi-card.cyan .kpi-glow { background: var(--cyan); }
+.kpi-card.pink .kpi-glow { background: var(--pink); }
+.kpi-card.green .kpi-glow { background: var(--green); }
+.kpi-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+.kpi-val {
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  position: relative;
+}
+.kpi-card.violet .kpi-val { color: var(--violet-l); }
+.kpi-card.cyan .kpi-val { color: var(--cyan); }
+.kpi-card.pink .kpi-val { color: var(--pink); }
+.kpi-card.green .kpi-val { color: var(--green); }
+.kpi-lbl {
+  font-size: 0.8125rem;
+  color: var(--t2);
+  margin-top: 0.375rem;
+  position: relative;
+}
+.kpi-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  position: relative;
+}
+.kpi-card.violet .kpi-tag { background: rgba(124,58,237,0.2); color: var(--violet-l); }
+.kpi-card.cyan .kpi-tag { background: rgba(34,211,238,0.15); color: var(--cyan); }
+.kpi-card.pink .kpi-tag { background: rgba(244,114,182,0.15); color: var(--pink); }
+.kpi-card.green .kpi-tag { background: rgba(52,211,153,0.15); color: var(--green); }
+
+/* ── TWO COL ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── CARD ── */
+.card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--t1);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.card-link {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--violet-l);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: color 150ms;
+}
+.card-link:hover { color: var(--cyan); }
+.card-body { padding: 1rem 1.25rem; }
+
+/* ── CLASS ROWS ── */
+.class-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.5625rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 150ms;
+}
+.class-row:last-child { border-bottom: none; }
+.class-row:hover { background: var(--s1); padding-right: 0.5rem; padding-left: 0.5rem; }
+.class-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--t1);
+  width: 3.5rem;
+  flex-shrink: 0;
+}
+.prog-track {
+  flex: 1;
+  height: 5px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 800ms ease-out;
+}
+.prog-fill.hi { background: linear-gradient(90deg, var(--violet), var(--cyan)); }
+.prog-fill.md { background: linear-gradient(90deg, var(--amber), #FDE68A); }
+.prog-fill.lo { background: linear-gradient(90deg, var(--pink), #FDA4AF); }
+.prog-pct {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--t2);
+  width: 2.5rem;
+  text-align: left;
+  flex-shrink: 0;
+}
+.class-chip {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--t3);
+  flex-shrink: 0;
+}
+
+/* ── ACTIVITY ── */
+.act-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.act-item:last-child { border-bottom: none; }
+.act-pip {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.act-pip.v { background: var(--violet-l); box-shadow: 0 0 8px var(--violet); }
+.act-pip.c { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.act-pip.g { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.act-pip.p { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+.act-text { font-size: 0.8125rem; color: var(--t1); line-height: 1.4; }
+.act-time { font-family: var(--mono); font-size: 0.6875rem; color: var(--t3); margin-top: 2px; }
+
+/* ── GRADEBOOK ── */
+.gb-card {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.gb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.gb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.gb-filter {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  color: var(--t2);
+  border-radius: 8px;
+  padding: 0.3rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all 150ms;
+  letter-spacing: 0.02em;
+}
+.gb-filter:hover { border-color: var(--border2); color: var(--t1); background: var(--s2); }
+.gb-spacer { flex: 1; }
+.gb-stat { font-family: var(--mono); font-size: 0.6875rem; color: var(--t3); }
+.gb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.gb-table th {
+  padding: 0.625rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--t3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+}
+.gb-table td {
+  padding: 0.6875rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--t1);
+  vertical-align: middle;
+}
+.gb-table tr:last-child td { border-bottom: none; }
+.gb-table tr:hover td { background: rgba(255,255,255,0.03); }
+.sname { font-weight: 600; }
+.grade-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 7px;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-width: 2.75rem;
+  text-align: center;
+  border: 1px solid;
+}
+.ga { color:#34D399; background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.25); }
+.gb-cl { color:#22D3EE; background:rgba(34,211,238,0.10); border-color:rgba(34,211,238,0.2); }
+.gc { color:#FBBF24; background:rgba(251,191,36,0.10); border-color:rgba(251,191,36,0.2); }
+.gf { color:#F87171; background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.25); }
+.gm { color:var(--t3); background:var(--s1); border-color:var(--border); font-style:italic; }
+.avg-val { font-family:var(--mono); font-size:0.875rem; font-weight:600; }
+.avg-val.hi { color:var(--green); }
+.avg-val.lo { color:var(--pink); }
+.footer-row td { background: var(--s1) !important; font-family:var(--mono); font-size:0.75rem; color:var(--t2); border-top:1px solid var(--border2) !important; border-bottom:none !important; }
+
+/* ── CONCEPT LABEL ── */
+.clabel {
+  position: fixed;
+  bottom: 1rem; left: 1rem;
+  z-index: 200;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--violet-l);
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(8px);
+}
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-gem">🎓</div>
+    <div class="brand-name">GradeBook</div>
+  </div>
+  <nav class="topbar-pills">
+    <a class="topbar-pill active">לוח בקרה</a>
+    <a class="topbar-pill">כיתות</a>
+    <a class="topbar-pill">תלמידים</a>
+    <a class="topbar-pill">תעודות</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="notif-btn">🔔<div class="notif-pip"></div></div>
+    <div class="user-btn">
+      <div class="user-avatar">מ</div>
+      <span>מנהל מערכת</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="nav-group">
+      <div class="nav-label">כללי</div>
+      <a class="nav-item active">
+        <div class="nav-icon-wrap">◈</div>
+        <span>לוח בקרה</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">🏫</div>
+        <span>כיתות</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">👥</div>
+        <span>תלמידים</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">📚</div>
+        <span>מקצועות</span>
+      </a>
+    </div>
+    <div class="nav-hr"></div>
+    <div class="nav-group">
+      <div class="nav-label">נתונים</div>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">▦</div>
+        <span>ספרי ציונות</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">🔒</div>
+        <span>תקופות</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon-wrap">📜</div>
+        <span>תעודות</span>
+      </a>
+    </div>
+    <div class="nav-hr"></div>
+    <div class="nav-group">
+      <a class="nav-item">
+        <div class="nav-icon-wrap">⚙️</div>
+        <span>הגדרות</span>
+      </a>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="school-chip">
+        <div class="school-dot"></div>
+        <div>
+          <div class="school-name">בית ספר אורט</div>
+          <div class="school-role">ADMIN // ONLINE</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <div class="page-title">לוח בקרה <span>— תשפ"ו</span></div>
+        <div class="page-sub">שנה"ל פעילה · 483 תלמידים · 18 כיתות</div>
+      </div>
+      <div style="display:flex;gap:0.625rem">
+        <button class="btn btn-ghost">↓ דוח חודשי</button>
+        <button class="btn btn-primary">✦ הפק תעודות</button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card violet">
+        <div class="kpi-glow"></div>
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-val">483</div>
+        <div class="kpi-lbl">תלמידים פעילים</div>
+        <div class="kpi-tag">↑ +12 החודש</div>
+      </div>
+      <div class="kpi-card cyan">
+        <div class="kpi-glow"></div>
+        <div class="kpi-icon">🎓</div>
+        <div class="kpi-val">31</div>
+        <div class="kpi-lbl">מורים פעילים</div>
+        <div class="kpi-tag">● כולם מחוברים</div>
+      </div>
+      <div class="kpi-card pink">
+        <div class="kpi-glow"></div>
+        <div class="kpi-icon">⚠</div>
+        <div class="kpi-val">14</div>
+        <div class="kpi-lbl">ציונים חסרים</div>
+        <div class="kpi-tag">↑ דרוש טיפול</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-glow"></div>
+        <div class="kpi-icon">📜</div>
+        <div class="kpi-val">127</div>
+        <div class="kpi-lbl">תעודות הופקו</div>
+        <div class="kpi-tag">↑ +23 השבוע</div>
+      </div>
+    </div>
+
+    <!-- TWO COL -->
+    <div class="grid-2">
+      <div class="card glass">
+        <div class="card-head">
+          <div class="card-title">
+            <span style="color:var(--violet-l)">◈</span> כיתות — השלמת ציונות
+          </div>
+          <a class="card-link">כל הכיתות →</a>
+        </div>
+        <div class="card-body">
+          <div class="class-row">
+            <div class="class-name">ז׳1</div>
+            <div class="prog-track"><div class="prog-fill hi" style="width:92%"></div></div>
+            <div class="prog-pct">92%</div>
+            <div class="class-chip">26 תל׳</div>
+          </div>
+          <div class="class-row">
+            <div class="class-name">ז׳2</div>
+            <div class="prog-track"><div class="prog-fill hi" style="width:78%"></div></div>
+            <div class="prog-pct">78%</div>
+            <div class="class-chip">24 תל׳</div>
+          </div>
+          <div class="class-row">
+            <div class="class-name">ח׳1</div>
+            <div class="prog-track"><div class="prog-fill md" style="width:61%"></div></div>
+            <div class="prog-pct">61%</div>
+            <div class="class-chip">22 תל׳</div>
+          </div>
+          <div class="class-row">
+            <div class="class-name">ח׳2</div>
+            <div class="prog-track"><div class="prog-fill hi" style="width:85%"></div></div>
+            <div class="prog-pct">85%</div>
+            <div class="class-chip">23 תל׳</div>
+          </div>
+          <div class="class-row">
+            <div class="class-name">ט׳1</div>
+            <div class="prog-track"><div class="prog-fill lo" style="width:43%"></div></div>
+            <div class="prog-pct">43%</div>
+            <div class="class-chip">25 תל׳</div>
+          </div>
+          <div class="class-row">
+            <div class="class-name">י׳1</div>
+            <div class="prog-track"><div class="prog-fill hi" style="width:97%"></div></div>
+            <div class="prog-pct">97%</div>
+            <div class="class-chip">28 תל׳</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-head">
+          <div class="card-title">
+            <span style="color:var(--cyan)">◈</span> פעילות אחרונה
+          </div>
+          <a class="card-link">כל הלוג →</a>
+        </div>
+        <div class="card-body">
+          <div class="act-item">
+            <div class="act-pip v"></div>
+            <div>
+              <div class="act-text">ציוני מתמטיקה ז׳1 עודכנו</div>
+              <div class="act-time">לפני 8 דק׳ // שרה לוי</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-pip g"></div>
+            <div>
+              <div class="act-text">תעודות ח׳2 הופקו — 22 תעודות</div>
+              <div class="act-time">לפני 34 דק׳ // admin</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-pip c"></div>
+            <div>
+              <div class="act-text">תקופה ב׳ נעולה — כיתה ז׳1</div>
+              <div class="act-time">לפני שעה // admin</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-pip p"></div>
+            <div>
+              <div class="act-text">תלמיד חדש — יוסף כהן</div>
+              <div class="act-time">לפני 2 שעות // admin</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <div class="act-pip g"></div>
+            <div>
+              <div class="act-text">גיבוי מערכת הושלם</div>
+              <div class="act-time">לפני 3 שעות // SYSTEM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADEBOOK -->
+    <div class="gb-card glass">
+      <div class="gb-head">
+        <div class="card-title">
+          <span style="color:var(--green)">◈</span>
+          ספר ציונות — ז׳1 / תקופה ב׳
+          <span style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3);font-weight:400">// נעול</span>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-ghost" style="padding:0.375rem 0.875rem;font-size:0.8125rem">↓ CSV</button>
+          <button class="btn btn-primary" style="padding:0.375rem 0.875rem;font-size:0.8125rem">📜 הפק תעודות</button>
+        </div>
+      </div>
+      <div class="gb-toolbar">
+        <div class="gb-filter">🔍 חפש תלמיד...</div>
+        <div class="gb-filter">מקצוע ▾</div>
+        <div class="gb-filter">מיין לפי ממוצע ▾</div>
+        <div class="gb-spacer"></div>
+        <div class="gb-stat">∑ 24 תלמידים</div>
+        <div class="gb-stat" style="color:var(--violet-l)">⌀ 78.4</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="gb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>שם תלמיד</th><th>מתמטיקה</th><th>אנגלית</th><th>עברית</th><th>מדעים</th><th>ממוצע</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">01</td>
+              <td class="sname">אברהם כהן</td>
+              <td><span class="grade-badge ga">91</span></td>
+              <td><span class="grade-badge gb-cl">84</span></td>
+              <td><span class="grade-badge ga">88</span></td>
+              <td><span class="grade-badge ga">95</span></td>
+              <td class="avg-val hi">89.5</td>
+            </tr>
+            <tr>
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">02</td>
+              <td class="sname">שרה לוי</td>
+              <td><span class="grade-badge gb-cl">78</span></td>
+              <td><span class="grade-badge ga">92</span></td>
+              <td><span class="grade-badge gc">71</span></td>
+              <td><span class="grade-badge gb-cl">85</span></td>
+              <td class="avg-val" style="color:var(--cyan)">81.5</td>
+            </tr>
+            <tr style="background:rgba(248,113,113,0.04)">
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">03</td>
+              <td class="sname" style="color:var(--pink)">דוד גולד ⚠</td>
+              <td><span class="grade-badge gf">45</span></td>
+              <td><span class="grade-badge gf">61</span></td>
+              <td><span class="grade-badge gf">52</span></td>
+              <td><span class="grade-badge gf">58</span></td>
+              <td class="avg-val lo">54.0</td>
+            </tr>
+            <tr>
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">04</td>
+              <td class="sname">מרים בן-דוד</td>
+              <td><span class="grade-badge ga">88</span></td>
+              <td><span class="grade-badge gb-cl">79</span></td>
+              <td><span class="grade-badge ga">90</span></td>
+              <td><span class="grade-badge gb-cl">82</span></td>
+              <td class="avg-val" style="color:var(--cyan)">84.8</td>
+            </tr>
+            <tr>
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">05</td>
+              <td class="sname">יוסף אברמוביץ</td>
+              <td><span class="grade-badge gc">72</span></td>
+              <td><span class="grade-badge gm">—</span></td>
+              <td><span class="grade-badge gc">68</span></td>
+              <td><span class="grade-badge gb-cl">75</span></td>
+              <td class="avg-val gc" style="color:var(--amber)">71.7*</td>
+            </tr>
+            <tr style="background:rgba(52,211,153,0.04)">
+              <td style="font-family:var(--mono);font-size:0.6875rem;color:var(--t3)">06</td>
+              <td class="sname" style="color:var(--green)">רחל פרידמן ★</td>
+              <td><span class="grade-badge ga">99</span></td>
+              <td><span class="grade-badge ga">97</span></td>
+              <td><span class="grade-badge ga">95</span></td>
+              <td><span class="grade-badge ga">98</span></td>
+              <td class="avg-val hi">97.3</td>
+            </tr>
+            <tr class="footer-row">
+              <td></td>
+              <td style="color:var(--t3);letter-spacing:0.05em;text-transform:uppercase;font-size:0.6875rem">⌀ ממוצע</td>
+              <td style="text-align:center;color:var(--cyan)">78.6</td>
+              <td style="text-align:center;color:var(--cyan)">82.3</td>
+              <td style="text-align:center;color:var(--cyan)">76.9</td>
+              <td style="text-align:center;color:var(--cyan)">81.4</td>
+              <td style="color:var(--violet-l);font-weight:700">79.8</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="clabel">✦ CONCEPT 4 — AURORA</div>
+</body>
+</html>
