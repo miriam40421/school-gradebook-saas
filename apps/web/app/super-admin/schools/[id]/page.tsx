@@ -38,7 +38,6 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
   const [schoolName, setSchoolName] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -56,7 +55,6 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
       if (schoolName !== data?.name) body.schoolName = schoolName;
       if (adminName !== data?.admin?.name) body.adminName = adminName;
       if (adminEmail !== data?.admin?.email) body.adminEmail = adminEmail;
-      if (adminPassword) body.adminPassword = adminPassword;
       return apiFetch<SchoolDetail>(`/super-admin/schools/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
@@ -64,7 +62,6 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
     },
     onSuccess: (result) => {
       setSaved(true);
-      setAdminPassword('');
       qc.setQueryData(['super-admin-school', id], result);
       qc.invalidateQueries({ queryKey: ['super-admin-schools'] });
     },
@@ -90,8 +87,7 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
   const isDirty =
     schoolName !== (data?.name ?? '') ||
     adminName !== (data?.admin?.name ?? '') ||
-    adminEmail !== (data?.admin?.email ?? '') ||
-    adminPassword !== '';
+    adminEmail !== (data?.admin?.email ?? '');
 
   return (
     <AdminShell>
@@ -162,16 +158,6 @@ export default function EditSchoolPage({ params }: { params: Promise<{ id: strin
                   <div>
                     <Label htmlFor="admin-email">{he.superAdminAdminEmail}</Label>
                     <Input id="admin-email" type="email" value={adminEmail} onChange={(e) => { setAdminEmail(e.target.value); setSaved(false); }} />
-                  </div>
-                  <div>
-                    <Label htmlFor="admin-password">{he.superAdminAdminPassword}</Label>
-                    <Input
-                      id="admin-password"
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => { setAdminPassword(e.target.value); setSaved(false); }}
-                      placeholder="השאירי ריק לאי-שינוי"
-                    />
                   </div>
                 </div>
               </>

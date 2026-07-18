@@ -4,19 +4,14 @@ import { FormEvent, useState } from 'react';
 import { Eye, EyeOff, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { apiFetch, setRefreshToken, setToken } from '@/lib/api';
-import type { AuthUserDto } from '@school/shared';
 import { he, translateApiError } from '@/lib/he';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
-import { useRouter } from 'next/navigation';
-
 export default function LoginPage() {
-  const { login, loading } = useAuth();
-  const router = useRouter();
+  const { login, platformLogin, loading } = useAuth();
   const [schoolId, setSchoolId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,18 +25,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       if (!schoolId.trim()) {
-        try {
-          const data = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUserDto }>(
-            '/auth/platform/login',
-            { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) },
-          );
-          setToken(data.accessToken);
-          setRefreshToken(data.refreshToken);
-          window.location.replace('/super-admin');
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : he.loginFailed;
-          setError(translateApiError(msg));
-        }
+        await platformLogin(email.trim(), password);
       } else {
         await login(schoolId.trim(), email.trim(), password);
       }

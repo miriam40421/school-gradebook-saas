@@ -405,3 +405,11 @@ FILES:
   apps/web/app/login/page.tsx — platform login שומר refreshToken
 COMMITS: 860a413
 STATUS: COMPLETE. משתמש נשאר מחובר כל עוד פעיל (refresh 7d). P1 FOLLOWUPS — סגור.
+
+[2026-07-18] GitHub PAT rotation + settings hardening
+- Rotated GitHub PAT (old ghp_Y3fu... → new token)
+- settings.json: GITHUB_PERSONAL_ACCESS_TOKEN now uses ${GITHUB_PAT} (env var)
+- ~/.bashrc: GITHUB_PAT exported
+- Old token deleted from GitHub
+Files: ~/.claude/settings.json, ~/.bashrc
+

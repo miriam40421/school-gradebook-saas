@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Ban, CheckCircle2, Pencil, Plus, RotateCcw, School, Trash2 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { AdminShell } from '@/components/AdminShell';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -185,13 +186,13 @@ export default function SuperAdminPage() {
                       ) : (
                         <>
                           <span className="relative inline-flex group/edit">
-                            <a
+                            <Link
                               href={`/super-admin/schools/${s.id}`}
                               aria-label="עריכה"
                               className="ui-icon-action flex h-7 w-7 items-center justify-center rounded-md border border-primary/30 bg-transparent text-primary transition-colors duration-150 hover:border-primary hover:bg-primary/10"
                             >
                               <Pencil className="h-3.5 w-3.5" aria-hidden />
-                            </a>
+                            </Link>
                             <span
                               aria-hidden
                               className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/edit:opacity-100"

@@ -10,6 +10,7 @@ type AuthContextValue = {
   user: AuthUserDto | null;
   loading: boolean;
   login: (schoolId: string, email: string, password: string) => Promise<void>;
+  platformLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -67,6 +68,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
+  const platformLogin = async (email: string, password: string) => {
+    const data = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUserDto }>(
+      '/auth/platform/login',
+      { method: 'POST', body: JSON.stringify({ email, password }) },
+    );
+    setToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
+    setUser(data.user);
+    router.replace('/super-admin');
+  };
+
   const login = async (schoolId: string, email: string, password: string) => {
     const data = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUserDto }>(
       '/auth/login',
@@ -98,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, platformLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
