@@ -719,6 +719,8 @@ export class CertificatesService {
         await this.storage.putObject(item.storageKey, pdfBuffer, 'application/pdf');
         results.push({ studentId: item.student.id, snapshotId: item.snapshotId, ok: true });
       } catch (err) {
+        // Storage write failed after DB record was created — clean up orphaned DB record
+        await this.prisma.certificateSnapshot.deleteMany({ where: { id: item.snapshotId } }).catch(() => undefined);
         results.push({
           studentId: item.student.id,
           ok: false,
