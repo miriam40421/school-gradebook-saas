@@ -7,6 +7,33 @@
 
 ---
 
+## STATUS UPDATE — 2026-07-19
+
+### ✅ Fixed in session 2026-07-18/19
+| Layer | Finding | Fix |
+|-------|---------|-----|
+| Layer 7 | GitHub PAT hardcoded in `settings.json` | Token rotated; moved to `${GITHUB_PAT}` env var; `~/.bashrc` exports `GITHUB_PAT` |
+| Layer 5 | `security-reviewer` had `Bash` in tools | Removed `Bash` → `tools: Read, Grep, Glob` only |
+
+### ⏭️ Pending — to be done LAST (after all other work)
+| Layer | Finding | Reason deferred |
+|-------|---------|-----------------|
+| Layer 3 | PreToolUse hook blocking `.env` reads | Must be last — adding it now would block file edits during remaining work |
+| Layer 2 | `permissions.deny` for secret file patterns | Same reason; do together with Layer 3 |
+
+### 🔴 Still open
+| Layer | Finding | Priority |
+|-------|---------|----------|
+| Layer 3 | No PreToolUse hook inspecting `file_path` for `.env`/`secrets`/`.ssh` | 🔴 critical — the one reliable enforcing gate |
+| Layer 2 | No `permissions.deny` block in `settings.json` | 🟡 secondary to Layer 3 |
+| Layer 4 | No sandbox / dev-container | 🟡 medium |
+| Layer 6 | No CI security-review Action | 🟡 deferred until CI set up |
+| Layer 8 | No trufflehog/gitleaks pre-commit scan | 🟡 deferred until CI set up |
+
+---
+
+---
+
 ## Summary
 
 | | Layer | Status | Severity if missing |

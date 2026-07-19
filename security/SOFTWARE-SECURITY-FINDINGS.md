@@ -3,6 +3,74 @@
 > Read-only audit against the 16 software-security principles. No code was modified.
 > Scope: `apps/api/src` (NestJS) + `apps/web` (Next.js) + `packages/`.
 > Verify pass: /security-review — skipped (no git diff; not applicable to whole-repo audit).
+
+---
+
+## STATUS UPDATE — 2026-07-19
+
+### ✅ Verified already fixed (pre-existing in code)
+| Finding | Where |
+|---------|-------|
+| No global JwtAuthGuard | `app.module.ts:54` — `APP_GUARD: JwtAuthGuard` present |
+| Plaintext password in welcome email | `email.service.ts` — sends resetUrl link, no password in body |
+| Plaintext password in update email | same — sends resetUrl, no password |
+| Password reset token stored plaintext | `auth.service.ts:132` — sha256 hashed before store |
+| Access token TTL 24h | `auth.module.ts:25` — already `expiresIn: '15m'` |
+| Password reset doesn't revoke JWTs | `auth.service.ts:169` — sets `tokensValidAfter`; JWT strategy checks it |
+| syncSubjects non-transactional | `users.service.ts:107` — wrapped in `$transaction` |
+| Magic bytes check missing | `import-names.util.ts:43-57` — ZIP + OLE2 magic bytes present |
+| upsertLabelOverrides authorization | controller already uses `@HomeroomOrAdmin()` |
+| Bare catch swallows errors (students) | catch block propagates error |
+| Bare catch swallows errors (classes) | catch block propagates error |
+| console.log student names | `console.log` removed |
+| postcss CVE | override in `pnpm-workspace.yaml` |
+| uuid CVE | override in `pnpm-workspace.yaml` |
+| Logout silent fail if no JTI | `auth.controller.ts:97` — throws 400 |
+| NODE_ENV filter `!== 'production'` | `http-exception.filter.ts:38` — already `=== 'development'` |
+| `/health` endpoint exists | `health.controller.ts` — present with `@Public()` + `@SkipThrottle()` |
+
+### ✅ Fixed in session 2026-07-18/19
+| Finding | Fix |
+|---------|-----|
+| GitHub PAT hardcoded in settings.json (Layer 7) | Moved to `${GITHUB_PAT}` env var; token rotated |
+| security-reviewer has Bash (Layer 5) | Removed Bash from tools list |
+| `apps/web/.env.local` tracked by git | `git rm --cached` + `**/.env.local` in `.gitignore` |
+| `.env.example` NEXT_PUBLIC_API_URL wrong | Changed to `/api-proxy` |
+| Certificate storage atomicity | Added `deleteMany` cleanup in catch block |
+| Docker resource limits missing | Added `cpus: '1.0'` + `pids: 200` to postgres and minio |
+| Root `.env.example` has real credentials | Replaced `school:school` with `<db-user>:<db-password>` placeholder |
+
+### ⏭️ Intentional / deferred
+| Finding | Decision |
+|---------|----------|
+| settingsJson deep validation | Skip — only super-admin can send; low real-world risk |
+| students.controller RBAC "inconsistency" | Intentional design: admin read-only on students, service enforces correctly |
+| Healthcheck for K8s/load-balancer | Deferred — no Dockerfile yet; revisit when containerising |
+| NestJS v10→v11 upgrade | Separate session — needs full regression testing |
+| Layer 3 PreToolUse hook | Last task — do after all other work complete |
+| Layer 2 permissions.deny | Last task — together with Layer 3 |
+| Data-subject rights endpoints (Amendment 13) | Future feature scope |
+
+### ✅ Fixed in session 2026-07-19 (runtime-confirm)
+| Finding | Fix |
+|---------|-----|
+| CORS silent fallback in dev mode | Removed `??` fallback from `main.ts`; `CORS_ORIGIN` now required unconditionally; added to `.env` + `.env.example` |
+
+### 🔴 Still open
+| Finding | File | Priority |
+|---------|------|----------|
+| NestJS v10 injection CVE | Deferred (major upgrade) | 🟠 high |
+
+### ✅ Runtime-confirmed false positives (2026-07-19)
+| Finding | Evidence |
+|---------|----------|
+| API binds to 0.0.0.0 in production | `main.ts:30-31` — already `isDev ? '0.0.0.0' : '127.0.0.1'` |
+| `roles.guard.ts` deny-by-default | `roles.guard.ts:23` — already `return false` + `UnauthorizedException` |
+| FileInterceptor missing fileSize limit | `certificate-templates.controller.ts:67,80` — `limits.fileSize: 2MB` present |
+| purgeExpired() never scheduled | `token-revocation.service.ts:22` — `@Cron(EVERY_HOUR)` present |
+| Password reset TTL mismatch | Both `email.service.ts:143` and `auth.service.ts:133` say 2h |
+
+---
 > Supply-chain: `pnpm audit --json` — 1,114 packages scanned.
 
 ---

@@ -6,6 +6,48 @@
 
 ---
 
+## STATUS UPDATE — 2026-07-19
+
+### ✅ Verified already fixed (pre-existing in code)
+| Finding | Where |
+|---------|-------|
+| Postgres bound to 0.0.0.0 | `docker-compose.yml:7` — already `127.0.0.1:5433:5432` |
+| MinIO bound to 0.0.0.0 | `docker-compose.yml:32-33` — already `127.0.0.1:9002:9000` + `127.0.0.1:9003:9001` |
+| MinIO floating `latest` tag | `docker-compose.yml:28` — pinned to `RELEASE.2025-04-22T22-12-26Z` |
+| Postgres + MinIO no healthcheck | Both have `healthcheck:` directives |
+
+### ✅ Fixed in session 2026-07-18/19
+| Finding | Fix |
+|---------|-----|
+| No resource limits on containers | Added `cpus: '1.0'` + `pids: 200` to both services |
+| `apps/web/.env.local` tracked by git | `git rm --cached` + `**/.env.local` in `.gitignore` |
+| Root `.env.example` real credentials | Replaced with `<db-user>:<db-password>` placeholder |
+| `.env.example` NEXT_PUBLIC_API_URL wrong | Changed to `/api-proxy` |
+
+### ⏭️ Intentional / deferred
+| Finding | Decision |
+|---------|----------|
+| No reverse proxy / nginx committed | Infra-ops concern; not in repo scope |
+| Postgres image not pinned to patch | Low priority; acceptable for dev |
+| Layer 3 PreToolUse hook | Last task — do after all other work complete |
+| Layer 2 permissions.deny | Last task — together with Layer 3 |
+| No CI secret-scan | Deferred until CI is set up |
+
+### 🔴 Still open
+| Finding | File | Priority |
+|---------|------|----------|
+| Inter-service traffic HTTP (not HTTPS) | `next.config.ts` proxy → `http://localhost:3001` | 🔵 nit (localhost only) |
+| docker-compose default credentials | `school:school` + `minioadmin` in compose | 🔵 dev-only acceptable |
+
+### ✅ Runtime-confirmed false positive (2026-07-19)
+| Finding | Evidence |
+|---------|----------|
+| API binds to 0.0.0.0 in production | `main.ts:30-31` — already `isDev ? '0.0.0.0' : '127.0.0.1'` |
+
+---
+
+---
+
 ## Summary
 
 | Severity | Count |

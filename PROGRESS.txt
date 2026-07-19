@@ -413,3 +413,50 @@ STATUS: COMPLETE. משתמש נשאר מחובר כל עוד פעיל (refresh 7
 - Old token deleted from GitHub
 Files: ~/.claude/settings.json, ~/.bashrc
 
+
+--- 2026-07-19 runtime-confirm ---
+TASKS: Runtime confirmation of static security findings
+RESULT: 1 confirmed (CORS silent fallback), 4 false-positives, 1 n/a
+FIXED:
+  apps/api/src/main.ts — removed CORS_ORIGIN dev fallback; now throws if absent
+  apps/api/.env — added CORS_ORIGIN=http://localhost:3000
+  apps/api/.env.example — added CORS_ORIGIN=http://localhost:3000
+REPORTS:
+  security/RUNTIME-CONFIRMATION.md — new
+  security/SOFTWARE-SECURITY-FINDINGS.md — updated (false positives marked, CORS fixed)
+  security/INFRA-SECURITY-FINDINGS.md — updated (API bind false positive marked)
+STATUS: runtime-confirm COMPLETE. Moving to /e2e-security.
+
+--- 2026-07-19 e2e-security ---
+TASKS: E2E behavioral security tests (5 vuln-classes in parallel)
+CONFIRMED + FIXED:
+  1. Logout/me broken for all roles (CRITICAL)
+     - apps/api/src/common/auth-decorators.ts — added AnyRole() decorator
+     - apps/api/src/auth/auth.controller.ts — @AnyRole() on logout + me
+  2. Stored XSS via student fullName (HIGH)
+     - apps/api/src/students/dto/student.dto.ts — @Matches(/^[^<>]*$/) on fullName
+  3. ImportStudentsDto.names missing MaxLength (MEDIUM)
+     - apps/api/src/students/dto/student.dto.ts — @MaxLength(255,{each}) + @Matches(NO_HTML,{each})
+NOT-REPRODUCED (false positives from static analysis):
+  - upsertLabelOverrides auth (both guards applied), IDOR (tenant isolation OK),
+    role escalation (403 everywhere), auth bypass (401 everywhere),
+    BulkGradeUpdateItemDto MaxLength (already @MaxLength(64)), fullName MaxLength (already @MaxLength(255))
+REPORTS: security/E2E-SECURITY-FINDINGS.md (new)
+STATUS: e2e-security COMPLETE. All security audit skills complete.
+
+---
+2026-07-19 — super admin bootstrap via env vars
+Tasks: ensureSuperAdmin() in seed.ts; .env.example updated
+Files: apps/api/prisma/seed.ts, apps/api/.env.example
+- seed without SEED_DEMO=1 → calls ensureSuperAdmin() (safe in production)
+- reads PLATFORM_ADMIN_EMAIL + PLATFORM_ADMIN_PASSWORD from env
+- skips if super_admin already exists (idempotent)
+- SEED_DEMO=1 demo flow unchanged; throws if NODE_ENV=production
+
+---
+2026-07-19 — platform forgot-password for super admin
+Tasks: super admin can reset password without schoolId
+Files: apps/api/src/auth/auth.service.ts, apps/api/src/auth/auth.controller.ts, apps/web/app/forgot-password/page.tsx
+- Added platformForgotPassword() service method (finds user by email where role=super_admin, schoolId=null)
+- Added POST /auth/platform/forgot-password endpoint (email only, @Public, throttled)
+- forgot-password page: schoolId now optional; if empty → calls platform endpoint, else → regular endpoint
