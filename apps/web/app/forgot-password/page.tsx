@@ -25,11 +25,20 @@ function ForgotPasswordForm() {
     setError('');
     setSubmitting(true);
     try {
-      await apiFetch('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ schoolId: schoolId.trim(), email: email.trim() }),
-        headers: { 'x-app-url': window.location.origin },
-      });
+      const trimmedSchoolId = schoolId.trim();
+      if (trimmedSchoolId) {
+        await apiFetch('/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ schoolId: trimmedSchoolId, email: email.trim() }),
+          headers: { 'x-app-url': window.location.origin },
+        });
+      } else {
+        await apiFetch('/auth/platform/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ email: email.trim() }),
+          headers: { 'x-app-url': window.location.origin },
+        });
+      }
       setSent(true);
     } catch (err) {
       setError(translateApiError(err instanceof Error ? err.message : ''));
@@ -58,12 +67,14 @@ function ForgotPasswordForm() {
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="schoolId">{he.schoolId}</Label>
+              <Label htmlFor="schoolId">
+                {he.schoolId}
+                <span className="mr-1 text-xs text-text-muted">(ריק = סופר-אדמין)</span>
+              </Label>
               <Input
                 id="schoolId"
                 value={schoolId}
                 onChange={(e) => setSchoolId(e.target.value)}
-                required
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 autoComplete="organization"
               />

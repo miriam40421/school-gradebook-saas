@@ -5,16 +5,34 @@ const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 12;
 const DEMO_PASSWORD = 'DemoAdmin1!';
 
-async function main() {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Seed must not run in production');
-  }
-  if (process.env.SEED_DEMO !== '1') {
-    console.log(
-      'Seed skipped. Set SEED_DEMO=1 to load demo data (wipes all schools first).',
+async function ensureSuperAdmin() {
+  const email = process.env.PLATFORM_ADMIN_EMAIL;
+  const password = process.env.PLATFORM_ADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      'PLATFORM_ADMIN_EMAIL and PLATFORM_ADMIN_PASSWORD must be set to bootstrap the super admin account.',
     );
-    console.log('To remove demo data only: pnpm db:clear-demo');
+  }
+  const existing = await prisma.user.findFirst({ where: { role: 'super_admin' } });
+  if (existing) {
+    console.log(`Super admin already exists (${existing.email}). Skipping.`);
     return;
+  }
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  await prisma.user.create({
+    data: { schoolId: null, role: 'super_admin', name: 'Super Admin', email, passwordHash },
+  });
+  console.log(`Super admin created: ${email}`);
+}
+
+async function main() {
+  if (process.env.SEED_DEMO !== '1') {
+    await ensureSuperAdmin();
+    return;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Demo seed must not run in production — unset SEED_DEMO or set NODE_ENV=production to skip.');
   }
 
   await prisma.certificateSnapshot.deleteMany();
