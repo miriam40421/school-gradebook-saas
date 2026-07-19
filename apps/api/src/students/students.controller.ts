@@ -92,6 +92,12 @@ export class StudentsController {
     return this.students.updateGroupMemberships(user, id, dto.classGroupIds);
   }
 
+  @Get(':id/export')
+  @HomeroomOrAdmin()
+  exportStudentData(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {
+    return this.students.exportStudentData(user, id);
+  }
+
   @Delete(':id')
   @HomeroomOnly()
   remove(@CurrentUser() user: SchoolUserPayload, @Param('id') id: string) {

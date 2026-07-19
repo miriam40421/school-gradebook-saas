@@ -541,3 +541,14 @@ Tasks:
 Files:
   apps/api/src/students/students.service.ts
   apps/api/src/certificates/certificates.service.ts
+
+[2026-07-19 Student Export Endpoint - סעיף 13]
+Branch: task/mfa-email-otp
+Tasks:
+  - StudentsService.exportStudentData(): מחזיר כל נתוני תלמיד (grades, supplements, snapshots)
+  - GET /students/:id/export — @HomeroomOrAdmin()
+  - Emits student.export AuditEvent
+Files:
+  apps/api/src/students/students.service.ts
+  apps/api/src/students/students.controller.ts
+Verified: TypeScript clean

@@ -240,6 +240,46 @@ export class StudentsService {
     return updated;
   }
 
+  async exportStudentData(user: SchoolUserPayload, id: string) {
+    const student = await this.prisma.student.findFirst({
+      where: { id, schoolId: user.school_id, deletedAt: null },
+      include: {
+        gradeEntries: {
+          select: { subjectId: true, termId: true, value: true, updatedAt: true },
+        },
+        certificateSupplements: {
+          select: {
+            termId: true,
+            evaluation: true,
+            absences: true,
+            lateness: true,
+            hourAbsences: true,
+            hourLateness: true,
+            homeroomComment: true,
+          },
+        },
+        certificateSnapshots: {
+          select: {
+            id: true,
+            termId: true,
+            createdAt: true,
+            generatedBy: true,
+          },
+        },
+      },
+    });
+    if (!student) throw new NotFoundException();
+    this.audit.emit({
+      action: 'student.export',
+      actorId: user.sub,
+      targetType: 'Student',
+      targetId: id,
+      schoolId: user.school_id,
+      outcome: 'success',
+    });
+    return student;
+  }
+
   async remove(user: SchoolUserPayload, id: string) {
     assertHomeroomWrite(user);
     const existing = await this.prisma.student.findFirst({
