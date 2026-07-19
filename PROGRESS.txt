@@ -511,3 +511,13 @@ Verified:
   - login success with trusted device → auth.login | success | {"mfa":"trusted_device"} ב-DB
   - mfa verify failure → auth.mfa_verify | denied ב-DB
   - mfa verify success → auth.mfa_verify | success ב-DB
+
+[2026-07-19 MinIO PDF cleanup on student purge]
+Branch: task/mfa-email-otp
+Tasks:
+  - DataRetentionService: לפני מחיקת Student → שלוף pdfStorageKey מ-CertificateSnapshots → מחק מ-MinIO → מחק מ-DB
+  - שימוש ב-Promise.allSettled לסבילות כשלים
+  - לוגים: pdfKeysDeleted + partial failures
+Files:
+  apps/api/src/common/data-retention.service.ts
+Verified: TypeScript clean (exit 0). CRON job — לא ניתן לבדוק בזמן ריאלי.
