@@ -460,3 +460,34 @@ Files: apps/api/src/auth/auth.service.ts, apps/api/src/auth/auth.controller.ts, 
 - Added platformForgotPassword() service method (finds user by email where role=super_admin, schoolId=null)
 - Added POST /auth/platform/forgot-password endpoint (email only, @Public, throttled)
 - forgot-password page: schoolId now optional; if empty → calls platform endpoint, else → regular endpoint
+
+[2026-07-19 MFA Email OTP]
+Branch: task/mfa-email-otp
+Tasks:
+  - הוספת EmailOtpCode + TrustedDevice models לschema
+  - Migration: 20260719132358_add_mfa_models
+  - MfaService: sendOtpAndGetToken, verifyOtp, isTrustedDevice, createTrustedDevice, validateMfaToken
+  - AuthService: login/platformLogin עם deviceToken + MFA flow, verifyMfa()
+  - AuthController: POST /auth/mfa/verify
+  - AuthModule: רישום MfaService
+  - EmailService: sendOtpCode()
+  - Frontend: lib/api.ts (deviceToken storage), lib/auth.tsx (pendingMfa state + verifyMfa), login/page.tsx (OTP step UI)
+Files:
+  apps/api/prisma/schema.prisma
+  apps/api/prisma/migrations/20260719132358_add_mfa_models/
+  apps/api/src/auth/mfa.service.ts (NEW)
+  apps/api/src/auth/auth.service.ts
+  apps/api/src/auth/auth.controller.ts
+  apps/api/src/auth/auth.module.ts
+  apps/api/src/auth/dto/login.dto.ts
+  apps/api/src/super-admin/email.service.ts
+  apps/web/lib/api.ts
+  apps/web/lib/auth.tsx
+  apps/web/app/login/page.tsx
+  apps/web/lib/he.ts
+Verified:
+  - login without device token → { requiresMfa: true, mfaToken }
+  - mfa/verify with correct OTP → { accessToken, refreshToken, user, deviceToken }
+  - mfa/verify with wrong OTP → 401 MFA_INVALID
+  - login with valid device token → JWT directly (no MFA)
+  - TypeScript clean (API + web)

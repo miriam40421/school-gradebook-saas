@@ -10,14 +10,18 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
+
 export default function LoginPage() {
-  const { login, platformLogin, loading } = useAuth();
+  const { login, platformLogin, verifyMfa, loading, pendingMfa } = useAuth();
   const [schoolId, setSchoolId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const [otpCode, setOtpCode] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(true);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,6 +33,20 @@ export default function LoginPage() {
       } else {
         await login(schoolId.trim(), email.trim(), password);
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : he.loginFailed;
+      setError(translateApiError(msg));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onVerifyMfa = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      await verifyMfa(otpCode.trim(), rememberDevice);
     } catch (err) {
       const msg = err instanceof Error ? err.message : he.loginFailed;
       setError(translateApiError(msg));
@@ -81,81 +99,134 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[340px]">
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-text">{he.loginTitle}</h1>
-            <p className="mt-1 text-sm text-text-muted">{he.loginSubtitle}</p>
-          </div>
-
-          <form onSubmit={onSubmit} className="space-y-5">
-            <div>
-              <Label htmlFor="schoolId">{he.schoolId}</Label>
-              <Input
-                id="schoolId"
-                type="text"
-                value={schoolId}
-                onChange={(e) => setSchoolId(e.target.value)}
-                autoComplete="organization"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">{he.email}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <Label htmlFor="password" className="!mb-0">{he.password}</Label>
-                <Link
-                  href={`/forgot-password${schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : ''}`}
-                  className="text-xs text-primary hover:underline"
-                >
-                  {he.forgotPassword}
-                </Link>
+          {pendingMfa ? (
+            /* ── OTP step ── */
+            <>
+              <div className="mb-8">
+                <h1 className="text-2xl font-bold tracking-tight text-text">אימות דו-שלבי</h1>
+                <p className="mt-1 text-sm text-text-muted">
+                  נשלח קוד אימות בן 6 ספרות למייל שלך. הקוד בתוקף ל-10 דקות.
+                </p>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="pe-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
-                  className="ui-eye-toggle absolute inset-y-0 end-0 flex items-center pe-3 text-text-muted hover:text-text"
+
+              <form onSubmit={onVerifyMfa} className="space-y-5">
+                <div>
+                  <Label htmlFor="otpCode">קוד אימות</Label>
+                  <Input
+                    id="otpCode"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    autoFocus
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border accent-primary"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                  />
+                  <span className="text-sm text-text-muted">זכור מכשיר זה ל-30 יום</span>
+                </label>
+
+                {error && <Alert variant="error">{error}</Alert>}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting || otpCode.length !== 6}
+                  className="w-full !border-primary !bg-primary !text-white hover:!bg-primary-hover hover:!border-primary-hover"
                 >
-                  {showPassword
-                    ? <EyeOff className="h-4 w-4" aria-hidden />
-                    : <Eye className="h-4 w-4" aria-hidden />}
-                </button>
+                  {submitting ? 'מאמת…' : 'אישור'}
+                </Button>
+              </form>
+            </>
+          ) : (
+            /* ── Password step ── */
+            <>
+              <div className="mb-8">
+                <h1 className="text-2xl font-bold tracking-tight text-text">{he.loginTitle}</h1>
+                <p className="mt-1 text-sm text-text-muted">{he.loginSubtitle}</p>
               </div>
-            </div>
 
-            {error && <Alert variant="error">{error}</Alert>}
+              <form onSubmit={onSubmit} className="space-y-5">
+                <div>
+                  <Label htmlFor="schoolId">{he.schoolId}</Label>
+                  <Input
+                    id="schoolId"
+                    type="text"
+                    value={schoolId}
+                    onChange={(e) => setSchoolId(e.target.value)}
+                    autoComplete="organization"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  />
+                </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={submitting}
-              className="w-full !border-primary !bg-primary !text-white hover:!bg-primary-hover hover:!border-primary-hover"
-            >
-              {submitting ? he.signingIn : he.signIn}
-            </Button>
-          </form>
+                <div>
+                  <Label htmlFor="email">{he.email}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <Label htmlFor="password" className="!mb-0">{he.password}</Label>
+                    <Link
+                      href={`/forgot-password${schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : ''}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {he.forgotPassword}
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="pe-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
+                      className="ui-eye-toggle absolute inset-y-0 end-0 flex items-center pe-3 text-text-muted hover:text-text"
+                    >
+                      {showPassword
+                        ? <EyeOff className="h-4 w-4" aria-hidden />
+                        : <Eye className="h-4 w-4" aria-hidden />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && <Alert variant="error">{error}</Alert>}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting}
+                  className="w-full !border-primary !bg-primary !text-white hover:!bg-primary-hover hover:!border-primary-hover"
+                >
+                  {submitting ? he.signingIn : he.signIn}
+                </Button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </main>

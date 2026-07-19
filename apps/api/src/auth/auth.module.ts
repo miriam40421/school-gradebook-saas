@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { MfaService } from './mfa.service';
 import { TokenRevocationService } from './token-revocation.service';
 import { EmailService } from '../super-admin/email.service';
 
@@ -28,7 +29,7 @@ import { EmailService } from '../super-admin/email.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenRevocationService, EmailService],
+  providers: [AuthService, JwtStrategy, TokenRevocationService, EmailService, MfaService],
   exports: [AuthService, JwtModule, TokenRevocationService],
 })
 export class AuthModule {}

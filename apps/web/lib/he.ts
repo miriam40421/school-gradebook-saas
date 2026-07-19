@@ -701,6 +701,7 @@ export function translateApiError(message: string): string {
   }
   if (m === 'SCHOOL_BLOCKED') return he.schoolBlockedLogin;
   if (m === 'SCHOOL_DELETED') return he.schoolDeletedLogin;
+  if (m === 'MFA_INVALID') return 'קוד האימות שגוי או שפג תוקפו — נסי שוב.';
   if (m === 'NOT_PLATFORM_USER') return he.missingSchoolId;
   if (m === 'Forbidden') return 'אין הרשאה — יצירת כיתה רק למנהלת. התחברי כמשתמש מנהל.';
   if (

@@ -28,6 +28,19 @@ export function clearRefreshToken() {
   localStorage.removeItem('refreshToken');
 }
 
+export function getDeviceToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('deviceToken');
+}
+
+export function setDeviceToken(token: string) {
+  localStorage.setItem('deviceToken', token);
+}
+
+export function clearDeviceToken() {
+  localStorage.removeItem('deviceToken');
+}
+
 let refreshPromise: Promise<boolean> | null = null;
 
 async function tryRefresh(): Promise<boolean> {

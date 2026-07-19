@@ -1,14 +1,14 @@
 import { BadRequestException, Body, Controller, Get, Ip, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
-import { IsEmail, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import { AnyRole } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtPayload } from './jwt-payload.interface';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto, VerifyMfaDto } from './dto/login.dto';
 import { TokenRevocationService } from './token-revocation.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -19,6 +19,10 @@ class PlatformLoginDto {
   @IsString()
   @MinLength(1)
   password!: string;
+
+  @IsOptional()
+  @IsString()
+  deviceToken?: string;
 }
 
 class ForgotPasswordDto {
@@ -69,7 +73,14 @@ export class AuthController {
   @Post('platform/login')
   @Throttle({ default: { limit: 10, ttl: 900000 } })
   platformLogin(@Body() dto: PlatformLoginDto, @Ip() ip: string) {
-    return this.auth.platformLogin(dto.email, dto.password, ip);
+    return this.auth.platformLogin(dto.email, dto.password, ip, dto.deviceToken);
+  }
+
+  @Public()
+  @Post('mfa/verify')
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
+  verifyMfa(@Body() dto: VerifyMfaDto, @Ip() ip: string) {
+    return this.auth.verifyMfa(dto.mfaToken, dto.code, dto.rememberDevice ?? false, ip);
   }
 
   @Public()

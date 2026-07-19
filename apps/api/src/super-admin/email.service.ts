@@ -120,6 +120,44 @@ export class EmailService {
     else this.logger.log(`Update email sent to ${recipient}`);
   }
 
+  async sendOtpCode(params: { to: string; code: string; userName: string }) {
+    const recipient = process.env.EMAIL_OVERRIDE ?? params.to;
+    const from = process.env.RESEND_FROM ?? 'onboarding@resend.dev';
+    const subject = 'קוד אימות — כניסה למערכת';
+
+    const html = `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+        <h1 style="color: #1e293b; font-size: 22px;">אימות כניסה</h1>
+        <p style="color: #475569;">שלום ${params.userName},</p>
+        <p style="color: #475569;">קוד האימות שלך לכניסה למערכת:</p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <div style="display: inline-block; background: #f1f5f9; border: 2px solid #e2e8f0;
+                      border-radius: 12px; padding: 20px 40px;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px;
+                         color: #1e293b; font-family: monospace;">${params.code}</span>
+          </div>
+        </div>
+
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
+          <p style="margin: 0; color: #92400e;">⚠️ הקוד בתוקף ל-10 דקות בלבד.</p>
+          <p style="margin: 8px 0 0; color: #92400e;">אם לא ניסית להתחבר — התעלמי מהמייל הזה.</p>
+        </div>
+      </div>
+    `;
+
+    if (!this.resend) {
+      this.logger.log(`[EMAIL DEV] OTP email sent | Subject: ${subject}`);
+      this.logger.log(`[EMAIL DEV] Code: ${params.code}`);
+      return;
+    }
+
+    const { error } = await this.resend.emails.send({ from, to: recipient, subject, html });
+    if (error) {
+      this.logger.error(`Failed to send OTP email: ${JSON.stringify(error)}`);
+    }
+  }
+
   async sendPasswordReset(params: { to: string; resetUrl: string; userName: string }) {
     const recipient = process.env.EMAIL_OVERRIDE ?? params.to;
     const from = process.env.RESEND_FROM ?? 'onboarding@resend.dev';
