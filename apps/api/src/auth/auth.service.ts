@@ -115,6 +115,32 @@ export class AuthService {
     });
   }
 
+  async platformForgotPassword(email: string) {
+    const normalizedEmail = email.toLowerCase();
+    const user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail, role: 'super_admin', schoolId: null, deletedAt: null },
+    });
+    // Always return success — don't reveal if account exists
+    if (!user) return { success: true };
+
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    await this.prisma.passwordResetToken.create({
+      data: { userId: user.id, token: tokenHash, expiresAt },
+    });
+
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
+    void this.email.sendPasswordReset({ to: user.email, resetUrl, userName: user.name });
+
+    return { success: true };
+  }
+
   async forgotPassword(schoolId: string, email: string) {
     const normalizedEmail = email.toLowerCase();
     const user = await this.prisma.user.findUnique({

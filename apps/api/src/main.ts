@@ -10,9 +10,9 @@ async function bootstrap() {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   const isDev = process.env.NODE_ENV === 'development';
-  const corsOrigin = process.env.CORS_ORIGIN ?? (isDev ? 'http://localhost:3000' : null);
+  const corsOrigin = process.env.CORS_ORIGIN;
   if (!corsOrigin) {
-    throw new Error('CORS_ORIGIN must be set in non-development environments');
+    throw new Error('CORS_ORIGIN must be set (set CORS_ORIGIN=http://localhost:3000 in .env for local dev)');
   }
   if (!isDev && !corsOrigin.startsWith('https://')) {
     throw new Error('CORS_ORIGIN must be a valid HTTPS URL in non-development environments');

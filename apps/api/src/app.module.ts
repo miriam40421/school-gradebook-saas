@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { ClassGroupsModule } from './class-groups/class-groups.module';
 import { ClassesModule } from './classes/classes.module';
 import { GradingSetTypesModule } from './grading-set-types/grading-set-types.module';
@@ -52,6 +53,7 @@ import { CommonModule } from './common/common.module';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

@@ -20,6 +20,8 @@ services:
       resources:
         limits:
           memory: 512M
+          cpus: '1.0'
+          pids: 200
 
   minio:
     # Pin to a specific release — update deliberately, not on every pull
@@ -44,6 +46,8 @@ services:
       resources:
         limits:
           memory: 512M
+          cpus: '1.0'
+          pids: 200
 
 volumes:
   postgres_data:

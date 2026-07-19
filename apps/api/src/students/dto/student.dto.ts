@@ -1,9 +1,12 @@
-import { IsArray, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+
+const NO_HTML = /^[^<>]*$/;
 
 export class CreateStudentDto {
   @IsString()
   @MinLength(1)
   @MaxLength(255)
+  @Matches(NO_HTML, { message: 'fullName must not contain HTML characters' })
   fullName!: string;
 
   @IsUUID()
@@ -19,6 +22,7 @@ export class UpdateStudentDto {
   @IsString()
   @MinLength(1)
   @MaxLength(255)
+  @Matches(NO_HTML, { message: 'fullName must not contain HTML characters' })
   fullName?: string;
 
   @IsOptional()
@@ -36,6 +40,8 @@ export class ImportStudentsDto {
 
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(255, { each: true })
+  @Matches(NO_HTML, { each: true, message: 'names must not contain HTML characters' })
   names!: string[];
 }
 

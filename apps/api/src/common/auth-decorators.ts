@@ -1,5 +1,5 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
-import { Role } from '@school/shared';
+import { Role, ROLES } from '@school/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
@@ -20,4 +20,8 @@ export function HomeroomOrAdmin() {
 
 export function HomeroomOnly() {
   return Roles(Role.HomeroomTeacher);
+}
+
+export function AnyRole() {
+  return Roles(...ROLES);
 }

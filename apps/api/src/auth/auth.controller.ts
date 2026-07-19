@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Get, Ip, Post, Req, UseGuards } 
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { IsEmail, IsString, IsUUID, MinLength } from 'class-validator';
+import { AnyRole } from '../common/auth-decorators';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -24,6 +25,11 @@ class ForgotPasswordDto {
   @IsUUID()
   schoolId!: string;
 
+  @IsEmail()
+  email!: string;
+}
+
+class PlatformForgotPasswordDto {
   @IsEmail()
   email!: string;
 }
@@ -67,6 +73,13 @@ export class AuthController {
   }
 
   @Public()
+  @Post('platform/forgot-password')
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  platformForgotPassword(@Body() dto: PlatformForgotPasswordDto) {
+    return this.auth.platformForgotPassword(dto.email);
+  }
+
+  @Public()
   @Post('forgot-password')
   @Throttle({ default: { limit: 5, ttl: 900000 } })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -89,6 +102,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @AnyRole()
   async logout(
     @CurrentUser() user: JwtPayload & { jti?: string; exp?: number },
     @Req() req: Request,
@@ -110,6 +124,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @AnyRole()
   me(@CurrentUser() user: JwtPayload) {
     return this.auth.me(user.sub, user.school_id);
   }
