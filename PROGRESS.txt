@@ -521,3 +521,13 @@ Tasks:
 Files:
   apps/api/src/common/data-retention.service.ts
 Verified: TypeScript clean (exit 0). CRON job — לא ניתן לבדוק בזמן ריאלי.
+
+[2026-07-19 AuditEvent Retention Policy]
+Branch: task/mfa-email-otp
+Tasks:
+  - DataRetentionService: מחיקת AuditEvent שגילם > 1095 ימים (36 חודשים)
+  - AUDIT_RETENTION_DAYS env var (ברירת מחדל 1095)
+  - לוג: auditEvents + auditCutoff
+Files:
+  apps/api/src/common/data-retention.service.ts
+Verified: TypeScript clean

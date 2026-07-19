@@ -5,6 +5,8 @@ import { STORAGE_PORT, StoragePort } from '../storage/storage.port';
 
 // Israeli educational records retention: 7 years from soft-delete
 const RETENTION_DAYS = parseInt(process.env.DATA_RETENTION_DAYS ?? '2555', 10);
+// תקנה 10(ג): audit logs minimum 24 months, capped at 36 months
+const AUDIT_RETENTION_DAYS = parseInt(process.env.AUDIT_RETENTION_DAYS ?? '1095', 10);
 
 @Injectable()
 export class DataRetentionService {
@@ -52,14 +54,21 @@ export class DataRetentionService {
       }),
     ]);
 
-    if (students.count > 0 || users.count > 0) {
+    const auditCutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const auditEvents = await this.prisma.auditEvent.deleteMany({
+      where: { createdAt: { lt: auditCutoff } },
+    });
+
+    if (students.count > 0 || users.count > 0 || auditEvents.count > 0) {
       this.logger.log(
         JSON.stringify({
           event: 'data_retention_purge',
           students: students.count,
           users: users.count,
           pdfKeysDeleted: pdfKeys.length,
+          auditEvents: auditEvents.count,
           cutoff,
+          auditCutoff,
         }),
       );
     }
