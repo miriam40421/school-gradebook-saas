@@ -491,3 +491,23 @@ Verified:
   - mfa/verify with wrong OTP → 401 MFA_INVALID
   - login with valid device token → JWT directly (no MFA)
   - TypeScript clean (API + web)
+
+[2026-07-19 AuditEvent outcome + denied attempts]
+Branch: task/mfa-email-otp
+Tasks:
+  - הוספת שדה outcome String? ל-AuditEvent (migration: 20260719133453_add_audit_outcome)
+  - עדכון AuditService.emit(): outcome + error catching
+  - עדכון AuthService: login/platformLogin/verifyMfa → emit לAuditEvent במקום Logger
+  - הוספת CommonModule ל-AuthModule imports
+Files:
+  apps/api/prisma/schema.prisma
+  apps/api/prisma/migrations/20260719133453_add_audit_outcome/
+  apps/api/src/common/audit.service.ts
+  apps/api/src/auth/auth.service.ts
+  apps/api/src/auth/auth.module.ts
+Verified:
+  - login failed (wrong_password) → auth.login | denied | {"reason":"wrong_password"} ב-DB
+  - platform_login failed → auth.platform_login | denied ב-DB
+  - login success with trusted device → auth.login | success | {"mfa":"trusted_device"} ב-DB
+  - mfa verify failure → auth.mfa_verify | denied ב-DB
+  - mfa verify success → auth.mfa_verify | success ב-DB

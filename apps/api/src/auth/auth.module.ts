@@ -9,9 +9,11 @@ import { JwtStrategy } from './jwt.strategy';
 import { MfaService } from './mfa.service';
 import { TokenRevocationService } from './token-revocation.service';
 import { EmailService } from '../super-admin/email.service';
+import { CommonModule } from '../common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     ScheduleModule.forRoot(),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

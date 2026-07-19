@@ -9,6 +9,7 @@ export interface AuditParams {
   targetId?: string;
   schoolId?: string | null;
   ip?: string;
+  outcome?: 'success' | 'denied';
   meta?: Prisma.InputJsonObject;
 }
 
@@ -17,7 +18,7 @@ export class AuditService {
   constructor(private prisma: PrismaService) {}
 
   emit(params: AuditParams): void {
-    void this.prisma.auditEvent.create({
+    this.prisma.auditEvent.create({
       data: {
         action: params.action,
         actorId: params.actorId,
@@ -25,8 +26,11 @@ export class AuditService {
         targetId: params.targetId,
         schoolId: params.schoolId ?? null,
         ip: params.ip ?? null,
+        outcome: params.outcome ?? null,
         meta: params.meta ?? undefined,
       },
+    }).catch((err: Error) => {
+      console.error('[AuditService] emit failed:', err.message);
     });
   }
 }

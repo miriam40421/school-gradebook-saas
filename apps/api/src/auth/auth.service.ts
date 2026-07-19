@@ -8,6 +8,9 @@ import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { EmailService } from '../super-admin/email.service';
 import { MfaService } from './mfa.service';
+import { AuditService } from '../common/audit.service';
+
+const UNKNOWN_ACTOR = 'UNKNOWN';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +21,7 @@ export class AuthService {
     private jwt: JwtService,
     private email: EmailService,
     private mfa: MfaService,
+    private audit: AuditService,
   ) {}
 
   private async issueTokens(user: { id: string; email: string; schoolId: string | null; role: string; name: string }) {
@@ -51,33 +55,32 @@ export class AuthService {
       include: { school: { select: { isBlocked: true, deletedAt: true } } },
     });
     if (!user) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', schoolId: dto.schoolId, ip, reason: 'user_not_found' }));
+      this.audit.emit({ action: 'auth.login', actorId: UNKNOWN_ACTOR, targetType: 'auth', schoolId: dto.schoolId, ip, outcome: 'denied', meta: { reason: 'user_not_found' } });
       throw new UnauthorizedException('Invalid credentials');
     }
     if (!user.school) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', schoolId: dto.schoolId, ip, reason: 'school_not_found' }));
+      this.audit.emit({ action: 'auth.login', actorId: user.id, targetType: 'auth', schoolId: dto.schoolId, ip, outcome: 'denied', meta: { reason: 'school_not_found' } });
       throw new ForbiddenException('SCHOOL_DELETED');
     }
     if (user.school.deletedAt) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', schoolId: dto.schoolId, ip, reason: 'school_deleted' }));
+      this.audit.emit({ action: 'auth.login', actorId: user.id, targetType: 'auth', schoolId: dto.schoolId, ip, outcome: 'denied', meta: { reason: 'school_deleted' } });
       throw new ForbiddenException('SCHOOL_DELETED');
     }
     if (user.school.isBlocked) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', schoolId: dto.schoolId, ip, reason: 'school_blocked' }));
+      this.audit.emit({ action: 'auth.login', actorId: user.id, targetType: 'auth', schoolId: dto.schoolId, ip, outcome: 'denied', meta: { reason: 'school_blocked' } });
       throw new ForbiddenException('SCHOOL_BLOCKED');
     }
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
-      this.logger.warn(JSON.stringify({ event: 'login_failure', schoolId: dto.schoolId, ip, reason: 'wrong_password' }));
+      this.audit.emit({ action: 'auth.login', actorId: user.id, targetType: 'auth', schoolId: user.schoolId, ip, outcome: 'denied', meta: { reason: 'wrong_password' } });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (dto.deviceToken && await this.mfa.isTrustedDevice(user.id, dto.deviceToken)) {
-      this.logger.log(JSON.stringify({ event: 'login_success', userId: user.id, schoolId: user.schoolId, ip, mfa: 'trusted_device' }));
+      this.audit.emit({ action: 'auth.login', actorId: user.id, targetType: 'auth', schoolId: user.schoolId, ip, outcome: 'success', meta: { mfa: 'trusted_device' } });
       return this.issueTokens(user);
     }
 
-    this.logger.log(JSON.stringify({ event: 'login_mfa_required', userId: user.id, schoolId: user.schoolId, ip }));
     const mfaToken = await this.mfa.sendOtpAndGetToken({ id: user.id, email: user.email, name: user.name, schoolId: user.schoolId });
     return { requiresMfa: true, mfaToken };
   }
@@ -88,21 +91,20 @@ export class AuthService {
       where: { email: normalizedEmail, role: 'super_admin', deletedAt: null },
     });
     if (!user) {
-      this.logger.warn(JSON.stringify({ event: 'platform_login_failure', ip, reason: 'user_not_found' }));
+      this.audit.emit({ action: 'auth.platform_login', actorId: UNKNOWN_ACTOR, targetType: 'auth', ip, outcome: 'denied', meta: { reason: 'user_not_found' } });
       throw new UnauthorizedException('NOT_PLATFORM_USER');
     }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      this.logger.warn(JSON.stringify({ event: 'platform_login_failure', ip, reason: 'wrong_password' }));
+      this.audit.emit({ action: 'auth.platform_login', actorId: user.id, targetType: 'auth', ip, outcome: 'denied', meta: { reason: 'wrong_password' } });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (deviceToken && await this.mfa.isTrustedDevice(user.id, deviceToken)) {
-      this.logger.log(JSON.stringify({ event: 'platform_login_success', userId: user.id, ip, mfa: 'trusted_device' }));
+      this.audit.emit({ action: 'auth.platform_login', actorId: user.id, targetType: 'auth', ip, outcome: 'success', meta: { mfa: 'trusted_device' } });
       return this.issueTokens({ ...user, schoolId: null });
     }
 
-    this.logger.log(JSON.stringify({ event: 'platform_login_mfa_required', userId: user.id, ip }));
     const mfaToken = await this.mfa.sendOtpAndGetToken({ id: user.id, email: user.email, name: user.name, schoolId: null });
     return { requiresMfa: true, mfaToken };
   }
@@ -113,7 +115,7 @@ export class AuthService {
 
     const valid = await this.mfa.verifyOtp(payload.sub, code);
     if (!valid) {
-      this.logger.warn(JSON.stringify({ event: 'mfa_failure', userId: payload.sub, ip, reason: 'invalid_otp' }));
+      this.audit.emit({ action: 'auth.mfa_verify', actorId: payload.sub, targetType: 'auth', schoolId: payload.schoolId, ip, outcome: 'denied', meta: { reason: 'invalid_otp' } });
       throw new UnauthorizedException('MFA_INVALID');
     }
 
@@ -122,7 +124,7 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException();
 
-    this.logger.log(JSON.stringify({ event: 'login_success', userId: user.id, schoolId: user.schoolId, ip, mfa: 'otp' }));
+    this.audit.emit({ action: 'auth.mfa_verify', actorId: user.id, targetType: 'auth', schoolId: payload.schoolId, ip, outcome: 'success' });
     const tokens = await this.issueTokens({ ...user, schoolId: payload.schoolId });
 
     if (rememberDevice) {

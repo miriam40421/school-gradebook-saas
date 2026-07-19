@@ -878,6 +878,8 @@ model AuditEvent {
 
   ip         String?
 
+  outcome    String?  @map("outcome")
+
   meta       Json?
 
   createdAt  DateTime @default(now()) @map("created_at")
