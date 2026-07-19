@@ -531,3 +531,13 @@ Tasks:
 Files:
   apps/api/src/common/data-retention.service.ts
 Verified: TypeScript clean
+
+[2026-07-19 Audit Coverage: certificates + import]
+Branch: task/mfa-email-otp
+Tasks:
+  - StudentsService.importMany(): emit student.import | success | count, classId
+  - CertificatesService.generate(): emit certificate.generate | success | count, classId, termId
+  - CertificatesService: הזרקת AuditService
+Files:
+  apps/api/src/students/students.service.ts
+  apps/api/src/certificates/certificates.service.ts

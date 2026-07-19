@@ -43,6 +43,7 @@ import { NikudService } from './nikud.service';
 import { renderTemplatePdf, renderTemplateHtmlString } from '../certificate-templates/template-render.util';
 import { GenerateCertificatesBodyDto } from './dto/certificates.dto';
 import { UpsertCertificateSupplementsBodyDto } from './dto/certificate-supplements.dto';
+import { AuditService } from '../common/audit.service';
 
 const MAX_STUDENTS_PER_BATCH = 50;
 
@@ -111,6 +112,7 @@ export class CertificatesService {
     @Inject(STORAGE_PORT) private storage: StoragePort,
     @Inject(PDF_RENDER_SERVICE) private pdfRender: PdfRenderService,
     private nikudService: NikudService,
+    private audit: AuditService,
   ) {}
 
   private certificatePrefsForClass(
@@ -729,6 +731,17 @@ export class CertificatesService {
       }
     }
 
+    const successCount = results.filter((r) => r.ok).length;
+    if (successCount > 0) {
+      this.audit.emit({
+        action: 'certificate.generate',
+        actorId: user.sub,
+        targetType: 'certificate',
+        schoolId: user.school_id,
+        outcome: 'success',
+        meta: { classId: dto.classId, termId: dto.termId, count: successCount },
+      });
+    }
     return { results };
   }
 

@@ -182,6 +182,14 @@ export class StudentsService {
         }),
       ),
     );
+    this.audit.emit({
+      action: 'student.import',
+      actorId: user.sub,
+      targetType: 'student',
+      schoolId: user.school_id,
+      outcome: 'success',
+      meta: { classId: dto.classId, count: created.length },
+    });
     return { imported: created.length, students: created };
   }
 
