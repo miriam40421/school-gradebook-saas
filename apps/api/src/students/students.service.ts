@@ -255,7 +255,6 @@ export class StudentsService {
             lateness: true,
             hourAbsences: true,
             hourLateness: true,
-            homeroomComment: true,
           },
         },
         certificateSnapshots: {
