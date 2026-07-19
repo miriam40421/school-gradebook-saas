@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -58,13 +59,20 @@ describe('API Integration', () => {
       data: { schoolId: schoolAId, key: 'limudi_test', label: 'לימודי' },
     });
     academicTypeAId = typeAcademic.id;
-    await prisma.user.create({
+    const adminA = await prisma.user.create({
       data: {
         schoolId: schoolAId,
         role: Role.Admin,
         name: 'Admin A',
         email: 'admin@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminA.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const teacher = await prisma.user.create({
@@ -77,6 +85,13 @@ describe('API Integration', () => {
       },
     });
     homeroomTeacherId = teacher.id;
+    await prisma.trustedDevice.create({
+      data: {
+        userId: teacher.id,
+        tokenHash: createHash('sha256').update('test-device-teacher@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     await prisma.gradingSet.create({
       data: {
         schoolId: schoolAId,
@@ -89,13 +104,20 @@ describe('API Integration', () => {
       data: { name: 'Test School B', settingsJson: {} },
     });
     schoolBId = schoolB.id;
-    await prisma.user.create({
+    const adminB = await prisma.user.create({
       data: {
         schoolId: schoolBId,
         role: Role.Admin,
         name: 'Admin B',
         email: 'admin@demo-b.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminB.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-b.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
   });
@@ -111,14 +133,14 @@ describe('API Integration', () => {
   it('login success and failure', async () => {
     const ok = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!' })
+      .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-admin@demo-a.local' })
       .expect(201);
     adminAToken = ok.body.accessToken;
     expect(ok.body.user.schoolId).toBe(schoolAId);
 
     await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'admin@demo-a.local', password: 'wrong' })
+      .send({ email: 'admin@demo-a.local', password: 'wrong', schoolId: schoolAId })
       .expect(401);
   });
 
@@ -151,7 +173,7 @@ describe('API Integration', () => {
   it('RBAC: homeroom teacher gets 403 on POST /grading-sets', async () => {
     const login = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!' })
+      .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-teacher@demo-a.local' })
       .expect(201);
     teacherToken = login.body.accessToken;
 
@@ -268,7 +290,7 @@ describe('API Integration', () => {
     await prisma.gradingSetType.deleteMany({ where: { schoolId: schoolBId } });
     const loginB = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'admin@demo-b.local', password: 'DemoAdmin1!' })
+      .send({ email: 'admin@demo-b.local', password: 'DemoAdmin1!', schoolId: schoolBId, deviceToken: 'test-device-admin@demo-b.local' })
       .expect(201);
     const res = await request(app.getHttpServer())
       .get('/grading-set-types')

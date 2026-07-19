@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -80,13 +81,20 @@ describe('Certificates Integration', () => {
       ],
     });
 
-    await prisma.user.create({
+    const adminA = await prisma.user.create({
       data: {
         schoolId: schoolA.id,
         role: Role.Admin,
         name: 'Admin A',
         email: 'admin@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminA.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const homeroom = await prisma.user.create({
@@ -98,6 +106,13 @@ describe('Certificates Integration', () => {
         passwordHash: hash,
       },
     });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: homeroom.id,
+        tokenHash: createHash('sha256').update('test-device-teacher@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const subjectTeacher = await prisma.user.create({
       data: {
         schoolId: schoolA.id,
@@ -105,6 +120,13 @@ describe('Certificates Integration', () => {
         name: 'Subject A',
         email: 'subject@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: subjectTeacher.id,
+        tokenHash: createHash('sha256').update('test-device-subject@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -168,7 +190,7 @@ describe('Certificates Integration', () => {
     const login = async (email: string) => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email, password: 'DemoAdmin1!' });
+        .send({ email, password: 'DemoAdmin1!', schoolId: schoolA.id, deviceToken: `test-device-${email}` });
       return res.body.accessToken as string;
     };
 
@@ -305,9 +327,16 @@ describe('Certificates Integration', () => {
         passwordHash: await bcrypt.hash('DemoAdmin1!', 12),
       },
     });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: schoolBAdmin.id,
+        tokenHash: createHash('sha256').update('test-device-admin-b-cert@demo.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const loginB = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'admin-b-cert@demo.local', password: 'DemoAdmin1!' });
+      .send({ email: 'admin-b-cert@demo.local', password: 'DemoAdmin1!', schoolId: schoolBId, deviceToken: 'test-device-admin-b-cert@demo.local' });
     void schoolBAdmin;
 
     await request(app.getHttpServer())

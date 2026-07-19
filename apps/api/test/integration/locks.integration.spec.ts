@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -82,13 +83,20 @@ describe('Locks Integration', () => {
       ],
     });
 
-    await prisma.user.create({
+    const adminA = await prisma.user.create({
       data: {
         schoolId: schoolAId,
         role: Role.Admin,
         name: 'Admin A',
         email: 'admin@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminA.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const homeroom = await prisma.user.create({
@@ -101,6 +109,13 @@ describe('Locks Integration', () => {
       },
     });
     homeroomUserId = homeroom.id;
+    await prisma.trustedDevice.create({
+      data: {
+        userId: homeroom.id,
+        tokenHash: createHash('sha256').update('test-device-teacher@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const subjectTeacher = await prisma.user.create({
       data: {
         schoolId: schoolAId,
@@ -108,6 +123,13 @@ describe('Locks Integration', () => {
         name: 'Subject A',
         email: 'subject@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: subjectTeacher.id,
+        tokenHash: createHash('sha256').update('test-device-subject@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const cls = await prisma.class.create({
@@ -160,7 +182,7 @@ describe('Locks Integration', () => {
       },
     });
 
-    await prisma.user.create({
+    const adminB = await prisma.user.create({
       data: {
         schoolId: schoolBId,
         role: Role.Admin,
@@ -169,7 +191,14 @@ describe('Locks Integration', () => {
         passwordHash: hash,
       },
     });
-    await prisma.user.create({
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminB.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-b.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+    const homeroomB = await prisma.user.create({
       data: {
         schoolId: schoolBId,
         role: Role.HomeroomTeacher,
@@ -178,29 +207,36 @@ describe('Locks Integration', () => {
         passwordHash: hash,
       },
     });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: homeroomB.id,
+        tokenHash: createHash('sha256').update('test-device-teacher@demo-b.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
 
     adminAToken = (
       await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!' })
+        .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-admin@demo-a.local' })
     ).body.accessToken;
 
     homeroomToken = (
       await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!' })
+        .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-teacher@demo-a.local' })
     ).body.accessToken;
 
     subjectToken = (
       await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'subject@demo-a.local', password: 'DemoAdmin1!' })
+        .send({ email: 'subject@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-subject@demo-a.local' })
     ).body.accessToken;
 
     homeroomBToken = (
       await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'teacher@demo-b.local', password: 'DemoAdmin1!' })
+        .send({ email: 'teacher@demo-b.local', password: 'DemoAdmin1!', schoolId: schoolBId, deviceToken: 'test-device-teacher@demo-b.local' })
     ).body.accessToken;
   });
 

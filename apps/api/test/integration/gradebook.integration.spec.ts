@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -83,13 +84,20 @@ describe('Gradebook Integration', () => {
       ],
     });
 
-    await prisma.user.create({
+    const adminA = await prisma.user.create({
       data: {
         schoolId: schoolAId,
         role: Role.Admin,
         name: 'Admin A',
         email: 'admin@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminA.id,
+        tokenHash: createHash('sha256').update('test-device-admin@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const homeroom = await prisma.user.create({
@@ -101,6 +109,13 @@ describe('Gradebook Integration', () => {
         passwordHash: hash,
       },
     });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: homeroom.id,
+        tokenHash: createHash('sha256').update('test-device-teacher@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const subjectTeacher = await prisma.user.create({
       data: {
         schoolId: schoolAId,
@@ -108,6 +123,13 @@ describe('Gradebook Integration', () => {
         name: 'Subject A',
         email: 'subject@demo-a.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: subjectTeacher.id,
+        tokenHash: createHash('sha256').update('test-device-subject@demo-a.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -179,17 +201,17 @@ describe('Gradebook Integration', () => {
 
     const loginAdmin = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!' });
+      .send({ email: 'admin@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-admin@demo-a.local' });
     adminAToken = loginAdmin.body.accessToken;
 
     const loginHomeroom = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!' });
+      .send({ email: 'teacher@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-teacher@demo-a.local' });
     homeroomToken = loginHomeroom.body.accessToken;
 
     const loginSubject = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'subject@demo-a.local', password: 'DemoAdmin1!' });
+      .send({ email: 'subject@demo-a.local', password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: 'test-device-subject@demo-a.local' });
     subjectToken = loginSubject.body.accessToken;
 
     // store B ids for isolation test

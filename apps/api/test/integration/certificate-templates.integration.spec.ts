@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
@@ -76,13 +77,20 @@ describe('Certificate Templates Integration', () => {
       ],
     });
 
-    await prisma.user.create({
+    const adminTpl = await prisma.user.create({
       data: {
         schoolId: schoolAId,
         role: Role.Admin,
         name: 'Admin Tpl',
         email: 'admin-tpl@demo.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: adminTpl.id,
+        tokenHash: createHash('sha256').update('test-device-admin-tpl@demo.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
     const homeroom = await prisma.user.create({
@@ -92,6 +100,13 @@ describe('Certificate Templates Integration', () => {
         name: 'Homeroom Tpl',
         email: 'teacher-tpl@demo.local',
         passwordHash: hash,
+      },
+    });
+    await prisma.trustedDevice.create({
+      data: {
+        userId: homeroom.id,
+        tokenHash: createHash('sha256').update('test-device-teacher-tpl@demo.local').digest('hex'),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -146,7 +161,7 @@ describe('Certificate Templates Integration', () => {
     const login = async (email: string) => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email, password: 'DemoAdmin1!' });
+        .send({ email, password: 'DemoAdmin1!', schoolId: schoolAId, deviceToken: `test-device-${email}` });
       return res.body.accessToken as string;
     };
 
