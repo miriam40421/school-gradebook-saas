@@ -159,7 +159,7 @@ export class StudentsService {
       });
     });
     return this.prisma.student.findFirst({
-      where: { id: studentId, deletedAt: null },
+      where: { id: studentId, schoolId: user.school_id, deletedAt: null },
       include: studentIncludeBasic,
     });
   }

@@ -64,7 +64,7 @@ export class EmailService {
     `;
 
     if (!this.resend) {
-      this.logger.log(`[EMAIL DEV] To: ${recipient} | Subject: ${subject}`);
+      this.logger.log(`[EMAIL DEV] Subject: ${subject}`);
       this.logger.log(`School: ${params.schoolName} | ID: ${params.schoolId}`);
       return;
     }
