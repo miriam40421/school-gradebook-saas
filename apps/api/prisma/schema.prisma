@@ -28,6 +28,8 @@ model School {
 
   isBlocked       Boolean          @default(false) @map("is_blocked")
 
+  dpaSignedAt     DateTime?        @map("dpa_signed_at")
+
   deletedAt       DateTime?        @map("deleted_at")
 
   users           User[]

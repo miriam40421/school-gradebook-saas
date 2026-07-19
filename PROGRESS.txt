@@ -552,3 +552,13 @@ Files:
   apps/api/src/students/students.service.ts
   apps/api/src/students/students.controller.ts
 Verified: TypeScript clean
+
+[2026-07-19 DPA Signed Date Field]
+Branch: task/mfa-email-otp
+Tasks:
+  - Schema: dpaSignedAt DateTime? ל-School
+  - Migration: 20260719144218_add_school_dpa_signed_at
+  - הערה: Super-admin צריך להגדיר dpaSignedAt כשחותמים DPA מול בית ספר (ארגוני)
+Files:
+  apps/api/prisma/schema.prisma
+  apps/api/prisma/migrations/20260719144218_add_school_dpa_signed_at/
