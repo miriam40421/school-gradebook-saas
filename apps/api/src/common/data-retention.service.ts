@@ -35,6 +35,15 @@ export class DataRetentionService {
       .map((snap) => snap.pdfStorageKey)
       .filter((key): key is string => !!key);
 
+    const [students, users] = await Promise.all([
+      this.prisma.student.deleteMany({
+        where: { deletedAt: { lt: cutoff } },
+      }),
+      this.prisma.user.deleteMany({
+        where: { deletedAt: { lt: cutoff } },
+      }),
+    ]);
+
     if (pdfKeys.length > 0 && this.storage.deleteObject) {
       const results = await Promise.allSettled(
         pdfKeys.map((key) => this.storage.deleteObject!(key)),
@@ -44,15 +53,6 @@ export class DataRetentionService {
         this.logger.warn(JSON.stringify({ event: 'storage_delete_partial_failure', failed, total: pdfKeys.length }));
       }
     }
-
-    const [students, users] = await Promise.all([
-      this.prisma.student.deleteMany({
-        where: { deletedAt: { lt: cutoff } },
-      }),
-      this.prisma.user.deleteMany({
-        where: { deletedAt: { lt: cutoff } },
-      }),
-    ]);
 
     const auditCutoff = new Date(Date.now() - AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
     const auditEvents = await this.prisma.auditEvent.deleteMany({

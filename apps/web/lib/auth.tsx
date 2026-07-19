@@ -23,7 +23,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUserDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pendingMfa, setPendingMfa] = useState<PendingMfa | null>(null);
+  const [pendingMfa, setPendingMfaState] = useState<PendingMfa | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = sessionStorage.getItem('pendingMfa');
+      return stored ? (JSON.parse(stored) as PendingMfa) : null;
+    } catch { return null; }
+  });
+
+  const setPendingMfa = (mfa: PendingMfa | null) => {
+    if (mfa) sessionStorage.setItem('pendingMfa', JSON.stringify(mfa));
+    else sessionStorage.removeItem('pendingMfa');
+    setPendingMfaState(mfa);
+  };
   const router = useRouter();
   const pathname = usePathname();
 
@@ -134,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => undefined);
     clearToken();
     clearRefreshToken();
+    clearDeviceToken();
+    sessionStorage.removeItem('pendingMfa');
     window.location.replace('/login');
   };
 

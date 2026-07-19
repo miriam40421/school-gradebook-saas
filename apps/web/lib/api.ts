@@ -43,11 +43,22 @@ export function clearDeviceToken() {
 
 let refreshPromise: Promise<boolean> | null = null;
 
+function decodeJwtSub(token: string): string | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    return (JSON.parse(atob(payload)) as { sub?: string }).sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function tryRefresh(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     const refreshToken = getRefreshToken();
     if (!refreshToken) return false;
+    const currentSub = decodeJwtSub(getToken() ?? '');
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
@@ -60,6 +71,13 @@ async function tryRefresh(): Promise<boolean> {
         return false;
       }
       const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      // Detect cross-tab contamination: refresh token belonged to a different user
+      if (currentSub && decodeJwtSub(data.accessToken) !== currentSub) {
+        clearToken();
+        clearRefreshToken();
+        if (typeof window !== 'undefined') window.location.replace('/login');
+        return false;
+      }
       setToken(data.accessToken);
       setRefreshToken(data.refreshToken);
       return true;
@@ -114,7 +132,7 @@ export async function apiFetch<T>(
     throw new Error(translateApiError('Failed to fetch'));
   }
 
-  const isAuthEndpoint = path === '/auth/refresh' || path === '/auth/login' || path === '/auth/platform/login';
+  const isAuthEndpoint = path === '/auth/refresh' || path === '/auth/login' || path === '/auth/platform/login' || path === '/auth/mfa/verify';
   if (res.status === 401 && !isAuthEndpoint) {
     const refreshed = await tryRefresh();
     if (refreshed) {

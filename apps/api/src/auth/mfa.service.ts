@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../super-admin/email.service';
 
@@ -31,7 +31,7 @@ export class MfaService {
       data: { usedAt: new Date() },
     });
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 1000000).toString();
     const codeHash = createHash('sha256').update(code).digest('hex');
     await this.prisma.emailOtpCode.create({
       data: {
@@ -54,21 +54,27 @@ export class MfaService {
   }
 
   async verifyOtp(userId: string, code: string): Promise<boolean> {
+    const now = new Date();
     const codeHash = createHash('sha256').update(code).digest('hex');
-    const record = await this.prisma.emailOtpCode.findFirst({
-      where: {
-        userId,
-        codeHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
+    const activeWhere = { userId, usedAt: null, expiresAt: { gt: now } };
+
+    const locked = await this.prisma.emailOtpCode.findFirst({
+      where: { ...activeWhere, failedAttempts: { gte: 5 } },
+      select: { id: true },
     });
-    if (!record) return false;
-    await this.prisma.emailOtpCode.update({
-      where: { id: record.id },
-      data: { usedAt: new Date() },
+    if (locked) return false;
+
+    const result = await this.prisma.emailOtpCode.updateMany({
+      where: { ...activeWhere, codeHash },
+      data: { usedAt: now },
     });
-    return true;
+    if (result.count > 0) return true;
+
+    await this.prisma.emailOtpCode.updateMany({
+      where: activeWhere,
+      data: { failedAttempts: { increment: 1 } },
+    });
+    return false;
   }
 
   async isTrustedDevice(userId: string, deviceToken: string): Promise<boolean> {

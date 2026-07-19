@@ -562,3 +562,32 @@ Tasks:
 Files:
   apps/api/prisma/schema.prisma
   apps/api/prisma/migrations/20260719144218_add_school_dpa_signed_at/
+
+---
+2026-07-19 23:11 | task/mfa-email-otp — code review fixes (Fixes 1-10)
+Tasks completed:
+  Fix 1: Math.random → crypto.randomInt in mfa.service.ts
+  Fix 2: clearDeviceToken + sessionStorage.removeItem('pendingMfa') in logout (auth.tsx)
+  Fix 3: /auth/mfa/verify added to isAuthEndpoint (api.ts)
+  Fix 4: Integration tests — add TrustedDevice in beforeAll + schoolId/deviceToken in all login calls (5 files)
+  Fix 5: Per-user OTP lockout after 5 failed attempts (mfa.service.ts + schema + migration)
+  Fix 6: TOCTOU race → atomic updateMany in verifyOtp (mfa.service.ts)
+  Fix 7: Stale schoolId from mfaToken → fresh from DB in verifyMfa (auth.service.ts)
+  Fix 8: tokensValidAfter + school blocked/deleted checks in verifyMfa (auth.service.ts)
+  Fix 9: pendingMfa persisted to sessionStorage (auth.tsx)
+  Fix 10: DB records deleted BEFORE storage objects in data-retention.service.ts
+  Bonus: NikudPreviewModal iframe fix — X-Frame-Options SAMEORIGIN for /api/html-preview/** (next.config.mjs)
+Files changed:
+  apps/api/src/auth/mfa.service.ts
+  apps/api/src/auth/auth.service.ts
+  apps/web/lib/api.ts
+  apps/web/lib/auth.tsx
+  apps/api/src/common/data-retention.service.ts
+  apps/web/next.config.mjs
+  apps/api/prisma/schema.prisma (add failedAttempts to EmailOtpCode)
+  apps/api/prisma/migrations/20260719160000_add_otp_failed_attempts/migration.sql
+  apps/api/test/integration/app.integration.spec.ts
+  apps/api/test/integration/gradebook.integration.spec.ts
+  apps/api/test/integration/certificates.integration.spec.ts
+  apps/api/test/integration/locks.integration.spec.ts
+  apps/api/test/integration/certificate-templates.integration.spec.ts

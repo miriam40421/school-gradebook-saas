@@ -5,12 +5,19 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ];
 
+const securityHeadersFrameable = securityHeaders.map((h) =>
+  h.key === 'X-Frame-Options' ? { key: 'X-Frame-Options', value: 'SAMEORIGIN' } : h,
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@school/shared'],
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      { source: '/api/html-preview/:path*', headers: securityHeadersFrameable },
+      { source: '/((?!api/html-preview).*)', headers: securityHeaders },
+    ];
   },
   async rewrites() {
     return [

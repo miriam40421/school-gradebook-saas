@@ -121,11 +121,23 @@ export class AuthService {
 
     const user = await this.prisma.user.findFirst({
       where: { id: payload.sub, deletedAt: null },
+      include: { school: { select: { isBlocked: true, deletedAt: true } } },
     });
     if (!user) throw new UnauthorizedException();
 
-    this.audit.emit({ action: 'auth.mfa_verify', actorId: user.id, targetType: 'auth', schoolId: payload.schoolId, ip, outcome: 'success' });
-    const tokens = await this.issueTokens({ ...user, schoolId: payload.schoolId });
+    const tokenIat = (payload as unknown as { iat?: number }).iat;
+    if (user.tokensValidAfter && tokenIat && user.tokensValidAfter > new Date(tokenIat * 1000)) {
+      throw new UnauthorizedException();
+    }
+
+    if (user.schoolId) {
+      if (!user.school || user.school.deletedAt || user.school.isBlocked) {
+        throw new ForbiddenException('SCHOOL_BLOCKED');
+      }
+    }
+
+    this.audit.emit({ action: 'auth.mfa_verify', actorId: user.id, targetType: 'auth', schoolId: user.schoolId, ip, outcome: 'success' });
+    const tokens = await this.issueTokens(user);
 
     if (rememberDevice) {
       const deviceToken = await this.mfa.createTrustedDevice(user.id);
