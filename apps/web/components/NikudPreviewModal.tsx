@@ -446,14 +446,15 @@ export function NikudPreviewModal({
     setError(null);
     try {
       // 1. Label overrides (green כלל הכיתה)
-      //    Standard labels: always save all current values (so auto-nikud changes are persisted).
-      //    Block/custom labels: save only if changed from initial.
+      //    Standard labels: save only when changed from initial (prevents un-nikud'd defaults
+      //    from overriding the server-side NIKUD defaults for nikud=true schools).
+      //    Block/custom labels: same — save only if changed from initial.
       const changedLabels: Record<string, string> = {};
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(LBL_PREFIX)) {
           const labelKey = k.slice(LBL_PREFIX.length);
           if (labelKey in CERTIFICATE_LABEL_DEFAULTS) {
-            if (v.trim()) changedLabels[labelKey] = v;
+            if (v.trim() && v !== initialLabelValues.current[k]) changedLabels[labelKey] = v;
           } else {
             if (v !== initialLabelValues.current[k]) changedLabels[labelKey] = v;
           }
@@ -824,7 +825,7 @@ export function NikudPreviewModal({
               <span style={{ fontSize: '0.8rem', color: '#16a34a', marginLeft: 'auto' }}>✓ נשמר</span>
             )}
             <Button type="button" variant="ghost" onClick={onClose}>{he.cancel ?? 'סגור'}</Button>
-            <Button type="button" variant="primary" loading={saving} onClick={handleSave}>שמור</Button>
+            <Button type="button" variant="primary" loading={saving} disabled={autoNikudRunning} onClick={handleSave}>שמור</Button>
           </div>
         </div>
       </div>

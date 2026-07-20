@@ -609,3 +609,18 @@ note: forgot-password silent if user missing (correct) + requires SMTP config to
 2026-07-20 09:57 — fix: deviceToken no longer cleared on logout
   file: apps/web/lib/auth.tsx
   reason: clearing deviceToken on logout forced OTP on every re-login, breaking '30-day remember device' UX
+
+[2026-07-20 11:22] fix: cohort nikud not updating in preview
+  - mergeSupplementIntoSnapshot: cohort NKO override skipped when snapshot.class.cohort=undefined (showClassYearHebrew=false at snapshot time). undefined != null is false in JS, so spread never ran.
+  - Fixed: apply override when nko['class.cohort'] exists, regardless of snapshot state
+  - Also committed: NikudPreviewModal race condition fix (sequential saves), users page password eye icon
+  Files: apps/api/src/certificates/snapshot-builder.util.ts, apps/web/components/NikudPreviewModal.tsx, apps/web/app/users/page.tsx
+
+[2026-07-20 12:00] fix: cohort label not updating in preview — two bugs
+  bug 1: save button was not disabled during autoNikudRunning → teacher could save un-nikud'd
+          values before API returned → un-nikud'd label saved as override → overrode NIKUD default
+  bug 2: standard labels were always saved on every save (even if unchanged from initial) →
+          opening+saving modal caused un-nikud'd defaults to override server-side NIKUD defaults
+  fix 1: added disabled={autoNikudRunning} to save button
+  fix 2: standard labels now only saved when v !== initialLabelValues.current[k] (same as custom labels)
+  files: apps/web/components/NikudPreviewModal.tsx (lines 449-460, 827)
