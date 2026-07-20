@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+apps/web
+**/*.log
+.git
+.env
+**/.env
+**/test
+**/tests
