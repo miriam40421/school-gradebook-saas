@@ -17,15 +17,15 @@ export function clearToken() {
 
 export function getRefreshToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('refreshToken');
+  return sessionStorage.getItem('refreshToken');
 }
 
 export function setRefreshToken(token: string) {
-  localStorage.setItem('refreshToken', token);
+  sessionStorage.setItem('refreshToken', token);
 }
 
 export function clearRefreshToken() {
-  localStorage.removeItem('refreshToken');
+  sessionStorage.removeItem('refreshToken');
 }
 
 export function getDeviceToken(): string | null {

@@ -146,7 +146,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => undefined);
     clearToken();
     clearRefreshToken();
-    clearDeviceToken();
     sessionStorage.removeItem('pendingMfa');
     window.location.replace('/login');
   };

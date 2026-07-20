@@ -591,3 +591,21 @@ Files changed:
   apps/api/test/integration/certificates.integration.spec.ts
   apps/api/test/integration/locks.integration.spec.ts
   apps/api/test/integration/certificate-templates.integration.spec.ts
+
+---
+2026-07-20 — fix: NOT_PLATFORM_USER translation bug
+tasks:
+  - bug: login errors on user's machine traced to empty DB (seed not run after migrations)
+  - fix: `NOT_PLATFORM_USER` was translated to `he.missingSchoolId` ("יש להזין מזהה בית ספר")
+         correct: maps to `he.invalidCredentials` ("אימייל או סיסמה שגויים") — same as wrong password
+files:
+  - apps/web/lib/he.ts (translateApiError line 705)
+note: forgot-password silent if user missing (correct) + requires SMTP config to actually send
+
+2026-07-20 09:26 — fix: refreshToken moved from localStorage to sessionStorage
+  files: apps/web/lib/api.ts
+  reason: multiple tabs with different users caused refresh token collision → silent logout mid-session
+
+2026-07-20 09:57 — fix: deviceToken no longer cleared on logout
+  file: apps/web/lib/auth.tsx
+  reason: clearing deviceToken on logout forced OTP on every re-login, breaking '30-day remember device' UX
