@@ -24,11 +24,13 @@ COPY apps/api/ ./apps/api/
 
 RUN pnpm install --frozen-lockfile
 
+# Generate Prisma client first (must be before API build — types needed at compile time)
+RUN pnpm --filter @school/api prisma:generate
+
 # Build shared packages then API
 RUN pnpm --filter @school/shared build
 RUN pnpm --filter @school/certificate-layout build
 RUN pnpm --filter @school/api build
-RUN pnpm --filter @school/api prisma:generate
 
 EXPOSE 3001
 
