@@ -13,21 +13,16 @@ RUN apt-get update && apt-get install -y \
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
-RUN npm install -g pnpm@9
+RUN npm install -g pnpm@11.1.3
 
 WORKDIR /app
 
-# Copy workspace config first (for layer caching)
+# Copy all source first (postinstall builds packages — needs source present)
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json pnpm.yaml pnpm.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/certificate-layout/package.json ./packages/certificate-layout/
-COPY apps/api/package.json ./apps/api/
-
-RUN pnpm install --frozen-lockfile
-
-# Copy source
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
+
+RUN pnpm install --frozen-lockfile
 
 # Build shared packages then API
 RUN pnpm --filter @school/shared build
