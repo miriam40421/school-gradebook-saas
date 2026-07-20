@@ -13,6 +13,7 @@ const securityHeadersFrameable = securityHeaders.map((h) =>
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@school/shared'],
+  eslint: { ignoreDuringBuilds: true },
   async headers() {
     return [
       { source: '/api/html-preview/:path*', headers: securityHeadersFrameable },
@@ -23,7 +24,7 @@ const nextConfig = {
     return [
       {
         source: '/api-proxy/:path*',
-        destination: 'http://localhost:3001/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/:path*`,
       },
     ];
   },

@@ -11,7 +11,7 @@ export async function GET(
   }
 
   const certificateProfileId = req.nextUrl.searchParams.get('certificateProfileId');
-  const backendUrl = `http://localhost:3001/certificate-templates/${id}/preview`;
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/certificate-templates/${id}/preview`;
 
   const res = await fetch(backendUrl, {
     method: 'POST',

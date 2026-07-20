@@ -10,7 +10,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const backendUrl = `http://localhost:3001/certificates/snapshots/${id}/pdf`;
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/certificates/snapshots/${id}/pdf`;
   const res = await fetch(backendUrl, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',

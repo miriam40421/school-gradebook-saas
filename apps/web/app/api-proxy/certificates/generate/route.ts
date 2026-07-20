@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization');
   const body = await req.text();
 
-  const res = await fetch('http://localhost:3001/certificates/generate', {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const res = await fetch(`${apiUrl}/certificates/generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
