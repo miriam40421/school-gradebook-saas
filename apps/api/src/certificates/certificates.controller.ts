@@ -32,6 +32,14 @@ class ClassOverridesDto {
   overrides!: Record<string, string>;
 }
 
+class GradeNikudMapDto {
+  @IsUUID()
+  classId!: string;
+
+  @IsObject()
+  map!: Record<string, string>;
+}
+
 @Controller('certificates')
 export class CertificatesController {
   constructor(private certificates: CertificatesService) {}
@@ -98,6 +106,16 @@ export class CertificatesController {
     @Body() body: ClassOverridesDto,
   ) {
     await this.certificates.upsertNikudClassOverrides(user, body.classId, body.overrides);
+  }
+
+  @Put('grade-nikud-map')
+  @Authenticated()
+  @HttpCode(204)
+  async upsertGradeNikudMap(
+    @CurrentUser() user: SchoolUserPayload,
+    @Body() body: GradeNikudMapDto,
+  ) {
+    await this.certificates.upsertGradeNikudMap(user, body.classId, body.map);
   }
 
   @Post('nikud-text')

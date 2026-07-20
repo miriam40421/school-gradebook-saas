@@ -39,6 +39,7 @@ type NikudModalState = {
   gradeValues: Record<string, string>;
   customTextBlocks: Array<{ id: string; text: string }>;
   classNikudOverrides: Record<string, string>;
+  gradeNikudMap: Record<string, string>;
 };
 
 export function TeacherCertificatesTab({ classId, termId, classInfo, termLocked }: Props) {
@@ -160,12 +161,12 @@ export function TeacherCertificatesTab({ classId, termId, classInfo, termLocked 
           onPreview={(id, studentName) => setPreview({ id, studentName })}
           onNikudEdit={(
             snapshotId, studentName, studentId, supplement, prefs, subjects,
-            classInfoArg, termNameArg, gradeValues, customTextBlocks, classNikudOverrides,
+            classInfoArg, termNameArg, gradeValues, customTextBlocks, classNikudOverrides, gradeNikudMap,
           ) =>
             setNikudModal({
               snapshotId, studentName, studentId, supplement, prefs, subjects,
               classInfo: classInfoArg, termName: termNameArg, gradeValues,
-              customTextBlocks, classNikudOverrides,
+              customTextBlocks, classNikudOverrides, gradeNikudMap,
             })
           }
         />
@@ -185,6 +186,7 @@ export function TeacherCertificatesTab({ classId, termId, classInfo, termLocked 
           studentName={nikudModal.studentName}
           supplement={nikudModal.supplement}
           classNikudOverrides={nikudModal.classNikudOverrides}
+          gradeNikudMap={nikudModal.gradeNikudMap}
           prefs={nikudModal.prefs}
           subjects={nikudModal.subjects}
           gradeValues={nikudModal.gradeValues}

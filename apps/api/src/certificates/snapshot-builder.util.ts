@@ -39,6 +39,8 @@ export type SnapshotBuilderInput = {
   certificateProfileName?: string | null;
   supplement?: CertificateSupplementInput;
   generatedAt?: string;
+  /** School-wide grade text → nikud'd text map. Applied before per-student overrides. */
+  gradeNikudMap?: Record<string, string>;
 };
 
 function groupNameForSubject(
@@ -197,7 +199,9 @@ export function buildSnapshotJson(
       ? (nkoForSubjects[`subcategory.${placement.subCategoryId}`] || placement.subCategoryLabel)
       : placement.subCategoryLabel;
     const rawGrade = input.entries.get(s.id) ?? null;
-    const resolvedGrade = rawGrade ? (nkoForSubjects[`grade.${s.id}`] || rawGrade) : null;
+    const resolvedGrade = rawGrade
+      ? (nkoForSubjects[`grade.${s.id}`] || input.gradeNikudMap?.[rawGrade] || rawGrade)
+      : null;
     return {
       subjectId: s.id,
       subjectName: resolvedSubjectName,
@@ -295,6 +299,7 @@ export function mergeSupplementIntoSnapshot(
   supplement?: CertificateSupplementInput,
   certificatePrefs?: CertificatePrefs,
   classNikudOverrides?: Record<string, string>,
+  gradeNikudMap?: Record<string, string>,
 ): CertificateSnapshotJsonV1 {
   const prefs = normalizeCertificatePrefs(
     certificatePrefs ?? snapshot.certificatePrefs,
@@ -318,7 +323,9 @@ export function mergeSupplementIntoSnapshot(
     const resolvedSubCategoryLabel = subCategoryId
       ? (nko[`subcategory.${subCategoryId}`] || subCategoryLabel)
       : subCategoryLabel;
-    const resolvedGrade = s.value ? (nko[`grade.${subjectId}`] || s.value) : s.value;
+    const resolvedGrade = s.value
+      ? (nko[`grade.${subjectId}`] || gradeNikudMap?.[s.value] || s.value)
+      : s.value;
     return {
       ...s,
       subjectName: resolvedSubjectName,

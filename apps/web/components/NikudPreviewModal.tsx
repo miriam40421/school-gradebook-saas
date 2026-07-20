@@ -27,6 +27,7 @@ type Props = {
   studentName: string;
   supplement: CertificateSupplementDto;
   classNikudOverrides: Record<string, string>;
+  gradeNikudMap: Record<string, string>;
   prefs: CertificatePrefs;
   subjects: CertificateSupplementSubjectDto[];
   gradeValues: Record<string, string>;
@@ -154,6 +155,7 @@ export function NikudPreviewModal({
   studentName,
   supplement,
   classNikudOverrides,
+  gradeNikudMap,
   prefs,
   subjects,
   gradeValues,
@@ -195,12 +197,12 @@ export function NikudPreviewModal({
       }
     }
 
-    // Subject names (class-level) + grade values (per-student)
+    // Subject names (class-level) + grade values (school-wide map, then per-student fallback)
     for (const s of subjects) {
       init[`${NKO_PREFIX}subject.${s.id}`] = classNikudOverrides[`subject.${s.id}`] ?? s.name;
       const gv = gradeValues[s.id] ?? '';
       if (gv && !isNumeric(gv)) {
-        init[`${NKO_PREFIX}grade.${s.id}`] = nko[`grade.${s.id}`] ?? gv;
+        init[`${NKO_PREFIX}grade.${s.id}`] = gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv;
       }
     }
 
@@ -281,7 +283,7 @@ export function NikudPreviewModal({
       addIfNeeded(`${NKO_PREFIX}subject.${s.id}`, classNikudOverrides[`subject.${s.id}`] ?? s.name);
       const gv = gradeValues[s.id] ?? '';
       if (gv && !isNumeric(gv)) {
-        addIfNeeded(`${NKO_PREFIX}grade.${s.id}`, nko[`grade.${s.id}`] ?? gv);
+        addIfNeeded(`${NKO_PREFIX}grade.${s.id}`, gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv);
       }
     }
     if (prefs.evaluation && supplement.evaluation) {
@@ -462,26 +464,32 @@ export function NikudPreviewModal({
       }
 
       // 2. Class-level nikud overrides (green כלל הכיתה — category/subject/class/term)
+      // 2b. School-wide grade nikud map (grade raw text → nikud'd text)
       const classNkoUpdates: Record<string, string> = {};
+      const gradeNikudUpdates: Record<string, string> = {};
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(NKO_PREFIX)) {
           const nkoKey = k.slice(NKO_PREFIX.length);
-          if (isClassNkoKey(nkoKey)) {
+          if (nkoKey.startsWith('grade.')) {
+            const subjectId = nkoKey.slice(6);
+            const rawGrade = gradeValues[subjectId];
+            if (rawGrade && !isNumeric(rawGrade) && v.trim()) gradeNikudUpdates[rawGrade] = v;
+          } else if (isClassNkoKey(nkoKey)) {
             if (v.trim()) classNkoUpdates[nkoKey] = v;
           }
         }
       }
 
-      // 3. Per-student nikud overrides (blue לתלמידה זו)
+      // 3. Per-student nikud overrides (blue לתלמידה זו — only student.fullName for now)
       const perStudentNko: Record<string, string> = { ...nko };
-      // clear old class-level keys that may have been stored per-student previously
+      // clear class-level and grade keys that may have been stored per-student previously
       for (const k of Object.keys(perStudentNko)) {
-        if (isClassNkoKey(k)) delete perStudentNko[k];
+        if (isClassNkoKey(k) || k.startsWith('grade.')) delete perStudentNko[k];
       }
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(NKO_PREFIX)) {
           const nkoKey = k.slice(NKO_PREFIX.length);
-          if (!isClassNkoKey(nkoKey)) {
+          if (!isClassNkoKey(nkoKey) && !nkoKey.startsWith('grade.')) {
             if (v.trim()) perStudentNko[nkoKey] = v;
             else delete perStudentNko[nkoKey];
           }
@@ -505,6 +513,12 @@ export function NikudPreviewModal({
         await apiFetch('/certificates/nikud-class-overrides', {
           method: 'PUT',
           body: JSON.stringify({ classId, overrides: classNkoUpdates }),
+        });
+      }
+      if (Object.keys(gradeNikudUpdates).length > 0) {
+        await apiFetch('/certificates/grade-nikud-map', {
+          method: 'PUT',
+          body: JSON.stringify({ classId, map: gradeNikudUpdates }),
         });
       }
       await apiFetch('/certificates/supplements', {
@@ -533,12 +547,12 @@ export function NikudPreviewModal({
     } finally { setSaving(false); }
   };
 
-  const renderField = (key: string, label: string, multiline?: boolean, badge?: string) => {
+  const renderField = (key: string, label: string, multiline?: boolean, badge?: string, schoolLevel?: boolean) => {
     const val = values[key] ?? '';
     const isActive = activeKey === key;
     const loading = nikudLoading === key;
     const nkoKey = key.startsWith(NKO_PREFIX) ? key.slice(NKO_PREFIX.length) : null;
-    const isClassLevel = key.startsWith(LBL_PREFIX) || (nkoKey !== null && isClassNkoKey(nkoKey));
+    const isClassLevel = !schoolLevel && (key.startsWith(LBL_PREFIX) || (nkoKey !== null && isClassNkoKey(nkoKey)));
     return (
       <div key={key} style={{ marginBottom: '0.55rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.15rem', flexWrap: 'wrap' }}>
@@ -546,7 +560,10 @@ export function NikudPreviewModal({
           {isClassLevel && (
             <span style={{ fontSize: '0.6rem', padding: '0.05rem 0.3rem', background: '#dcfce7', color: '#15803d', borderRadius: '0.9rem', border: '1px solid #bbf7d0', lineHeight: 1.4 }}>כלל הכיתה</span>
           )}
-          {badge && !isClassLevel && (
+          {schoolLevel && (
+            <span style={{ fontSize: '0.6rem', padding: '0.05rem 0.3rem', background: '#fff7ed', color: '#c2410c', borderRadius: '0.9rem', border: '1px solid #fed7aa', lineHeight: 1.4 }}>כלל ביה״ס</span>
+          )}
+          {badge && !isClassLevel && !schoolLevel && (
             <span style={{ fontSize: '0.6rem', padding: '0.05rem 0.3rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '0.9rem', border: '1px solid #bae6fd', lineHeight: 1.4 }}>{badge}</span>
           )}
           <button
@@ -733,7 +750,7 @@ export function NikudPreviewModal({
                       <div key={s.id}>
                         {renderField(`${NKO_PREFIX}subject.${s.id}`, `מקצוע: ${s.name}`, false, 'כלל הכיתה')}
                         {gradeValues[s.id] && !isNumeric(gradeValues[s.id]) &&
-                          renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, 'לתלמידה זו')}
+                          renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, undefined, true)}
                         {prefs.commentPerGrade &&
                           renderField(`comment:${s.id}`, `הערה: ${s.name}`, false, 'לתלמידה זו')}
                       </div>
@@ -746,7 +763,7 @@ export function NikudPreviewModal({
                   <div key={s.id}>
                     {renderField(`${NKO_PREFIX}subject.${s.id}`, `מקצוע: ${s.name}`, false, 'כלל הכיתה')}
                     {gradeValues[s.id] && !isNumeric(gradeValues[s.id]) &&
-                      renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, 'לתלמידה זו')}
+                      renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, undefined, true)}
                     {prefs.commentPerGrade &&
                       renderField(`comment:${s.id}`, `הערה: ${s.name}`, false, 'לתלמידה זו')}
                   </div>

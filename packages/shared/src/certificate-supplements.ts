@@ -46,6 +46,8 @@ export type CertificateSupplementContextDto = {
   customTextBlocks?: Array<{ id: string; text: string }>;
   /** Class-wide nikud overrides: subject names, category names, class/term name */
   nikudClassOverrides?: Record<string, string>;
+  /** School-wide map: raw grade text → nikud'd grade text (e.g. "מצוין" → "מָצוּיָן") */
+  gradeNikudMap?: Record<string, string>;
 };
 
 export type UpsertCertificateSupplementItemDto = {

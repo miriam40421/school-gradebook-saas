@@ -71,6 +71,7 @@ type Props = {
     gradeValues: Record<string, string>,
     customTextBlocks: Array<{ id: string; text: string }>,
     classNikudOverrides: Record<string, string>,
+    gradeNikudMap: Record<string, string>,
   ) => void;
 };
 
@@ -470,6 +471,7 @@ export function CertificateUnifiedTable({
                               gradeValues,
                               certContext?.customTextBlocks ?? [],
                               certContext?.nikudClassOverrides ?? {},
+                              certContext?.gradeNikudMap ?? {},
                             );
                           }}
                         >

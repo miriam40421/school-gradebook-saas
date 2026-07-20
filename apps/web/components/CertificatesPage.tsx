@@ -83,6 +83,7 @@ function CertificatesContent({
     gradeValues: Record<string, string>;
     customTextBlocks: Array<{ id: string; text: string }>;
     classNikudOverrides: Record<string, string>;
+    gradeNikudMap: Record<string, string>;
   } | null>(null);
   const [generatingStudentId, setGeneratingStudentId] = useState<string | null>(null);
 
@@ -225,8 +226,8 @@ function CertificatesContent({
             generateOne.mutate(studentId);
           }}
           onPreview={(id, studentName) => setPreview({ id, studentName })}
-          onNikudEdit={(snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides) =>
-            setNikudModal({ snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides })
+          onNikudEdit={(snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides, gradeNikudMap) =>
+            setNikudModal({ snapshotId, studentName, studentId, supplement, prefs, subjects, classInfo, termName, gradeValues, customTextBlocks, classNikudOverrides, gradeNikudMap })
           }
         />
       )}
@@ -245,6 +246,7 @@ function CertificatesContent({
           studentName={nikudModal.studentName}
           supplement={nikudModal.supplement}
           classNikudOverrides={nikudModal.classNikudOverrides}
+          gradeNikudMap={nikudModal.gradeNikudMap}
           prefs={nikudModal.prefs}
           subjects={nikudModal.subjects}
           gradeValues={nikudModal.gradeValues}

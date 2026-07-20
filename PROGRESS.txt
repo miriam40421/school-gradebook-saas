@@ -624,3 +624,23 @@ note: forgot-password silent if user missing (correct) + requires SMTP config to
   fix 1: added disabled={autoNikudRunning} to save button
   fix 2: standard labels now only saved when v !== initialLabelValues.current[k] (same as custom labels)
   files: apps/web/components/NikudPreviewModal.tsx (lines 449-460, 827)
+
+[2026-07-20] feat: grade-nikud-map — school-wide grade text → nikud mapping
+Tasks:
+  - Added gradeNikudMap to CertificateSupplementContextDto (shared)
+  - SnapshotBuilderInput.gradeNikudMap: applied before per-student nko in buildSnapshotJson
+  - mergeSupplementIntoSnapshot: 5th param gradeNikudMap, applied per grade value
+  - certificates.service: patchGradeNikudMapInSettings, resolveGradeNikudMap, upsertGradeNikudMap
+  - certificates.controller: PUT /certificates/grade-nikud-map endpoint
+  - NikudPreviewModal: gradeNikudMap prop, grade fields → orange "כלל ביה"ס" badge,
+    initial values from school map, save routes to grade-nikud-map endpoint (not per-student)
+  - CertificateUnifiedTable/CertificatesPage/TeacherCertificatesTab: pass gradeNikudMap through
+Files:
+  packages/shared/src/certificate-supplements.ts
+  apps/api/src/certificates/snapshot-builder.util.ts
+  apps/api/src/certificates/certificates.service.ts
+  apps/api/src/certificates/certificates.controller.ts
+  apps/web/components/NikudPreviewModal.tsx
+  apps/web/components/CertificateUnifiedTable.tsx
+  apps/web/components/CertificatesPage.tsx
+  apps/web/components/TeacherCertificatesTab.tsx

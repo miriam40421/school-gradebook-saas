@@ -105,6 +105,18 @@ function resolveNikudClassOverrides(
   return (cert['nikudClassOverrides'] ?? {}) as Record<string, string>;
 }
 
+function patchGradeNikudMapInSettings(
+  settings: Record<string, unknown>,
+  map: Record<string, string>,
+): Record<string, unknown> {
+  const existing = (settings['gradeNikudMap'] ?? {}) as Record<string, string>;
+  return { ...settings, gradeNikudMap: { ...existing, ...map } };
+}
+
+function resolveGradeNikudMap(settings: Record<string, unknown>): Record<string, string> {
+  return (settings['gradeNikudMap'] ?? {}) as Record<string, string>;
+}
+
 @Injectable()
 export class CertificatesService {
   constructor(
@@ -392,6 +404,7 @@ export class CertificatesService {
       supplements,
       customTextBlocks: await this.extractCustomTextBlocks(user.school_id, settings, classRow.certificateProfileId),
       nikudClassOverrides: resolveNikudClassOverrides(settings, classRow.certificateProfileId),
+      gradeNikudMap: resolveGradeNikudMap(settings),
     };
   }
 
@@ -643,6 +656,7 @@ export class CertificatesService {
           certificateProfileName: profile?.name ?? null,
           supplement,
           gradingSetTypes,
+          gradeNikudMap: resolveGradeNikudMap((school.settingsJson ?? {}) as Record<string, unknown>),
         });
 
         if (customTemplate) {
@@ -783,6 +797,7 @@ export class CertificatesService {
       ? this.certificatePrefsForClass(school.settingsJson, classRow?.certificateProfileId)
       : undefined;
     const classNikud = resolveNikudClassOverrides(schoolSettings, classRow?.certificateProfileId);
+    const gradeNikudMap = resolveGradeNikudMap(schoolSettings);
 
     const snapshotJson = enrichSnapshotProfileName(
       mergeSupplementIntoSnapshot(
@@ -790,6 +805,7 @@ export class CertificatesService {
         supplement,
         currentPrefs,
         classNikud,
+        gradeNikudMap,
       ),
       resolveCertificateProfile(
         school?.settingsJson as Record<string, unknown> | undefined,
@@ -906,6 +922,7 @@ export class CertificatesService {
         )
       : undefined;
     const pdfClassNikud = resolveNikudClassOverrides(pdfSchoolSettings, classRow?.certificateProfileId);
+    const pdfGradeNikudMap = resolveGradeNikudMap(pdfSchoolSettings);
 
     const snapshotJson = enrichSnapshotProfileName(
       mergeSupplementIntoSnapshot(
@@ -913,6 +930,7 @@ export class CertificatesService {
         supplement,
         currentPrefs,
         pdfClassNikud,
+        pdfGradeNikudMap,
       ),
       resolveCertificateProfile(
         school?.settingsJson as Record<string, unknown> | undefined,
@@ -996,6 +1014,25 @@ export class CertificatesService {
 
     const settings = (school.settingsJson ?? {}) as Record<string, unknown>;
     const updatedSettings = patchNikudClassOverridesInSettings(settings, classRow.certificateProfileId, overrides);
+
+    await this.prisma.school.update({
+      where: { id: user.school_id },
+      data: { settingsJson: updatedSettings as import('@prisma/client').Prisma.InputJsonValue },
+    });
+  }
+
+  async upsertGradeNikudMap(
+    user: SchoolUserPayload,
+    classId: string,
+    map: Record<string, string>,
+  ): Promise<void> {
+    const classRow = await this.assertClassViewAccess(user, classId);
+    this.assertCanGenerate(user, classRow);
+    const school = await this.prisma.school.findFirst({ where: { id: user.school_id } });
+    if (!school) throw new NotFoundException();
+
+    const settings = (school.settingsJson ?? {}) as Record<string, unknown>;
+    const updatedSettings = patchGradeNikudMapInSettings(settings, map);
 
     await this.prisma.school.update({
       where: { id: user.school_id },
