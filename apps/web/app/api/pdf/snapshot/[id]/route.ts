@@ -13,6 +13,7 @@ export async function GET(
   const backendUrl = `http://localhost:3001/certificates/snapshots/${id}/pdf`;
   const res = await fetch(backendUrl, {
     headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
   });
 
   if (!res.ok) {
@@ -25,6 +26,7 @@ export async function GET(
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': isDownload ? 'attachment' : 'inline',
+      'Cache-Control': 'no-store',
     },
   });
 }

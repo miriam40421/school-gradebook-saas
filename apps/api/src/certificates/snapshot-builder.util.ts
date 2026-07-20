@@ -199,8 +199,10 @@ export function buildSnapshotJson(
       ? (nkoForSubjects[`subcategory.${placement.subCategoryId}`] || placement.subCategoryLabel)
       : placement.subCategoryLabel;
     const rawGrade = input.entries.get(s.id) ?? null;
+    // Store raw grade text in the snapshot; gradeNikudMap is applied at render time
+    // via mergeSupplementIntoSnapshot so it stays live and changeable after generation.
     const resolvedGrade = rawGrade
-      ? (nkoForSubjects[`grade.${s.id}`] || input.gradeNikudMap?.[rawGrade] || rawGrade)
+      ? (nkoForSubjects[`grade.${s.id}`] || rawGrade)
       : null;
     return {
       subjectId: s.id,
@@ -323,8 +325,14 @@ export function mergeSupplementIntoSnapshot(
     const resolvedSubCategoryLabel = subCategoryId
       ? (nko[`subcategory.${subCategoryId}`] || subCategoryLabel)
       : subCategoryLabel;
+    const sValueTrimmed = s.value?.trim() ?? '';
+    // gradeNikudMap is authoritative (class-wide, set by teacher).
+    // Strip all Hebrew diacritic marks (U+05B0–U+05C7) as fallback in case the snapshot
+    // has old nikud baked in from a previous gradeNikudMap generation.
     const resolvedGrade = s.value
-      ? (nko[`grade.${subjectId}`] || gradeNikudMap?.[s.value] || s.value)
+      ? (gradeNikudMap?.[sValueTrimmed] ||
+         gradeNikudMap?.[sValueTrimmed.replace(/[ְ-ׇ]/g, '')] ||
+         s.value)
       : s.value;
     return {
       ...s,

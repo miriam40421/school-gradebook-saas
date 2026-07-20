@@ -256,8 +256,8 @@ function CertificatesContent({
           classId={classId}
           termId={termId}
           onClose={() => setNikudModal(null)}
-          onAfterSave={() => {
-            void qc.invalidateQueries({ queryKey: ['certificate-supplement-context', classId, termId] });
+          onAfterSave={async () => {
+            await qc.refetchQueries({ queryKey: ['certificate-supplement-context', classId, termId] });
           }}
         />
       )}

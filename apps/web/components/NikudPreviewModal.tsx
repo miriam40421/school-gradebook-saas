@@ -20,7 +20,8 @@ const isClassNkoKey = (k: string) =>
   CLASS_NKO_KEYS.has(k) ||
   k.startsWith('category.') ||
   k.startsWith('subcategory.') ||
-  k.startsWith('subject.');
+  k.startsWith('subject.') ||
+  k.startsWith('grade.');
 
 type Props = {
   snapshotId: string;
@@ -37,7 +38,7 @@ type Props = {
   classId: string;
   termId: string;
   onClose: () => void;
-  onAfterSave?: () => void;
+  onAfterSave?: () => void | Promise<void>;
 };
 
 const NIKUD_RE = /[ְ-ֽׁׂ]/;
@@ -202,7 +203,8 @@ export function NikudPreviewModal({
       init[`${NKO_PREFIX}subject.${s.id}`] = classNikudOverrides[`subject.${s.id}`] ?? s.name;
       const gv = gradeValues[s.id] ?? '';
       if (gv && !isNumeric(gv)) {
-        init[`${NKO_PREFIX}grade.${s.id}`] = gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv;
+        const gvTrimmed = gv.trim();
+        init[`${NKO_PREFIX}grade.${s.id}`] = gradeNikudMap[gvTrimmed] ?? gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv;
       }
     }
 
@@ -232,7 +234,8 @@ export function NikudPreviewModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [iframeKey, setIframeKey] = useState(0);
+  const [savedGradeTexts, setSavedGradeTexts] = useState<string[]>([]);
+  const [iframeKey, setIframeKey] = useState(() => Date.now());
   const [previewRefreshing, setPreviewRefreshing] = useState(false);
   const [previewUpdated, setPreviewUpdated] = useState(false);
   const inputRefs = useRef<Record<string, HTMLTextAreaElement | HTMLInputElement | null>>({});
@@ -283,7 +286,8 @@ export function NikudPreviewModal({
       addIfNeeded(`${NKO_PREFIX}subject.${s.id}`, classNikudOverrides[`subject.${s.id}`] ?? s.name);
       const gv = gradeValues[s.id] ?? '';
       if (gv && !isNumeric(gv)) {
-        addIfNeeded(`${NKO_PREFIX}grade.${s.id}`, gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv);
+        const gvTrimmed = gv.trim();
+        addIfNeeded(`${NKO_PREFIX}grade.${s.id}`, gradeNikudMap[gvTrimmed] ?? gradeNikudMap[gv] ?? nko[`grade.${s.id}`] ?? gv);
       }
     }
     if (prefs.evaluation && supplement.evaluation) {
@@ -472,7 +476,7 @@ export function NikudPreviewModal({
           const nkoKey = k.slice(NKO_PREFIX.length);
           if (nkoKey.startsWith('grade.')) {
             const subjectId = nkoKey.slice(6);
-            const rawGrade = gradeValues[subjectId];
+            const rawGrade = gradeValues[subjectId]?.trim();
             if (rawGrade && !isNumeric(rawGrade) && v.trim()) gradeNikudUpdates[rawGrade] = v;
           } else if (isClassNkoKey(nkoKey)) {
             if (v.trim()) classNkoUpdates[nkoKey] = v;
@@ -480,16 +484,16 @@ export function NikudPreviewModal({
         }
       }
 
-      // 3. Per-student nikud overrides (blue לתלמידה זו — only student.fullName for now)
+      // 3. Per-student nikud overrides (blue לתלמידה זו).
+      //    grade. keys are class-level (saved to gradeNikudMap above); strip any stale per-student entries.
       const perStudentNko: Record<string, string> = { ...nko };
-      // clear class-level and grade keys that may have been stored per-student previously
       for (const k of Object.keys(perStudentNko)) {
-        if (isClassNkoKey(k) || k.startsWith('grade.')) delete perStudentNko[k];
+        if (isClassNkoKey(k)) delete perStudentNko[k];
       }
       for (const [k, v] of Object.entries(values)) {
         if (k.startsWith(NKO_PREFIX)) {
           const nkoKey = k.slice(NKO_PREFIX.length);
-          if (!isClassNkoKey(nkoKey) && !nkoKey.startsWith('grade.')) {
+          if (!isClassNkoKey(nkoKey)) {
             if (v.trim()) perStudentNko[nkoKey] = v;
             else delete perStudentNko[nkoKey];
           }
@@ -536,12 +540,13 @@ export function NikudPreviewModal({
           }],
         }),
       });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
       setPreviewRefreshing(true);
       setPreviewUpdated(false);
       setIframeKey((k) => k + 1);
-      onAfterSave?.();
+      await onAfterSave?.();
+      setSavedGradeTexts(Object.keys(gradeNikudUpdates));
+      setSaveSuccess(true);
+      setTimeout(() => { setSaveSuccess(false); setSavedGradeTexts([]); }, 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'שגיאה בשמירה');
     } finally { setSaving(false); }
@@ -750,7 +755,7 @@ export function NikudPreviewModal({
                       <div key={s.id}>
                         {renderField(`${NKO_PREFIX}subject.${s.id}`, `מקצוע: ${s.name}`, false, 'כלל הכיתה')}
                         {gradeValues[s.id] && !isNumeric(gradeValues[s.id]) &&
-                          renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, undefined, true)}
+                          renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`)}
                         {prefs.commentPerGrade &&
                           renderField(`comment:${s.id}`, `הערה: ${s.name}`, false, 'לתלמידה זו')}
                       </div>
@@ -763,7 +768,7 @@ export function NikudPreviewModal({
                   <div key={s.id}>
                     {renderField(`${NKO_PREFIX}subject.${s.id}`, `מקצוע: ${s.name}`, false, 'כלל הכיתה')}
                     {gradeValues[s.id] && !isNumeric(gradeValues[s.id]) &&
-                      renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`, false, undefined, true)}
+                      renderField(`${NKO_PREFIX}grade.${s.id}`, `ציון: ${s.name}`)}
                     {prefs.commentPerGrade &&
                       renderField(`comment:${s.id}`, `הערה: ${s.name}`, false, 'לתלמידה זו')}
                   </div>
@@ -839,7 +844,14 @@ export function NikudPreviewModal({
 
           <div style={{ padding: '0.6rem 1rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
             {saveSuccess && (
-              <span style={{ fontSize: '0.8rem', color: '#16a34a', marginLeft: 'auto' }}>✓ נשמר</span>
+              <span style={{ fontSize: '0.8rem', color: '#16a34a', marginLeft: 'auto', textAlign: 'right' }}>
+                ✓ נשמר
+                {savedGradeTexts.length > 0 && (
+                  <span style={{ display: 'block', fontSize: '0.72rem', color: '#15803d' }}>
+                    ניקוד {savedGradeTexts.length === 1 ? `"${savedGradeTexts[0]}"` : `${savedGradeTexts.length} ציונים`} נשמר לכלל הכיתה
+                  </span>
+                )}
+              </span>
             )}
             <Button type="button" variant="ghost" onClick={onClose}>{he.cancel ?? 'סגור'}</Button>
             <Button type="button" variant="primary" loading={saving} disabled={autoNikudRunning} onClick={handleSave}>שמור</Button>

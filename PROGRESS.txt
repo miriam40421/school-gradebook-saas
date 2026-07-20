@@ -644,3 +644,71 @@ Files:
   apps/web/components/CertificateUnifiedTable.tsx
   apps/web/components/CertificatesPage.tsx
   apps/web/components/TeacherCertificatesTab.tsx
+
+[2026-07-20] Fix: grade nikud preview not updating in NikudPreviewModal
+
+Root cause (2 bugs):
+1. snapshot-builder.util.ts mergeSupplementIntoSnapshot: gradeNikudMap lookup used
+   s.value directly — but for nikud=true schools, snapshot stores Dicta-nikud'd value
+   (e.g. "מָצוּיָן"), while map key is raw "מצוין". Fix: also try stripNikud(s.value).
+2. NikudPreviewModal handleSave: grade. keys were EXCLUDED from perStudentNko,
+   so mergeSupplementIntoSnapshot had no per-student nko for grade → fell back to
+   gradeNikudMap which failed for nikud=true snapshots. Fix: include grade. keys
+   in perStudentNko (highest priority in preview) while ALSO saving to gradeNikudMap
+   (school-wide propagation).
+
+Files changed:
+- apps/api/src/certificates/snapshot-builder.util.ts (stripNikud fallback in gradeNikudMap lookup)
+- apps/web/components/NikudPreviewModal.tsx (include grade. in perStudentNko on save)
+2026-07-20 16:53 | Grade Nikud — class-scope + revert fix + propagation
+  BUGS FIXED:
+  1. gradeNikudMap scope: school-wide → class-level (classGradeNikudMaps[classId] in school.settingsJson)
+  2. Revert on re-open: onAfterSave now awaits refetchQueries (blocking) — certContext always fresh on next open
+  3. No auto-propagation: grade. added to isClassNkoKey → never saved per-student; class map applied to all students at preview time via mergeSupplementIntoSnapshot
+  4. Badge fix: grade fields now show green 'כלל הכיתה' instead of orange 'כלל ביה''ס'
+  FILES:
+  - apps/api/src/certificates/certificates.service.ts: patchGradeNikudMapInSettings + resolveGradeNikudMap (classId param), 5 call sites updated
+  - apps/web/components/NikudPreviewModal.tsx: grade. in isClassNkoKey, badge fix, await onAfterSave, onAfterSave type
+  - apps/web/components/CertificatesPage.tsx: invalidateQueries → refetchQueries (await)
+
+---
+2026-07-20 — gradeNikudMap fixes (session 2)
+Tasks:
+- Fixed iframeKey cache bug: initialized to Date.now() instead of 0 → each modal open gets unique URL
+- Fixed whitespace bug: trim() on rawGrade (save path) and s.value (lookup path) in both snapshot-builder.util.ts and NikudPreviewModal.tsx
+- Added savedGradeTexts state + informative success message "ניקוד 'ראויה לשבח' נשמר לכלל הכיתה"
+Files changed:
+- apps/web/components/NikudPreviewModal.tsx
+- apps/api/src/certificates/snapshot-builder.util.ts
+
+---
+[2026-07-20] FIX — grade nikud priority bug in mergeSupplementIntoSnapshot
+Root cause: old code saved grade nikud to classNikudOverrides["grade.subjectId"] keyed by subject ID.
+  New code saves to gradeNikudMap["ראויה לשבח"] keyed by grade text.
+  In mergeSupplementIntoSnapshot, nko (which merged classNikudOverrides) took FIRST priority,
+  so gradeNikudMap was never reached → preview never updated after save.
+Fix: resolvedGrade now uses perStudentNko (supplement.nikudOverrides only) for grade.X lookup,
+  bypassing stale classNikudOverrides grade entries. gradeNikudMap now works correctly.
+Files: apps/api/src/certificates/snapshot-builder.util.ts (mergeSupplementIntoSnapshot)
+tsc: clean (both api + web)
+
+
+---
+[2026-07-20] SESSION: Fix grade nikud preview not updating + gradeNikudMap not persisting on reopen
+
+Problem 1: Preview iframe showed stale HTML/PDF after saving grade nikud.
+Root cause: Next.js 14 Data Cache caches fetch() in GET Route Handlers by default.
+Fix: Added `cache: 'no-store'` to internal fetch() calls in both proxy routes.
+Files:
+  apps/web/app/api/html-preview/snapshot/[id]/route.ts
+  apps/web/app/api/pdf/snapshot/[id]/route.ts
+
+Problem 2: Grade nikud not shown when reopening modal (e.g. "טוב" not pre-filled).
+Root cause: Trim mismatch — save stores map key as gradeValues[id].trim(), but init
+  and auto-nikud effect looked up gradeNikudMap[gv] with untrimmed gv.
+Fix: Both init and auto-nikud effect now use gv.trim() first, fallback to gv.
+Files: apps/web/components/NikudPreviewModal.tsx (init block ~L202, useEffect ~L284)
+
+Note: ANY non-numeric grade can be nikud'd (no whitelist). Grade fields shown for
+  all subjects where student has non-numeric gradebook entry.
+tsc: clean (both api + web)

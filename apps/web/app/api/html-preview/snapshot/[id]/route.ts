@@ -13,6 +13,7 @@ export async function GET(
   const backendUrl = `http://localhost:3001/certificates/snapshots/${id}/preview-html`;
   const res = await fetch(backendUrl, {
     headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
   });
 
   if (!res.ok) {
