@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormEvent, useMemo, useState, type ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Role } from '@school/shared';
 import { AppShell } from '@/components/AppShell';
 import { RowActions } from '@/components/RowActions';
@@ -102,6 +103,7 @@ export default function UsersPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('TempPass123!');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role>(Role.HomeroomTeacher);
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
 
@@ -260,13 +262,24 @@ export default function UsersPage() {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-text">{he.password}</label>
-            <input
-              type="password"
-              placeholder={he.password}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder={he.password}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ paddingLeft: '2.5rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 left-2 flex items-center text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-text">{he.role ?? 'תפקיד'}</label>
@@ -927,6 +940,7 @@ function UserRow({
   extraCol?: ReactNode;
 } & UserEditProps) {
   const isEditing = editingUserId === user.id;
+  const [showEditPassword, setShowEditPassword] = useState(false);
   return (
     <tr>
       <td>
@@ -937,13 +951,23 @@ function UserRow({
               onChange={(e) => onEditUserName(e.target.value)}
               required
             />
-            <input
-              type="password"
-              placeholder={he.passwordLeaveBlank}
-              value={editUserPassword}
-              onChange={(e) => onEditUserPassword(e.target.value)}
-              style={{ marginTop: '0.25rem' }}
-            />
+            <div className="relative" style={{ marginTop: '0.25rem' }}>
+              <input
+                type={showEditPassword ? 'text' : 'password'}
+                placeholder={he.passwordLeaveBlank}
+                value={editUserPassword}
+                onChange={(e) => onEditUserPassword(e.target.value)}
+                style={{ paddingLeft: '2.5rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowEditPassword((v) => !v)}
+                className="absolute inset-y-0 left-2 flex items-center text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </>
         ) : (
           user.name

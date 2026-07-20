@@ -344,8 +344,12 @@ export function mergeSupplementIntoSnapshot(
     class: {
       ...snapshot.class,
       name: nko['class.name'] || snapshot.class.name,
-      ...(snapshot.class.cohort != null ? { cohort: nko['class.cohort'] || snapshot.class.cohort } : {}),
-      ...(snapshot.class.yearHebrew != null ? { yearHebrew: nko['class.cohort'] || snapshot.class.yearHebrew } : {}),
+      ...((snapshot.class.cohort != null || nko['class.cohort'])
+        ? { cohort: nko['class.cohort'] || snapshot.class.cohort || null }
+        : {}),
+      ...((snapshot.class.yearHebrew != null || nko['class.cohort'])
+        ? { yearHebrew: nko['class.cohort'] || snapshot.class.yearHebrew || null }
+        : {}),
     },
     term: { ...snapshot.term, name: nko['term.name'] || snapshot.term.name },
     certificatePrefs: prefs,

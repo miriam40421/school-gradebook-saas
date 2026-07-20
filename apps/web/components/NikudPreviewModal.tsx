@@ -492,35 +492,35 @@ export function NikudPreviewModal({
         if (k.startsWith('comment:')) gradeComments[k.slice(8)] = v || null;
       }
 
-      await Promise.all([
-        Object.keys(changedLabels).length > 0
-          ? apiFetch('/certificates/label-overrides', {
-              method: 'PUT',
-              body: JSON.stringify({ classId, overrides: changedLabels }),
-            })
-          : Promise.resolve(),
-        Object.keys(classNkoUpdates).length > 0
-          ? apiFetch('/certificates/nikud-class-overrides', {
-              method: 'PUT',
-              body: JSON.stringify({ classId, overrides: classNkoUpdates }),
-            })
-          : Promise.resolve(),
-        apiFetch('/certificates/supplements', {
+      // label-overrides and nikud-class-overrides both do read-modify-write on school.settingsJson —
+      // running them in parallel causes one to overwrite the other. Run sequentially.
+      if (Object.keys(changedLabels).length > 0) {
+        await apiFetch('/certificates/label-overrides', {
           method: 'PUT',
-          body: JSON.stringify({
-            classId,
-            termId,
-            items: [{
-              studentId: supplement.studentId,
-              evaluation: values['evaluation'] || null,
-              homeroomSignature: values['homeroomSignature'] || null,
-              principalSignature: values['principalSignature'] || null,
-              gradeComments: Object.keys(gradeComments).length ? gradeComments : undefined,
-              nikudOverrides: Object.keys(perStudentNko).length ? perStudentNko : {},
-            }],
-          }),
+          body: JSON.stringify({ classId, overrides: changedLabels }),
+        });
+      }
+      if (Object.keys(classNkoUpdates).length > 0) {
+        await apiFetch('/certificates/nikud-class-overrides', {
+          method: 'PUT',
+          body: JSON.stringify({ classId, overrides: classNkoUpdates }),
+        });
+      }
+      await apiFetch('/certificates/supplements', {
+        method: 'PUT',
+        body: JSON.stringify({
+          classId,
+          termId,
+          items: [{
+            studentId: supplement.studentId,
+            evaluation: values['evaluation'] || null,
+            homeroomSignature: values['homeroomSignature'] || null,
+            principalSignature: values['principalSignature'] || null,
+            gradeComments: Object.keys(gradeComments).length ? gradeComments : undefined,
+            nikudOverrides: Object.keys(perStudentNko).length ? perStudentNko : {},
+          }],
         }),
-      ]);
+      });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       setPreviewRefreshing(true);
