@@ -1,6 +1,11 @@
 import { translateApiError } from './he';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// Production browser: route through Vercel proxy — browser never contacts Render directly.
+// SSR / local dev: call the API directly.
+const API_URL =
+  typeof window !== 'undefined' && process.env.NODE_ENV === 'production'
+    ? '/api-proxy'
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001');
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
