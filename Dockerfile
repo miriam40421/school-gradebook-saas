@@ -35,4 +35,4 @@ RUN pnpm --filter @school/api build
 EXPOSE 3001
 
 # On startup: run DB migrations then start server
-CMD ["sh", "-c", "cd apps/api && pnpm prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "cd apps/api && pnpm prisma migrate deploy && pnpm db:seed && node dist/main"]
