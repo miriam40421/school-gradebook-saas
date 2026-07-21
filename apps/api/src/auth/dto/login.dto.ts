@@ -1,4 +1,5 @@
 import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class LoginDto {
   @IsUUID()
@@ -27,5 +28,6 @@ export class VerifyMfaDto {
 
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean)
   rememberDevice?: boolean;
 }

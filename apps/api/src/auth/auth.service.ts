@@ -139,8 +139,10 @@ export class AuthService {
     this.audit.emit({ action: 'auth.mfa_verify', actorId: user.id, targetType: 'auth', schoolId: user.schoolId, ip, outcome: 'success' });
     const tokens = await this.issueTokens(user);
 
+    this.logger.log(`MFA verified — rememberDevice=${rememberDevice}`);
     if (rememberDevice) {
       const deviceToken = await this.mfa.createTrustedDevice(user.id);
+      this.logger.log('Trusted device created');
       return { ...tokens, deviceToken };
     }
     return tokens;
