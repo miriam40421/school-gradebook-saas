@@ -17,7 +17,7 @@ async function bootstrap() {
   if (!isDev && !corsOrigin.startsWith('https://')) {
     throw new Error('CORS_ORIGIN must be a valid HTTPS URL in non-development environments');
   }
-  app.enableCors({ origin: corsOrigin });
+  app.enableCors({ origin: isDev ? true : corsOrigin });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
