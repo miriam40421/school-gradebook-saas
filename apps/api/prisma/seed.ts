@@ -15,7 +15,13 @@ async function ensureSuperAdmin() {
   }
   const existing = await prisma.user.findFirst({ where: { role: 'super_admin' } });
   if (existing) {
-    console.log(`Super admin already exists (${existing.email}). Skipping.`);
+    if (process.env.FORCE_UPDATE_ADMIN !== 'true') {
+      console.log(`Super admin already exists (${existing.email}). Skipping.`);
+      return;
+    }
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    await prisma.user.update({ where: { id: existing.id }, data: { email, passwordHash } });
+    console.log(`Super admin updated: ${email}`);
     return;
   }
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
